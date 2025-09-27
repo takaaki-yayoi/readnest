@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<client>
+    <name>ReadNest</name>
+    <version>2.0</version>
+    <author>
+        <name>ReadNest Team</name>
+        <email>admin@readnest.jp</email>
+        <twitter>readnest_jp</twitter>
+    </author>
+    <url>https://readnest.jp/</url>
+    <twitter>readnest_jp</twitter>
+    <description><![CDATA[
+        あなたの読書の巣。読書進捗の記録、レビューの投稿、本棚の整理ができる読書管理サービスです。 
+    ]]></description>
+</client>

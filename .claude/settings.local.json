@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(do if grep -q \"bg-gray-50\\|bg-white\" \"$file\")",
+      "Bash(! grep -q \"dark:bg-gray-\" \"$file\")",
+      "Bash(do if grep -q \"text-gray-\" \"$file\")",
+      "Bash(! grep -q \"dark:text-gray-\" \"$file\")",
+      "Read(//Users/yayoi/Desktop/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,34 @@
+<svg width="200" height="300" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="300" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" rx="8"/>
+  
+  <!-- Book icon background -->
+  <rect x="40" y="80" width="120" height="140" fill="#cbd5e1" rx="4"/>
+  
+  <!-- Book icon -->
+  <g transform="translate(100, 150)">
+    <!-- Book spine -->
+    <rect x="-30" y="-40" width="60" height="80" fill="#64748b" rx="2"/>
+    
+    <!-- Book pages -->
+    <rect x="-28" y="-38" width="56" height="76" fill="#f1f5f9" rx="1"/>
+    
+    <!-- Book lines -->
+    <line x1="-20" y1="-25" x2="20" y2="-25" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="-20" y1="-15" x2="20" y2="-15" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="-20" y1="-5" x2="20" y2="-5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="-20" y1="5" x2="20" y2="5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="-20" y1="15" x2="20" y2="15" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="-20" y1="25" x2="20" y2="25" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="100" y="250" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b">
+    画像なし
+  </text>
+  
+  <!-- ReadNest branding -->
+  <text x="100" y="270" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#94a3b8">
+    ReadNest
+  </text>
+</svg>

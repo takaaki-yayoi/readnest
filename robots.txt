@@ -1,0 +1,34 @@
+# ReadNest robots.txt
+# Allow all crawlers to access the site
+
+User-agent: *
+Allow: /
+
+# Disallow administrative and system directories
+Disallow: /admin/
+Disallow: /cron/
+Disallow: /config/
+Disallow: /library/
+Disallow: /ajax/
+Disallow: /api/ai_debug.php
+Disallow: /cache/
+Disallow: /migration/
+Disallow: /migrations/
+Disallow: /sql/
+
+# Disallow duplicate content pages
+Disallow: /*?sort=
+Disallow: /*?page=
+Disallow: /*&sort=
+Disallow: /*&page=
+
+# Allow important CSS and JS
+Allow: /css/
+Allow: /js/
+Allow: /img/
+
+# Crawl delay (be nice to servers)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://readnest.jp/sitemap.xml

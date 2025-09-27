@@ -1,0 +1,77 @@
+# サーバーにアップロードするファイルリスト
+# 2025-01-09 エンベディング生成システム
+
+## 新規作成ファイル（/admin/ディレクトリにアップロード）
+
+1. generate_enhanced_embeddings_cli.php
+   - メインのエンベディング生成スクリプト（CLI専用）
+   - user_id=12の高評価本を対象
+   - Google Books APIから説明文取得
+   - 3種類のエンベディング生成
+
+2. test_embedding_cli.php
+   - 環境設定テストスクリプト
+   - DB接続、API接続の確認用
+
+3. test_api_only.php
+   - API接続のみのテストスクリプト
+   - ローカル環境でも実行可能
+
+4. clear_embeddings.sql
+   - エンベディングデータクリア用SQL
+   - 再生成前に実行
+
+5. EMBEDDING_SETUP.md
+   - セットアップガイド
+   - 使用方法の説明
+
+## 更新されたファイル
+
+1. /admin/embedding_debug.php
+   - combined_embedding列を使用するよう修正済み
+   - 全ユーザーの本を検索対象に変更済み
+
+## サーバーでの実行手順
+
+### 1. ファイルのアップロード
+上記のファイルを /admin/ ディレクトリにアップロード
+
+### 2. 実行権限の付与（必要に応じて）
+```bash
+chmod +x generate_enhanced_embeddings_cli.php
+chmod +x test_embedding_cli.php
+chmod +x test_api_only.php
+```
+
+### 3. テスト実行
+```bash
+# API接続テスト
+php test_api_only.php
+
+# 完全なテスト（DB含む）
+php test_embedding_cli.php
+```
+
+### 4. エンベディング生成
+```bash
+# 必要に応じてエンベディングをクリア
+mysql -u icotfeels_book -p icotfeels_book < clear_embeddings.sql
+
+# 少数でテスト（5件）
+php generate_enhanced_embeddings_cli.php 5
+
+# 問題なければ本番実行（50件）
+php generate_enhanced_embeddings_cli.php 50
+```
+
+### 5. 結果確認
+ブラウザで以下にアクセス：
+- https://readnest.jp/admin/embedding_debug.php
+
+## 注意事項
+
+- OpenAI APIキーが正しく設定されていることを確認
+- 初回は少数（5-10件）でテスト実行を推奨
+- API制限を考慮し、大量処理は分割実行を推奨
+- エラーが発生した場合はログを確認：
+  /home/icotfeels/readnest.jp/log/dokusho_error_log.txt

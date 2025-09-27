@@ -1,0 +1,28 @@
+body {  
+  font-family: Arial, 'ＭＳ Ｐゴシック', sans-serif;
+  font-size:medium;
+}
+
+input, select {  
+  font-size:large;
+}
+
+ol.ranking_list{
+  width: 90%;
+  margin:5px;
+  padding:10px;
+  list-style: none;
+}
+
+ol.ranking_list li{
+  margin-top:5px;
+  padding: 4px;
+  vertical-align:middle;
+  background-color: #d7ecff;
+  /*height: 30px;*/
+}
+
+ol.ranking_list li p{
+  margin-top:5px;
+  height: 30px;
+}

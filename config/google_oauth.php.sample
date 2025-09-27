@@ -1,0 +1,27 @@
+<?php
+/**
+ * Google OAuth 2.0 設定ファイル
+ * 
+ * このファイルをgoogle_oauth.phpにコピーして、
+ * Google Cloud ConsoleからクライアントIDとシークレットを設定してください
+ * 
+ * 手順:
+ * 1. https://console.cloud.google.com/ にアクセス
+ * 2. プロジェクトを作成または選択
+ * 3. APIとサービス > 認証情報 を開く
+ * 4. 認証情報を作成 > OAuth クライアント ID
+ * 5. アプリケーションの種類: ウェブアプリケーション
+ * 6. 承認済みのリダイレクトURI: https://readnest.jp/auth/google_callback.php
+ * 7. 作成されたクライアントIDとシークレットをコピー
+ */
+
+// Google OAuth 2.0 設定
+define('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID_HERE');
+define('GOOGLE_CLIENT_SECRET', 'YOUR_CLIENT_SECRET_HERE');
+define('GOOGLE_REDIRECT_URI', 'https://readnest.jp/auth/google_callback.php');
+
+// OAuth 2.0 スコープ
+define('GOOGLE_SCOPES', [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile'
+]);

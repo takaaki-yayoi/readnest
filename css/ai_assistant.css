@@ -1,0 +1,546 @@
+/**
+ * AIアシスタント用スタイル
+ */
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* AIアシスタントボタン */
+#ai-assistant-button {
+    animation: fadeIn 0.5s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#ai-assistant-button:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* モバイルでデスクトップスタイルを上書きしないようにする */
+#ai-assistant-window {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+/* 新着メッセージインジケーター */
+#ai-assistant-button.has-new-message::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* チャットウィンドウ */
+#ai-assistant-window {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* メッセージスタイル */
+.ai-message {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.ai-message.user {
+    margin-left: auto;
+}
+
+.ai-message.assistant {
+    margin-right: auto;
+}
+
+/* ユーザーメッセージの吹き出し角丸 */
+.ai-message.user .bg-readnest-primary {
+    border-radius: 12px !important;
+}
+
+/* アシスタントメッセージの吹き出し角丸 */
+.ai-message.assistant .bg-gray-100 {
+    border-radius: 12px !important;
+}
+
+/* モバイルでの吹き出し角丸の強制適用 */
+@media (max-width: 768px) {
+    .ai-message.user > div > div {
+        border-radius: 12px !important;
+        -webkit-border-radius: 12px !important;
+        -moz-border-radius: 12px !important;
+    }
+    
+    .ai-message.assistant > div > div:last-child {
+        border-radius: 12px !important;
+        -webkit-border-radius: 12px !important;
+        -moz-border-radius: 12px !important;
+    }
+}
+
+/* メッセージ内のリンク */
+.ai-message a {
+    word-break: break-word;
+}
+
+/* スクロールバーのカスタマイズ */
+#ai-messages {
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb #f9fafb;
+}
+
+#ai-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+#ai-messages::-webkit-scrollbar-track {
+    background: #f9fafb;
+}
+
+#ai-messages::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+#ai-messages::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+
+/* ローディングアニメーション */
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+}
+
+/* PC用のサンプル質問ボタンスタイル */
+@media (min-width: 769px) {
+    #ai-sample-questions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    #ai-sample-questions button {
+        flex-shrink: 0;
+    }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    #ai-assistant-container {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        z-index: 9999 !important;
+    }
+    
+    #ai-assistant-window {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 90vh !important;
+        max-height: 90vh !important;
+        border-radius: 16px 16px 0 0 !important;
+        transform: none !important;
+        margin: 0 !important;
+    }
+    
+    #ai-messages {
+        max-height: calc(90vh - 200px);
+    }
+    
+    /* ヘッダーの調整 */
+    #ai-assistant-window .bg-readnest-primary {
+        border-radius: 16px 16px 0 0 !important;
+    }
+    
+    /* 入力エリアのレイアウト調整 */
+    #ai-assistant-window .input-area {
+        padding: 12px;
+        background: white;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 入力欄と送信ボタンを横並びに維持 */
+    #ai-assistant-window .input-area .flex.space-x-2 {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+    }
+    
+    #ai-assistant-window #ai-input {
+        flex: 1;
+        font-size: 16px; /* iOSでのズーム防止 */
+        min-width: 0; /* flexアイテムの縮小を許可 */
+        border-radius: 20px;
+        padding: 10px 16px;
+    }
+    
+    #ai-assistant-window #ai-send-btn {
+        flex-shrink: 0;
+        padding: 8px 16px;
+        white-space: nowrap;
+        border-radius: 20px !important;
+    }
+    
+    /* サンプル質問ボタンの調整 */
+    #ai-sample-questions {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 6px;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        align-items: center; /* ボタンを垂直方向に中央揃え */
+    }
+    
+    #ai-sample-questions button {
+        flex-shrink: 0;
+        font-size: 12px;
+        padding: 8px 12px; /* 上下パディングを戻す */
+        white-space: nowrap;
+        border-radius: 16px;
+        background-color: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        min-height: 32px; /* 最小高さを設定 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: normal;
+        margin: 0; /* マージンをリセット */
+    }
+    
+    /* キーボード表示時の調整 */
+    #ai-assistant-window.keyboard-open {
+        height: 50vh !important;
+        max-height: 50vh !important;
+    }
+    
+    #ai-assistant-window.keyboard-open #ai-messages {
+        max-height: calc(50vh - 200px);
+        min-height: 100px;
+    }
+    
+    /* スクロールバーを隠す */
+    #ai-sample-questions::-webkit-scrollbar {
+        display: none;
+    }
+    
+    #ai-sample-questions {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
+
+/* ダークモード対応（将来的な拡張用） */
+@media (prefers-color-scheme: dark) {
+    /* ダークモード時のスタイルをここに追加 */
+}
+
+/* 強制的なモバイル対応（最優先） */
+@media screen and (max-width: 768px) {
+    #ai-assistant-container {
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+    }
+    
+    #ai-assistant-button {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        left: auto !important;
+    }
+}
+
+/* ランドスケープモードの対応 */
+@media (orientation: landscape) and (max-height: 500px) {
+    #ai-assistant-container {
+        position: fixed !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: 0 !important;
+        width: auto !important;
+    }
+    
+    #ai-assistant-button {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        left: auto !important;
+        top: auto !important;
+    }
+    
+    #ai-assistant-window {
+        position: fixed !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        left: auto !important;
+        width: 384px !important;
+        max-width: 50vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        transform: none !important;
+        margin: 0 !important;
+    }
+    
+    #ai-messages {
+        max-height: calc(100vh - 180px) !important;
+    }
+    
+    /* 入力エリアの調整 */
+    #ai-assistant-window .input-area {
+        padding: 8px !important;
+    }
+    
+    /* サンプル質問を非表示（スペース節約） */
+    #ai-sample-questions {
+        display: none !important;
+    }
+    
+    #ai-assistant-window {
+        bottom: 0 !important;
+        left: 0 !important; 
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: none !important;
+    }
+    
+    /* 送信ボタンの角丸を確実に適用 */
+    #ai-assistant-window button#ai-send-btn {
+        border-radius: 20px !important;
+        -webkit-border-radius: 20px !important;
+        -moz-border-radius: 20px !important;
+    }
+    
+    /* サンプル質問ボタンのスタイル統一 */
+    .sample-question-btn {
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+        white-space: nowrap !important;
+        border-radius: 16px !important;
+        background-color: #f3f4f6 !important;
+        border: 1px solid #e5e7eb !important;
+        height: auto !important;
+        min-height: 32px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        color: #374151 !important;
+        text-decoration: none !important;
+        font-weight: normal !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* ユーザーメッセージの吹き出しを確実に角丸に */
+    .ai-message.user .rounded-xl,
+    .ai-message.user [class*="rounded"] {
+        border-radius: 12px !important;
+        -webkit-border-radius: 12px !important;
+        -moz-border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+}
+
+/* ユーザーメッセージの緑背景を確実に角丸に */
+#ai-assistant-window .bg-readnest-primary {
+    border-radius: 12px !important;
+    -webkit-border-radius: 12px !important;
+    -moz-border-radius: 12px !important;
+}
+
+/* Tailwindのrounded-xlクラスを上書き */
+#ai-assistant-window .rounded-xl {
+    border-radius: 12px !important;
+    -webkit-border-radius: 12px !important;
+    -moz-border-radius: 12px !important;
+}
+
+/* タイピングインジケーター */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+}
+
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    background-color: #9ca3af;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+    margin-right: 0;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+/* コンテキストバッジ */
+.context-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background-color: #f3f4f6;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.context-badge.home {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.context-badge.bookshelf {
+    background-color: #d1fae5;
+    color: #047857;
+}
+
+.context-badge.book-detail {
+    background-color: #fce7f3;
+    color: #be185d;
+}
+
+/* 提案ボタン */
+.suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.suggestion-chip {
+    padding: 6px 12px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-chip:hover {
+    background-color: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+/* サンプル質問ボタン（PC/モバイル共通） */
+.sample-question-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    border-radius: 16px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: #374151;
+    text-decoration: none;
+    font-weight: normal;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sample-question-btn:hover {
+    background-color: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+/* エラーメッセージ */
+.error-message {
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+/* サンプル質問ローディングアニメーション */
+.sample-questions-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sample-questions-loading span {
+    width: 6px;
+    height: 6px;
+    background-color: #9ca3af;
+    border-radius: 50%;
+    display: inline-block;
+    animation: sample-loading 1.4s infinite;
+}
+
+.sample-questions-loading span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.sample-questions-loading span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes sample-loading {
+    0%, 60%, 100% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+    30% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}

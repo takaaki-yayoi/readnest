@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ベーススタイル */
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+  }
+  
+  /* フォーカス時のアクセシビリティ向上 */
+  *:focus {
+    @apply outline-none ring-2 ring-book-primary-500 ring-offset-2;
+  }
+}
+
+@layer components {
+  /* ボタンコンポーネント */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply btn bg-book-primary-600 text-white hover:bg-book-primary-700 focus:ring-book-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-book-secondary-500 text-white hover:bg-book-secondary-600 focus:ring-book-secondary-500;
+  }
+  
+  .btn-outline {
+    @apply btn bg-transparent border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+  }
+  
+  /* カードコンポーネント */
+  .card {
+    @apply bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .card-body {
+    @apply p-4;
+  }
+  
+  /* 本棚グリッド */
+  .book-grid {
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4;
+  }
+  
+  /* 本のカード */
+  .book-card {
+    @apply card overflow-hidden cursor-pointer transform hover:scale-105 transition-transform duration-200;
+  }
+  
+  .book-cover {
+    @apply w-full h-48 object-cover;
+  }
+  
+  .book-info {
+    @apply p-3;
+  }
+  
+  .book-title {
+    @apply font-medium text-sm line-clamp-2 mb-1;
+  }
+  
+  .book-author {
+    @apply text-xs text-gray-600 line-clamp-1;
+  }
+  
+  /* ステータスバッジ */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-buy-someday {
+    @apply status-badge bg-gray-100 text-gray-800;
+  }
+  
+  .status-not-started {
+    @apply status-badge bg-blue-100 text-blue-800;
+  }
+  
+  .status-reading {
+    @apply status-badge bg-yellow-100 text-yellow-800;
+  }
+  
+  .status-finished {
+    @apply status-badge bg-green-100 text-green-800;
+  }
+  
+  .status-read-before {
+    @apply status-badge bg-purple-100 text-purple-800;
+  }
+  
+  /* 評価星 */
+  .rating {
+    @apply flex items-center;
+  }
+  
+  .star {
+    @apply w-4 h-4 text-yellow-400;
+  }
+  
+  .star-empty {
+    @apply w-4 h-4 text-gray-300;
+  }
+  
+  /* プログレスバー */
+  .progress-bar {
+    @apply w-full bg-gray-200 rounded-full h-2.5;
+  }
+  
+  .progress-bar-fill {
+    @apply bg-book-primary-600 h-2.5 rounded-full transition-all duration-300;
+  }
+  
+  /* モバイルナビゲーション */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 sm:hidden;
+  }
+  
+  .mobile-nav-items {
+    @apply flex justify-around;
+  }
+  
+  .mobile-nav-item {
+    @apply flex flex-col items-center py-2 px-3 text-gray-600 hover:text-book-primary-600;
+  }
+  
+  /* ドロワーメニュー */
+  .drawer {
+    @apply fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300;
+  }
+  
+  .drawer.open {
+    @apply translate-x-0;
+  }
+  
+  .drawer-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40 opacity-0 pointer-events-none transition-opacity duration-300;
+  }
+  
+  .drawer-overlay.open {
+    @apply opacity-100 pointer-events-auto;
+  }
+  
+  /* ページローダー */
+  .page-loader {
+    @apply fixed inset-0 bg-white z-50 flex items-center justify-center;
+  }
+  
+  .spinner {
+    @apply animate-spin rounded-full h-12 w-12 border-b-2 border-book-primary-600;
+  }
+}
+
+@layer utilities {
+  /* テキストの省略表示 */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+}

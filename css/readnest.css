@@ -1,0 +1,481 @@
+body {  
+ /* background-color:#BFFFE4;*/
+  background-color:#FFFFFF;
+  text-align:center;
+  
+  font-family: Arial, 'ＭＳ Ｐゴシック', sans-serif;
+  font-size:small;
+}
+
+a {
+  text-decoration:none;
+}
+
+a:hover {
+  background-color:#7d0; 
+}
+
+#header a:hover {
+  background-color:#fff; 
+}
+
+form{
+  margin: 0;
+} 
+
+table {
+  border-collapse: collapse;
+}
+
+th { 
+border: 1px #ccc solid; /* セルの枠線（太さ・色・スタイル） */ 
+background-color: #eee; /* セルの背景色 */ 
+padding: 3px; /* セル内の余白 */ 
+font-size:small;
+text-align:center;
+} 
+
+td { 
+border: 1px #ccc solid; /* セルの枠線（太さ・色・スタイル） */ 
+background-color: #FFFFFF; /* セルの背景色 */ 
+padding: 3px; /* セル内の余白 */ 
+font-size:small;
+} 
+
+tr.disclose_diary_header td { 
+background-color: #eee; /* セルの背景色 */ 
+} 
+
+#container {
+  width: 800px;
+margin-left: auto;
+margin-right: auto;
+
+}
+
+/* header */
+#header {
+  text-align: left;
+  width:800px; 
+  /*background-color:#80FFC9;*/
+  
+  	font-size:18pt; 
+	font-weight:900; 
+	font-family:varidina;
+
+  border: solid  #CCCCCC;
+  border-width: 0 0 2px 0;
+}
+
+/*  main part*/
+#main_top {
+  float: left;
+  width: 590px;
+  padding:5px;
+  text-align:left;
+  margin-top:5px;
+}
+
+#main {
+  float: left;
+  width: 790px;
+  padding:5px;
+  text-align:left;
+  margin-top:5px;
+}
+
+#bookshelf {
+  margin:0;
+}
+
+/* sub part */
+#sub {
+  float: right;
+  
+  /* background-color:#80FFC9; */
+	width: 200px;
+  margin-top:5px;
+  text-align: left;
+
+  /*border: solid  #9c0;*/
+  border-width: 1px 0 1px 0;
+
+}
+
+div.round {
+  border:solid 1px #bbb;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  background:#e6fae6;  
+}
+
+p.round-label {
+  margin: 2px 0 0 0;
+  text-align:center;
+  background:#e6fae6;
+  border:  dotted #CCCCCC;
+  border-width: 0 0 2px 0;
+}
+
+
+/* title in list */
+p.centering-label {
+  margin: 2px 0 0 0;
+  text-align:center;
+  background:#eee;
+  border:  solid #CCCCCC;
+  border-width: 0 1px 2px 0;
+}
+
+p.bookdetail-label {
+  margin: 2px 0 4px 0;
+  padding: 2px;
+  text-align:left;
+  background:#eee;
+  border: solid #CCCCCC;
+  border-width: 2px 2px 2px 2px;
+}
+
+p.date {
+  display: inline;
+  font-style: italic;
+  font-size:small;
+}
+
+ul.book_detail {
+  list-style:none;
+}
+
+ul.book_detail li{
+  text-align:center;
+}
+
+img.book_img{
+  margin:1px;
+  padding:2px;
+  border: 1px solid #ddd;
+}
+
+img.noborder{
+  margin: 0 !important;
+  padding:0 !important;
+  border: 0 !important;
+}
+
+ul.diary_list {
+  list-style:none;
+}
+
+ul.diary_list li{
+  margin:0 0 20px 0;
+  width:700px;
+  height:105px;
+  clear:both;
+}
+
+ul.diary_list li img{
+  margin:1px;
+  padding:2px;
+  border: 1px solid #ddd;
+}
+
+ul.diary_list .imgBox {
+  width:16%;
+  float:left;
+}
+
+ul.diary_list .textArea{
+  float:right;
+  width:84%;
+}
+
+p.diary_entry {
+  font-size:x-small;
+  text-align:right;
+}
+
+li.date_label {
+  height:20px !important;
+  font-size:medium;
+  color: #901808;
+}
+
+/* pager  */
+p.pager {
+  text-align:center;
+  vertical-align:middle;
+  /*border:1px solid #000;*/
+  /*height:40px;*/
+  clear:both;
+  padding:7px 0 0 7px;
+  /*
+  margin: 0 0.5em 0 0.5em;
+  width:600px;
+  */
+}
+
+p.order_list {
+  text-align:center;
+  vertical-align:middle;
+  clear:both;
+}
+
+
+ul.order_list {
+  text-align: center;
+  padding:0;
+}
+
+ul.order_list li {
+  width:80px;
+  display: inline-block;
+  text-align: center;
+  border: solid #ddd 1px;
+  margin: 3px;
+  font-size:small;
+}
+
+
+img.list_img {
+  width: 55px;
+  height: 80px;
+}
+
+span.pager_item {
+  height:20px;
+  margin:1px;
+  padding: 3px;
+  border: solid #ddd 1px;
+}
+
+span.pager_item:hover{
+  text-decoration:none;
+  background-color:#ddd; 
+}
+
+p.pager a:hover{
+  text-decoration:none;
+  background-color:#fff; 
+}
+
+
+#status_switch {
+  margin:0 auto;
+  text-align: center;
+}
+
+#status_switch ul {
+  list-style: none;
+  width: 700px;
+  margin: 0 auto;
+  padding: 0;
+  height: 32px;
+  /*overflow: hidden;
+  border-bottom: 2px solid #cccccc;*/
+  font-size: small;
+}
+
+#status_switch ul li {
+  float: left;
+  width: 140px;
+  margin: 0 auto;
+  padding: 0px;
+}
+
+#status_switch ul li a {
+  display: block;
+  width: 100%;
+  padding: 6px 0 8px 0;
+  color: #ffffff;
+  background-color: #4c924d;
+  text-decoration: none;
+  text-align: center;
+}
+
+img.photo_item { 
+  border-style :solid;
+  border-color: #333; 
+  border-width: 0;
+}
+
+hr {
+  border:solid #CCCCCC; 
+  border-width:1px 0 0 0;
+}
+
+div.round {
+   padding:5px;
+}
+
+div#menuarea {
+  margin:0 auto;
+  padding-top: 5px;
+  width:800px;
+}
+
+/*  menu bar */
+ul.menu_nav {
+  font-size:x-small;
+  list-style:none;
+  margin: 0 auto;
+  padding: 0;
+  width: 690px;
+}
+
+ul.menu_nav li {
+   margin: 1px;
+   padding: 2px;
+   border: 1px solid #CCCCCC;
+   float:left;
+}
+
+ul.menu_nav li a {
+  padding: 4px 4px 4px 10px;
+  background: #FFFFFF url(../img/list_marker_red.gif) left center no-repeat;
+  display:block;
+  /*width: 120px !important;*/
+  text-decoration: none;
+  color:#333333;
+}
+
+ul.menu_nav li.selected span {
+  padding: 4px 4px 4px 10px;
+  background: #FFFFFF url(../img/list_marker_red.gif) left center no-repeat;
+  background-color: #ddff99;
+  font-weight:bold;
+  display:block;
+  /*width: 120px !important;*/
+  text-decoration: none;
+  color:#333333;
+}
+
+/* event list*/
+ul.event_list {
+  text-align:left;
+  list-style:none;
+  margin: 0; 
+  padding: 0; 
+}
+
+ul.event_list li {
+   margin: 0;
+   padding: 0;
+   border-bottom: 1px solid #CCCCCC;
+   font-size:x-small;
+}
+
+
+ul.top_list {
+list-style:none; 
+font-size:medium;
+margin:0;
+}
+
+ul.top_list  p {
+font-size:small;
+margin:5px;
+}
+
+
+ul.event_list li.event_dogear {
+  list-style:none;
+  background: #9c0;
+
+  margin:0;
+  padding:0;
+
+  border: solid  #9c0;
+  border-width: 1px 0 1px 0;
+
+}
+
+
+ul.event_list li.event_memo {
+  list-style:none;
+  background-color:#fff;
+
+  margin:0;
+  padding:0
+}
+
+
+h2 {   
+   border-bottom: 6px solid #ddd;
+      
+   color: #901808;
+   
+   font-family: "Trebuchet MS", sans-serif;
+}
+
+.page_title {   
+   border-bottom: 6px solid #ddd;
+      
+   color: #901808;
+   
+   font-family: "Trebuchet MS", sans-serif;
+}
+
+
+#footer {
+  clear: both;
+  width: 100%;
+  text-align: center;
+    margin-top:5px;
+}
+
+input[type="button"], input[type="submit"] {
+  cursor: pointer;
+}
+
+
+ol.ranking_list{
+  width: 90%;
+  margin:5px;
+  padding:10px;
+  list-style: none;
+}
+
+ol.ranking_list li{
+  margin-top:5px;
+  padding: 4px;
+  vertical-align:middle;
+  background-color: #d7ecff;
+  /*height: 30px;*/
+}
+
+ol.ranking_list li p{
+  margin-top:5px;
+  height: 30px;
+}
+
+/* for Google analytics Bug on Win/FF3 */
+#ga_shade, x:-moz-broken{display:none !important;}
+
+
+.book_form {
+  text-align:center;
+  width: 100%;
+  clear: both;
+}
+
+.book_form input {
+  width: 200px;
+  margin-top: 10px;
+  clear: both;
+}
+
+.book_form label {
+  text-align: right;
+}
+
+.book_add_table {
+  border:none;
+}
+
+.book_add_table tr {
+border:none;
+}
+
+.book_add_table td {
+border:none;
+}

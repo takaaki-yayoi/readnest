@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# デバッグログファイル
+LOG_FILE=".claude/ftp-hook.log"
+
+# ターミナルにも表示
+echo "🔔 FTP Hook: Triggered at $(date)"
+
+# FTP設定
+FTP_HOST="sv16506.xserver.jp"
+FTP_USER="icotfeels"
+FTP_PASS="ege69emy"
+REMOTE_DIR="/readnest.jp/public_html"
+
+# 実行されたことを記録
+echo "========================================" >> "$LOG_FILE"
+echo "[$(date)] Hook triggered!" >> "$LOG_FILE"
+echo "Tool: $1" >> "$LOG_FILE"
+echo "Arguments: $@" >> "$LOG_FILE"
+echo "PWD: $(pwd)" >> "$LOG_FILE"
+echo "USER: $(whoami)" >> "$LOG_FILE"
+
+# 変更されたファイルを探す
+echo "Searching for recent files..." >> "$LOG_FILE"
+FILES_FOUND=$(find . -type f \( -name "*.php" -o -name "*.html" -o -name "*.css" -o -name "*.js" \) -mmin -1 2>/dev/null)
+
+if [ -z "$FILES_FOUND" ]; then
+    echo "No recent files found" >> "$LOG_FILE"
+else
+    echo "$FILES_FOUND" | while read file; do
+        if [[ ! "$file" =~ \.tmp\. ]]; then
+            echo "Found file: $file" >> "$LOG_FILE"
+            relative_path="${file#./}"
+            
+            # アップロード実行
+            echo "📤 Uploading: $relative_path"
+            curl -T "$file" \

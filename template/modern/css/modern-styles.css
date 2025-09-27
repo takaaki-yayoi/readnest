@@ -1,0 +1,305 @@
+/**
+ * ReadNest Modern Styles
+ * Based on the brand identity: Forest green bird on warm beige background
+ * Emphasizing nature, comfort, and the nurturing aspect of reading
+ */
+
+:root {
+    /* ReadNest Brand Colors - Based on logo */
+    --color-primary: #1a4d3e;           /* Deep forest green from logo */
+    --color-primary-light: #2a6654;
+    --color-primary-dark: #0f2f26;
+    
+    --color-secondary: #f5f1e8;         /* Warm beige from logo background */
+    --color-secondary-light: #faf8f3;
+    --color-secondary-dark: #e8e2d5;
+    
+    --color-accent: #38a182;            /* Bright green accent */
+    --color-accent-light: #56ae94;
+    --color-accent-dark: #2a8066;
+    
+    --color-background: #faf8f3;        /* Light beige background */
+    --color-surface: #FFFFFF;
+    --color-text: #1a1a1a;
+    --color-text-light: #4a4a4a;
+    --color-text-muted: #737373;
+    
+    /* 読書ステータスの色 - Updated with brand harmony */
+    --color-status-reading: #38a182;    /* 読書中 - Brand accent green */
+    --color-status-finished: #1a4d3e;   /* 読了 - Brand primary green */
+    --color-status-want: #d4a574;       /* 読みたい - Warm brown */
+    --color-status-stopped: #9ca3af;    /* 中断 - Neutral gray */
+    
+    /* スペーシング */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    
+    /* フォントサイズ */
+    --font-xs: 0.75rem;
+    --font-sm: 0.875rem;
+    --font-base: 1rem;
+    --font-lg: 1.125rem;
+    --font-xl: 1.25rem;
+    --font-2xl: 1.5rem;
+    --font-3xl: 1.875rem;
+    --font-4xl: 2.25rem;
+    
+    /* シャドウ - Softer shadows with brand color tint */
+    --shadow-sm: 0 1px 3px rgba(26, 77, 62, 0.08);
+    --shadow-md: 0 4px 12px rgba(26, 77, 62, 0.10);
+    --shadow-lg: 0 8px 24px rgba(26, 77, 62, 0.12);
+    --shadow-xl: 0 16px 40px rgba(26, 77, 62, 0.14);
+}
+
+/* ベーススタイル */
+body {
+    font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+/* Tailwind用のカスタムクラス - ReadNest Brand */
+.text-readnest-primary { color: var(--color-primary); }
+.text-readnest-secondary { color: var(--color-secondary); }
+.text-readnest-accent { color: var(--color-accent); }
+
+.bg-readnest-primary { background-color: var(--color-primary); }
+.bg-readnest-secondary { background-color: var(--color-secondary); }
+.bg-readnest-accent { background-color: var(--color-accent); }
+
+/* Brand gradient backgrounds */
+.bg-readnest-gradient {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+.bg-readnest-subtle {
+    background: linear-gradient(180deg, var(--color-background) 0%, var(--color-secondary) 100%);
+}
+
+/* ヘッダースタイル */
+.header-modern {
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    border-bottom: 1px solid var(--color-secondary);
+}
+
+/* ナビゲーション */
+.nav-link {
+    color: #f5f5f5;  /* 明るいグレーに変更 */
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #ffffff;  /* ホバー時は純白 */
+}
+
+.nav-link-active {
+    color: #ffffff;  /* アクティブ時も純白 */
+    font-weight: 600;
+}
+
+/* ボタンスタイル */
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--color-secondary);
+    color: var(--color-primary);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid var(--color-secondary-dark);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-secondary-dark);
+    box-shadow: var(--shadow-sm);
+}
+
+/* カードスタイル */
+.card-modern {
+    background-color: var(--color-surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-lg);
+    transition: all 0.3s ease;
+}
+
+.card-modern:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+/* 本の情報カード */
+.book-card {
+    background-color: var(--color-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.book-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.book-cover {
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    background-color: var(--color-secondary);
+}
+
+/* 読書ステータスバッジ */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: var(--font-sm);
+    font-weight: 500;
+    gap: 4px;
+}
+
+.status-reading {
+    background-color: var(--color-status-reading);
+    color: white;
+}
+
+.status-finished {
+    background-color: var(--color-status-finished);
+    color: white;
+}
+
+.status-want {
+    background-color: var(--color-status-want);
+    color: white;
+}
+
+.status-stopped {
+    background-color: var(--color-status-stopped);
+    color: white;
+}
+
+/* レビュー評価スター */
+.rating-star {
+    color: #fbbf24;
+    font-size: var(--font-lg);
+}
+
+.rating-star-empty {
+    color: #e5e7eb;
+}
+
+/* フォーム要素 */
+.form-input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-secondary-dark);
+    border-radius: 6px;
+    font-size: var(--font-base);
+    transition: all 0.2s ease;
+    background-color: var(--color-surface);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(26, 77, 62, 0.1);
+}
+
+/* ユーティリティクラス */
+.text-muted {
+    color: var(--color-text-muted);
+}
+
+.divider {
+    border-top: 1px solid var(--color-secondary);
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 768px) {
+    :root {
+        --spacing-lg: 16px;
+        --spacing-xl: 24px;
+        --spacing-2xl: 32px;
+    }
+    
+    .card-modern {
+        padding: var(--spacing-md);
+    }
+}
+
+/* 最新の活動セクション */
+.activity-section {
+    background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.activity-card {
+    background-color: rgba(52, 73, 94, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    background-color: rgba(52, 73, 94, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* セクションタイトル */
+.section-title {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* もっと見るリンク */
+.more-link {
+    color: #4ade80;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.more-link:hover {
+    color: #86efac;
+    text-decoration: underline;
+}

@@ -1,0 +1,26 @@
+<?php
+/**
+ * X (Twitter) API Configuration Example
+ * 
+ * Copy this file to x_api.php and fill in your actual API credentials.
+ * DO NOT commit x_api.php to version control!
+ */
+
+// X API v2 credentials
+define('X_API_KEY', 'your-api-key-here'); // API Key (Consumer Key)
+define('X_API_SECRET', 'your-api-secret-here'); // API Secret (Consumer Secret)
+define('X_ACCESS_TOKEN', 'your-access-token-here'); // Access Token
+define('X_ACCESS_TOKEN_SECRET', 'your-access-token-secret-here'); // Access Token Secret
+define('X_BEARER_TOKEN', 'your-bearer-token-here'); // Bearer Token for API v2
+
+// X API v2 endpoint
+define('X_API_BASE_URL', 'https://api.twitter.com/2/');
+
+// Post settings
+define('X_POST_MAX_LENGTH', 280);
+define('X_POST_ENABLED', true); // Master switch to enable/disable X posting
+
+// Templates for different event types
+define('X_TEMPLATE_START_READING', '「%s」を読み始めました！ #読書記録 #ReadNest');
+define('X_TEMPLATE_FINISH_READING', '「%s」を読み終わりました！ #読書記録 #ReadNest');
+define('X_TEMPLATE_ADD_REVIEW', '「%s」のレビューを投稿しました。評価: %s #読書記録 #ReadNest');

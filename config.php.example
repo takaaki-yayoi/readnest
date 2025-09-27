@@ -1,0 +1,107 @@
+<?php
+/**
+ * 設定ファイルのサンプル
+ * このファイルを config.php にコピーして使用してください
+ */
+
+// Include guard
+if (defined('CONFIG')) {
+    return;
+}
+define('CONFIG', true);
+
+// ディレクトリ設定
+$dir = dirname(__FILE__);
+if (!defined('BASEDIR')) {
+    define('BASEDIR', $dir);
+}
+if (!defined('LIBDIR')) {
+    define('LIBDIR', BASEDIR . '/library/');
+}
+if (!defined('TPLDIR')) {
+    define('TPLDIR', BASEDIR . '/template/');
+}
+
+// データベース設定
+define('DB_TYPE', 'mysql');
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'readnest');
+define('DB_USER', 'your_db_user');
+define('DB_PASS', 'your_db_password');
+define('DB_CHARSET', 'utf8mb4');
+
+// ========================================
+// 外部API設定
+// ========================================
+
+/**
+ * OpenAI API設定
+ * 用途：
+ * - text-embedding-3-small によるエンベディング生成
+ * - GPT-4による高度な本の推薦
+ * - 作家情報の自動生成
+ * 
+ * 取得方法：
+ * 1. https://platform.openai.com/ でアカウント作成
+ * 2. API Keys セクションで新規キー生成
+ * 
+ * 料金：
+ * - text-embedding-3-small: $0.02 / 1M トークン
+ * - GPT-4o-mini: $0.15 / 1M 入力トークン
+ */
+define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: '');
+
+/**
+ * Google Books API設定（オプション）
+ * 用途：
+ * - 書籍の説明文取得
+ * - 書籍のカテゴリ情報取得
+ * - ISBNから書籍情報検索
+ * 
+ * 取得方法：
+ * 1. https://console.cloud.google.com/ でプロジェクト作成
+ * 2. Google Books API を有効化
+ * 3. 認証情報から APIキー を作成
+ * 
+ * 料金：完全無料
+ * 制限：
+ * - APIキーなし: 1,000回/日（IPアドレスごと）
+ * - APIキーあり: 1,000回/日（申請で最大100,000回/日まで無料）
+ */
+define('GOOGLE_BOOKS_API_KEY', getenv('GOOGLE_BOOKS_API_KEY') ?: '');
+
+// ========================================
+// アプリケーション設定
+// ========================================
+
+// 読書ステータス
+define('BUY_SOMEDAY', 0);      // いつか買う
+define('NOT_STARTED', 1);      // 未読
+define('READING_NOW', 2);      // 読書中
+define('READING_FINISH', 3);   // 読了
+define('READ_BEFORE', 4);      // 既読
+
+// ユーザーステータス
+define('USER_STATUS_INTERIM', 0);  // 仮登録
+define('USER_STATUS_ACTIVE', 1);   // 本登録（有効）
+
+// セッション設定
+define('SESSION_LIFETIME', 86400); // 24時間
+
+// デバッグモード（本番環境では false に設定）
+define('DEBUG', false);
+
+// タイムゾーン
+date_default_timezone_set('Asia/Tokyo');
+
+// エラーレポート設定
+if (DEBUG) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+}
+
+// その他の必要な設定...
+?>

@@ -1,0 +1,146 @@
+# Configuration files with sensitive data
+config.php
+modern_config.php
+.env
+.env.*
+/config/x_api.php
+/config/google_oauth.php
+
+# Database dumps and backups
+*.sql
+*.dump
+*.sql.gz
+backups/
+backup/
+db_backup/
+
+# Upload directories
+uploads/
+upload/
+user_photos/
+book_images/
+
+# Cache and temporary files
+cache/
+tmp/
+temp/
+*.cache
+*.tmp
+*.temp
+*.log
+error_log
+access_log
+
+# Font files (usually large binary files)
+/fonts/*.ttf
+/fonts/*.otf
+/fonts/*.ttc
+/fonts/*.woff
+/fonts/*.woff2
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-*
+
+# PHP specific
+vendor/
+composer.lock
+*.phar
+
+# Node.js (for Tailwind CSS)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Temporary and backup files
+*.backup
+*.bak
+*_backup.php
+*_old.php
+*_test.php
+test_*.php
+*.orig
+*.rej
+
+# Debug files
+debug_*.php
+*_debug.php
+debug/
+xdebug/
+
+# Session files
+sessions/
+sess_*
+
+# SVN (since this was originally in Subversion)
+.svn/
+*.svn-base
+
+# Private documentation
+/docs/private/
+/docs/credentials/
+
+# Environment specific
+.env.local
+.env.production
+.env.development
+
+# API keys and credentials
+api_keys/
+credentials/
+secrets/
+
+# Generated files
+*.min.css
+*.min.js
+dist/
+build/
+
+# Test files and directories
+tests/tmp/
+phpunit.xml
+.phpunit.result.cache
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# OS generated files
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Personal notes and todo files
+TODO.txt
+NOTES.txt
+notes.md
+personal_notes/
+
+# Local development files
+.env.ftp
+local_settings.php
+development.php
