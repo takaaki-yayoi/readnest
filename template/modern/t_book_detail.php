@@ -1005,10 +1005,10 @@ ob_start();
                                                     document.addEventListener('DOMContentLoaded', function() {
                                                         const ctx = document.getElementById('progressChart');
                                                         if (ctx) {
-                                                            const progressData = <?php 
+                                                            const progressData = <?php
                                                                 $chart_data = [];
                                                                 $daily_progress = [];
-                                                                
+
                                                                 // 日毎に集計（その日の最大ページ数を取る）
                                                                 foreach ($reading_progress as $p) {
                                                                     $date_key = date('Y-m-d', strtotime($p['date']));
@@ -1016,29 +1016,32 @@ ob_start();
                                                                         $daily_progress[$date_key] = $p['page'];
                                                                     }
                                                                 }
-                                                                
+
                                                                 // 最新30日分を取得してチャートデータに変換
                                                                 $sorted_dates = array_keys($daily_progress);
                                                                 sort($sorted_dates);
                                                                 $recent_dates = array_slice($sorted_dates, -30);
-                                                                
+
                                                                 foreach ($recent_dates as $date) {
                                                                     $chart_data[] = [
-                                                                        'date' => date('m/d', strtotime($date)),
-                                                                        'page' => $daily_progress[$date]
+                                                                        'x' => $date . 'T00:00:00',  // ISO 8601形式で送信
+                                                                        'y' => $daily_progress[$date]
                                                                     ];
                                                                 }
-                                                                
+
                                                                 echo json_encode($chart_data);
                                                             ?>;
-                                                            
+
+                                                            console.log('Progress data:', progressData);
+                                                            console.log('Data sample:', progressData.slice(0, 3));
+                                                            console.log('Data count:', progressData.length);
+
                                                             new Chart(ctx, {
                                                                 type: 'line',
                                                                 data: {
-                                                                    labels: progressData.map(d => d.date),
                                                                     datasets: [{
                                                                         label: 'ページ数',
-                                                                        data: progressData.map(d => d.page),
+                                                                        data: progressData,
                                                                         borderColor: 'rgb(59, 130, 246)',
                                                                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                                                                         tension: 0.3,
@@ -1055,13 +1058,36 @@ ob_start();
                                                                         tooltip: {
                                                                             callbacks: {
                                                                                 label: function(context) {
+                                                                                    const date = new Date(context.parsed.x);
+                                                                                    const formattedDate = date.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
                                                                                     const percentage = Math.round((context.parsed.y / <?php echo $book['pages']; ?>) * 100);
-                                                                                    return context.parsed.y + 'ページ (' + percentage + '%)';
+                                                                                    return formattedDate + ': ' + context.parsed.y + 'ページ (' + percentage + '%)';
                                                                                 }
                                                                             }
                                                                         }
                                                                     },
                                                                     scales: {
+                                                                        x: {
+                                                                            type: 'time',
+                                                                            time: {
+                                                                                unit: 'day',
+                                                                                displayFormats: {
+                                                                                    day: 'MM/DD'
+                                                                                },
+                                                                                tooltipFormat: 'YYYY/MM/DD'
+                                                                            },
+                                                                            distribution: 'series',
+                                                                            title: {
+                                                                                display: false
+                                                                            },
+                                                                            ticks: {
+                                                                                source: 'data',
+                                                                                autoSkip: true,
+                                                                                maxTicksLimit: 8,
+                                                                                maxRotation: 45,
+                                                                                minRotation: 45
+                                                                            }
+                                                                        },
                                                                         y: {
                                                                             beginAtZero: true,
                                                                             max: <?php echo $book['pages']; ?>,
@@ -1069,12 +1095,6 @@ ob_start();
                                                                                 callback: function(value) {
                                                                                     return value + 'p';
                                                                                 }
-                                                                            }
-                                                                        },
-                                                                        x: {
-                                                                            ticks: {
-                                                                                maxRotation: 45,
-                                                                                minRotation: 45
                                                                             }
                                                                         }
                                                                     }

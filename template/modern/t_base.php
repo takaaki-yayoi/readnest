@@ -223,6 +223,9 @@ if(!defined('CONFIG')) {
     
     <!-- Chart.js for modern graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Moment.js and Chart.js date adapter for time scale -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
     
     
     <?php if (isset($d_additional_head)) echo $d_additional_head; ?>
