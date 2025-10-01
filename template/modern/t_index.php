@@ -210,15 +210,49 @@ $welcome_greeting = ($hour >= 21 || $hour < 5) ? $greeting : $welcome_variations
 ?>
 <section class="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <!-- モバイル用レイアウト -->
+        <div class="sm:hidden flex flex-col gap-3">
+            <!-- タイトル行 -->
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white"><?php echo $welcome_greeting; ?></h1>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm"><?php echo $selected_message; ?></p>
+                </div>
+                <!-- いいねボタン（タイトル右側・モバイルのみ） -->
+                <a href="/my_likes.php?tab=received" class="btn-secondary px-3 py-2 text-sm shrink-0 relative" title="いいね">
+                    <i class="fas fa-heart text-red-500"></i>
+                    <?php if (isset($recent_likes) && !empty($recent_likes)): ?>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        <?php echo min(count($recent_likes), 9); ?><?php echo count($recent_likes) > 9 ? '+' : ''; ?>
+                    </span>
+                    <?php endif; ?>
+                </a>
+            </div>
+
+            <!-- アクションボタン行 -->
+            <div class="flex gap-2">
+                <a href="/add_book.php" class="btn-primary px-3 py-2 text-sm flex-1 text-center">
+                    <i class="fas fa-plus mr-1"></i>本を追加
+                </a>
+                <a href="/bookshelf.php" class="btn-secondary px-3 py-2 text-sm flex-1 text-center">
+                    <i class="fas fa-book mr-1"></i>本棚
+                </a>
+                <a href="/reading_calendar.php" class="btn-secondary px-3 py-2 text-sm flex-1 text-center">
+                    <i class="fas fa-calendar-check mr-1"></i>カレンダー
+                </a>
+            </div>
+        </div>
+
+        <!-- PC用レイアウト（元のまま） -->
+        <div class="hidden sm:flex sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"><?php echo $welcome_greeting; ?></h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white"><?php echo $welcome_greeting; ?></h1>
                 <p class="text-gray-600 dark:text-gray-400 text-sm"><?php echo $selected_message; ?></p>
             </div>
-            <div class="flex gap-2 sm:gap-3">
+            <div class="flex gap-3">
                 <!-- いいねボタン（常時表示） -->
-                <a href="/my_likes.php?tab=received" class="btn-secondary px-3 sm:px-4 py-2 text-sm relative" title="いいね">
-                    <i class="fas fa-heart mr-1 sm:mr-2"></i>
+                <a href="/my_likes.php?tab=received" class="btn-secondary px-4 py-2 text-sm relative" title="いいね">
+                    <i class="fas fa-heart mr-2"></i>
                     <!-- いいね通知バッジ（新しいいいねがある時のみ表示） -->
                     <?php if (isset($recent_likes) && !empty($recent_likes)): ?>
                     <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -227,14 +261,14 @@ $welcome_greeting = ($hour >= 21 || $hour < 5) ? $greeting : $welcome_variations
                     <?php endif; ?>
                 </a>
 
-                <a href="/add_book.php" class="btn-primary px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-none text-center">
-                    <i class="fas fa-plus mr-1 sm:mr-2"></i>本を追加
+                <a href="/add_book.php" class="btn-primary px-4 py-2 text-sm text-center">
+                    <i class="fas fa-plus mr-2"></i>本を追加
                 </a>
-                <a href="/bookshelf.php" class="btn-secondary px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-none text-center">
-                    <i class="fas fa-book mr-1 sm:mr-2"></i>本棚
+                <a href="/bookshelf.php" class="btn-secondary px-4 py-2 text-sm text-center">
+                    <i class="fas fa-book mr-2"></i>本棚
                 </a>
-                <a href="/reading_calendar.php" class="btn-secondary px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-none text-center">
-                    <i class="fas fa-calendar-check mr-1 sm:mr-2"></i>カレンダー
+                <a href="/reading_calendar.php" class="btn-secondary px-4 py-2 text-sm text-center">
+                    <i class="fas fa-calendar-check mr-2"></i>カレンダー
                 </a>
             </div>
         </div>
