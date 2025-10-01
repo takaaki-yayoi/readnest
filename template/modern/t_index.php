@@ -216,6 +216,17 @@ $welcome_greeting = ($hour >= 21 || $hour < 5) ? $greeting : $welcome_variations
                 <p class="text-gray-600 dark:text-gray-400 text-sm"><?php echo $selected_message; ?></p>
             </div>
             <div class="flex gap-2 sm:gap-3">
+                <!-- いいねボタン（常時表示） -->
+                <a href="/my_likes.php?tab=received" class="btn-secondary px-3 sm:px-4 py-2 text-sm relative" title="いいね">
+                    <i class="fas fa-heart mr-1 sm:mr-2"></i>
+                    <!-- いいね通知バッジ（新しいいいねがある時のみ表示） -->
+                    <?php if (isset($recent_likes) && !empty($recent_likes)): ?>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        <?php echo min(count($recent_likes), 9); ?><?php echo count($recent_likes) > 9 ? '+' : ''; ?>
+                    </span>
+                    <?php endif; ?>
+                </a>
+
                 <a href="/add_book.php" class="btn-primary px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-none text-center">
                     <i class="fas fa-plus mr-1 sm:mr-2"></i>本を追加
                 </a>

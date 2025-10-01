@@ -486,7 +486,7 @@ if (!empty($amazon_id)) {
             
             foreach ($readers_book as $reader_book) {
                 $reader_id = $reader_book['user_id'];
-                
+
                 // プライベート設定でない場合のみ表示
                 if (isset($users_info[$reader_id])) {
                     $user_info = $users_info[$reader_id];
@@ -498,6 +498,19 @@ if (!empty($amazon_id)) {
                     'book_id' => $reader_book['book_id'],
                     'has_review' => !empty($reader_book['memo']) && $reader_book['memo'] !== ''
                 ];
+
+                    // レビューがある場合は$reviewsに追加
+                    if (!empty($reader_book['memo']) || ($reader_book['rating'] ?? 0) > 0) {
+                        $reviews[] = [
+                            'user_id' => $reader_id,
+                            'nickname' => $user_info['nickname'],
+                            'user_photo' => getProfilePhotoURL($reader_id),
+                            'rating' => $reader_book['rating'] ?? 0,
+                            'comment' => $reader_book['memo'] ?? '',
+                            'book_id' => $reader_book['book_id'],
+                            'update_date' => $reader_book['update_date'] ?? date('Y-m-d H:i:s')
+                        ];
+                    }
                 }
             }
             
@@ -539,6 +552,36 @@ $book_tags = getTag($book_id_for_tags);
 $user_tags = [];
 if ($login_flag) {
     $user_tags = getUserTags($book_id_for_tags, $mine_user_id);
+}
+
+// いいね機能のヘルパーを読み込み
+require_once(dirname(__FILE__) . '/library/like_helpers.php');
+
+// レビューにいいね情報を追加
+if (!empty($reviews)) {
+    // レビューのtarget_idを生成
+    $review_target_ids = [];
+    foreach ($reviews as $review) {
+        $review_target_ids[] = generateReviewTargetId($review['book_id'], $review['user_id']);
+    }
+
+    // いいね数を一括取得
+    $like_counts = getLikeCounts('review', $review_target_ids);
+
+    // ログインユーザーのいいね状態を取得
+    if ($login_flag) {
+        $user_like_states = getUserLikeStates($mine_user_id, 'review', $review_target_ids);
+    } else {
+        $user_like_states = [];
+    }
+
+    // 各レビューにいいね情報を追加
+    foreach ($reviews as &$review) {
+        $target_id = generateReviewTargetId($review['book_id'], $review['user_id']);
+        $review['like_count'] = $like_counts[$target_id] ?? 0;
+        $review['is_liked'] = $user_like_states[$target_id] ?? false;
+    }
+    unset($review);
 }
 
 // レビューとコメントのユーザーレベル情報を一括取得
@@ -904,6 +947,7 @@ if (!$is_in_bookshelf && !empty($book['user_id'])) {
         if (!DB::isError($review_result) && $review_result) {
             if (!empty($review_result['rating']) || !empty($review_result['memo'])) {
                 $public_user_review = [
+                    'user_id' => $book['user_id'],
                     'rating' => $review_result['rating'],
                     'memo' => $review_result['memo'],
                     'nickname' => $book_owner_info['nickname']

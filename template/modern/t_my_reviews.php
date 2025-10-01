@@ -221,11 +221,19 @@ ob_start();
                             
                             <!-- アクション -->
                             <div class="mt-3 flex items-center space-x-3">
-                                <a href="/book/<?php echo $review['book_id']; ?>" 
+                                <!-- いいね数表示（自分のレビューなのでボタンではなく表示のみ） -->
+                                <?php if (isset($review['like_count']) && $review['like_count'] > 0): ?>
+                                <span class="inline-flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-heart text-red-500"></i>
+                                    <span><?php echo number_format($review['like_count']); ?></span>
+                                </span>
+                                <?php endif; ?>
+
+                                <a href="/book/<?php echo $review['book_id']; ?>"
                                    class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors">
                                     <i class="fas fa-eye mr-1"></i>詳細を見る
                                 </a>
-                                <a href="/book/<?php echo $review['book_id']; ?>#review-section" 
+                                <a href="/book/<?php echo $review['book_id']; ?>#review-section"
                                    class="text-sm text-green-600 hover:text-green-800 transition-colors">
                                     <i class="fas fa-edit mr-1"></i>レビューを編集
                                 </a>

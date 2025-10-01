@@ -38,8 +38,20 @@ if(!defined('CONFIG')) {
     <title><?php echo html(isset($d_site_title) ? $d_site_title : 'ReadNest - あなたの読書の巣'); ?></title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="<?php echo html(isset($g_meta_description) ? $g_meta_description : 'ReadNest - 読書の進捉を記録し、レビューを書き、本を整理するための居心地のよい空間です。'); ?>"> 
+    <meta name="description" content="<?php echo html(isset($g_meta_description) ? $g_meta_description : 'ReadNest - 読書の進捉を記録し、レビューを書き、本を整理するための居心地のよい空間です。'); ?>">
     <meta name="keywords" content="<?php echo html(isset($g_meta_keyword) ? $g_meta_keyword : '読書,本,書評,レビュー,本棚,読書記録'); ?>">
+
+    <!-- CSRF Token -->
+    <?php
+    if (isset($_SESSION['AUTH_USER'])) {
+        // csrf.phpを読み込み
+        if (!function_exists('generateCSRFToken')) {
+            require_once(dirname(dirname(dirname(__FILE__))) . '/library/csrf.php');
+        }
+        $csrf_token = generateCSRFToken();
+        echo '<meta name="csrf-token" content="' . htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') . '">';
+    }
+    ?>
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -333,6 +345,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <a href="/recent_reviews.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-comments mr-2"></i>最新レビュー
                                 </a>
+                                <a href="/reviews.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-list mr-2"></i>レビュー一覧
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -444,8 +459,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                         <div class="text-xs text-gray-500">話題の感想・書評</div>
                                     </div>
                                 </a>
+                                <a href="/reviews.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-comments mr-3 text-blue-500 group-hover:scale-110 transition-transform"></i>
+                                    <div>
+                                        <div class="font-medium">レビュー一覧</div>
+                                        <div class="text-xs text-gray-500">みんなのレビュー</div>
+                                    </div>
+                                </a>
                             </div>
-                            
+
                             <div class="border-t border-gray-200"></div>
                             
                             <div class="py-1">
@@ -568,6 +590,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <a href="/my_reviews.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-pen-to-square mr-2 text-indigo-500"></i> マイレビュー
                                 </a>
+                                <a href="/my_likes.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-heart mr-2 text-red-500"></i> いいね
+                                </a>
                                 <a href="/reading_calendar.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-calendar-check mr-2 text-emerald-500"></i> 読書カレンダー
                                 </a>
@@ -682,8 +707,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <a href="/popular_review.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-comment-dots mr-3 w-4 text-orange-500"></i> 人気のレビュー
                     </a>
+                    <a href="/reviews.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
+                        <i class="fas fa-comments mr-3 w-4 text-blue-500"></i> レビュー一覧
+                    </a>
                 </div>
-                
+
                 <!-- コミュニティ -->
                 <div class="mb-6">
                     <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">コミュニティ</h4>
@@ -712,6 +740,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </a>
                     <a href="/my_reviews.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-pen-to-square mr-3 w-4 text-indigo-500"></i> マイレビュー
+                    </a>
+                    <a href="/my_likes.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
+                        <i class="fas fa-heart mr-3 w-4 text-red-500"></i> いいね
                     </a>
                 </div>
                 <?php endif; ?>
@@ -870,6 +901,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <script src="/js/common-utils.js"></script>
     <script src="/js/modern.js"></script>
     <script src="/js/onboarding.js?v=<?php echo date('YmdHis'); ?>"></script>
+    <script src="/js/like.js?v=<?php echo date('YmdHis'); ?>"></script>
     
     <!-- AI Assistant -->
     <?php if (isset($_SESSION['AUTH_USER'])): ?>

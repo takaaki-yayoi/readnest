@@ -23,6 +23,9 @@ require_once(dirname(__FILE__) . '/library/achievement_system.php');
 require_once(dirname(__FILE__) . '/library/level_display_helper.php');
 require_once(dirname(__FILE__) . '/library/optimized_pagination.php');
 
+// いいね機能
+require_once(dirname(__FILE__) . '/library/like_helpers.php');
+
 // ページネーション設定
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $per_page = 30;
@@ -193,10 +196,27 @@ if ($activities && !DB::isError($activities)) {
 if (!empty($formatted_activities)) {
     $user_ids = array_unique(array_column($formatted_activities, 'user_id'));
     $user_levels = getUsersLevels($user_ids);
-    
-    // 各活動にレベル情報を追加
+
+    // event_idの配列を作成
+    $event_ids = array_column($formatted_activities, 'event_id');
+
+    // いいね数を一括取得
+    $like_counts = getLikeCounts('activity', $event_ids);
+
+    // ログインユーザーのいいね状態を取得
+    $login_flag = checkLogin();
+    if ($login_flag) {
+        $mine_user_id = $_SESSION['AUTH_USER'];
+        $user_like_states = getUserLikeStates($mine_user_id, 'activity', $event_ids);
+    } else {
+        $user_like_states = [];
+    }
+
+    // 各活動にレベル情報といいね情報を追加
     foreach ($formatted_activities as &$activity) {
         $activity['user_level'] = $user_levels[$activity['user_id']] ?? getReadingLevel(0);
+        $activity['like_count'] = $like_counts[$activity['event_id']] ?? 0;
+        $activity['is_liked'] = $user_like_states[$activity['event_id']] ?? false;
     }
     unset($activity);
 }

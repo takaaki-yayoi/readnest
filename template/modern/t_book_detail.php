@@ -90,6 +90,17 @@ if (!empty($og_book_description)) {
 <meta name="twitter:description" content="<?php echo html($og_description); ?>">
 <meta name="twitter:image" content="<?php echo html($og_image_url); ?>">
 
+<!-- CSRF Token -->
+<?php
+if (isset($_SESSION['AUTH_USER'])) {
+    if (!function_exists('generateCSRFToken')) {
+        require_once(dirname(dirname(dirname(__FILE__))) . '/library/csrf.php');
+    }
+    $csrf_token = generateCSRFToken();
+    echo '<meta name="csrf-token" content="' . htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') . '">';
+}
+?>
+
 <!-- AI機能用のメタデータ -->
 <meta name="book-title" content="<?php echo html(isset($book['title']) ? $book['title'] : ''); ?>">
 <meta name="book-author" content="<?php echo html(isset($book['author']) ? $book['author'] : ''); ?>">
@@ -227,11 +238,25 @@ ob_start();
                                     <?php endif; ?>
                                 </p>
                                 
-                                <!-- みんなの評価ページへのリンク（ASINがある場合） -->
-                                <?php if (!empty($book['amazon_id']) || !empty($book['isbn']) || !empty($book['isbn10']) || !empty($book['isbn13'])): ?>
-                                    <?php $entity_id = !empty($book['amazon_id']) ? $book['amazon_id'] : (!empty($book['isbn']) ? $book['isbn'] : (!empty($book['isbn10']) ? $book['isbn10'] : $book['isbn13'])); ?>
+                                <!-- みんなの評価ページへのリンク -->
+                                <?php
+                                // ASINやISBNがある場合はそれを使用、なければbook_idを使用
+                                $entity_id = null;
+                                if (!empty($book['amazon_id'])) {
+                                    $entity_id = $book['amazon_id'];
+                                } elseif (!empty($book['isbn'])) {
+                                    $entity_id = $book['isbn'];
+                                } elseif (!empty($book['isbn10'])) {
+                                    $entity_id = $book['isbn10'];
+                                } elseif (!empty($book['isbn13'])) {
+                                    $entity_id = $book['isbn13'];
+                                } elseif (!empty($book['book_id'])) {
+                                    $entity_id = 'book_' . $book['book_id'];
+                                }
+                                ?>
+                                <?php if (!empty($entity_id)): ?>
                                     <div class="mt-3">
-                                        <a href="/book_entity/<?php echo urlencode($entity_id); ?>" 
+                                        <a href="/book_entity/<?php echo urlencode($entity_id); ?>"
                                            class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all text-sm font-medium">
                                             <i class="fas fa-users mr-2"></i>
                                             みんなの評価・レビューを見る
@@ -820,6 +845,33 @@ ob_start();
                                             <div class="mt-1 text-gray-700 text-sm leading-relaxed">
                                                 <?php echo XSS::nl2brAutoLink($public_user_review['memo']); ?>
                                             </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <!-- いいねボタン（ログインユーザーかつ本の所有者でない場合） -->
+                                        <?php if ($login_flag && $mine_user_id != $public_user_review['user_id']): ?>
+                                        <div class="mt-3">
+                                            <?php
+                                            require_once(dirname(dirname(dirname(__FILE__))) . '/library/like_helpers.php');
+                                            $review_target_id = generateReviewTargetId($book['book_id'], $public_user_review['user_id']);
+                                            $like_count = getLikeCount('review', $review_target_id);
+                                            $is_liked = isUserLiked($mine_user_id, 'review', $review_target_id);
+                                            echo generateLikeButton(
+                                                'review',
+                                                $book['book_id'],
+                                                $like_count,
+                                                $is_liked,
+                                                ['review_user_id' => $public_user_review['user_id']]
+                                            );
+                                            ?>
+                                        </div>
+                                        <?php elseif ($like_count > 0): ?>
+                                        <!-- いいね数のみ表示 -->
+                                        <div class="mt-3">
+                                            <span class="inline-flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-400">
+                                                <i class="fas fa-heart text-red-500"></i>
+                                                <span><?php echo number_format($like_count); ?></span>
+                                            </span>
                                         </div>
                                         <?php endif; ?>
                                     </div>
@@ -1624,6 +1676,30 @@ ob_start();
                                             </div>
                                         </div>
                                         <p class="text-gray-700 dark:text-gray-300 text-sm"><?php echo XSS::nl2brAutoLink($review['comment']); ?></p>
+
+                                        <!-- いいねボタン（自分のレビュー以外） -->
+                                        <?php if ($login_flag && $mine_user_id != $review['user_id']): ?>
+                                        <div class="mt-2">
+                                            <?php
+                                            require_once(dirname(dirname(dirname(__FILE__))) . '/library/like_helpers.php');
+                                            echo generateLikeButton(
+                                                'review',
+                                                $review['book_id'],
+                                                $review['like_count'] ?? 0,
+                                                $review['is_liked'] ?? false,
+                                                ['review_user_id' => $review['user_id']]
+                                            );
+                                            ?>
+                                        </div>
+                                        <?php elseif (isset($review['like_count']) && $review['like_count'] > 0): ?>
+                                        <!-- ログインしていないか自分のレビューの場合はいいね数のみ表示 -->
+                                        <div class="mt-2">
+                                            <span class="inline-flex items-center gap-1 px-3 py-1 text-sm text-gray-600 dark:text-gray-400">
+                                                <i class="fas fa-heart text-red-500"></i>
+                                                <span><?php echo number_format($review['like_count']); ?></span>
+                                            </span>
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>

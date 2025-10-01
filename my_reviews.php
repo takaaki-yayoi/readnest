@@ -43,6 +43,9 @@ if ($is_admin && isset($_GET['user_id'])) {
 }
 
 
+// いいね機能のヘルパーを読み込み
+require_once(dirname(__FILE__) . '/library/like_helpers.php');
+
 // ソート条件の取得
 $sort = $_GET['sort'] ?? 'update_date';
 $order = $_GET['order'] ?? 'desc';
@@ -109,6 +112,33 @@ try {
 } catch (Exception $e) {
     error_log("Error fetching reviews: " . $e->getMessage());
     $reviews = []; // エラー時は空配列を設定
+}
+
+// いいね情報を追加
+if (!empty($reviews)) {
+    // レビューのtarget_idを生成
+    $review_target_ids = [];
+    foreach ($reviews as $review) {
+        $review_target_ids[] = generateReviewTargetId($review['book_id'], $user_id);
+    }
+
+    // いいね数を一括取得
+    $like_counts = getLikeCounts('review', $review_target_ids);
+
+    // ログインユーザーのいいね状態を取得
+    if ($logged_in_user_id) {
+        $user_like_states = getUserLikeStates($logged_in_user_id, 'review', $review_target_ids);
+    } else {
+        $user_like_states = [];
+    }
+
+    // 各レビューにいいね情報を追加
+    foreach ($reviews as &$review) {
+        $target_id = generateReviewTargetId($review['book_id'], $user_id);
+        $review['like_count'] = $like_counts[$target_id] ?? 0;
+        $review['is_liked'] = $user_like_states[$target_id] ?? false;
+    }
+    unset($review);
 }
 
 // ページネーション計算

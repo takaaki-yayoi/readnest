@@ -140,6 +140,19 @@ ob_start();
                                 <?php echo nl2br(html($activity['comment'])); ?>
                             </div>
                             <?php endif; ?>
+
+                            <!-- いいねボタン -->
+                            <div class="mt-2">
+                                <?php
+                                require_once(dirname(dirname(__DIR__)) . '/library/like_helpers.php');
+                                echo generateLikeButton(
+                                    'activity',
+                                    $activity['event_id'],
+                                    $activity['like_count'] ?? 0,
+                                    $activity['is_liked'] ?? false
+                                );
+                                ?>
+                            </div>
                         </div>
                     </div>
                 </div>

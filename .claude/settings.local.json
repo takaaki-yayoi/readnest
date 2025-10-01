@@ -5,7 +5,9 @@
       "Bash(! grep -q \"dark:bg-gray-\" \"$file\")",
       "Bash(do if grep -q \"text-gray-\" \"$file\")",
       "Bash(! grep -q \"dark:text-gray-\" \"$file\")",
-      "Read(//Users/yayoi/Desktop/**)"
+      "Read(//Users/yayoi/Desktop/**)",
+      "Bash(grep:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

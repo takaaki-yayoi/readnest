@@ -1472,7 +1472,24 @@ if ($login_flag) {
             $most_active_hour = $hour;
         }
     }
-    
+
+    // いいね通知を取得（最終確認時刻以降）
+    require_once('library/like_helpers.php');
+
+    // 最終確認時刻を取得
+    $last_check_sql = "SELECT last_like_check FROM b_user WHERE user_id = ?";
+    $last_check_result = $g_db->getRow($last_check_sql, [$user_id]);
+
+    $last_check_timestamp = null;
+    if ($last_check_result && !DB::isError($last_check_result) && !empty($last_check_result['last_like_check'])) {
+        $last_check_timestamp = strtotime($last_check_result['last_like_check']);
+    } else {
+        // 初回の場合は過去24時間
+        $last_check_timestamp = time() - 86400;
+    }
+
+    $recent_likes = getReceivedLikes($user_id, 100, $last_check_timestamp);
+
 } else {
     $user_id = null;
     $d_nickname = '';
@@ -1480,6 +1497,7 @@ if ($login_flag) {
     $monthly_stats = [];
     $yearly_progress = [];
     $daily_progress = [];
+    $recent_likes = [];
 }
 
 // Analytics設定

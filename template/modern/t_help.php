@@ -90,6 +90,12 @@ ob_start();
                         <span class="font-medium text-gray-900 dark:text-gray-100">マイレビュー</span>
                     </div>
                 </a>
+                <a href="#likes" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <i class="fas fa-heart text-red-500 text-xl mr-3"></i>
+                        <span class="font-medium text-gray-900 dark:text-gray-100">いいね機能</span>
+                    </div>
+                </a>
                 <a href="#bookshelf" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center">
                         <i class="fas fa-bookmark text-readnest-primary text-xl mr-3"></i>
@@ -1080,6 +1086,175 @@ ob_start();
                             <li>• 繰り返し読みたい本をお気に入りにして、すぐアクセスできるようにしましょう</li>
                             <li>• おすすめしたい本を公開設定にして、他のユーザーと共有しましょう</li>
                             <li>• プライベートな本は非公開設定で自分だけの記録として保管できます</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- いいね機能 -->
+            <section id="likes" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                    <i class="fas fa-heart text-red-500 mr-3"></i>
+                    いいね機能
+                </h2>
+
+                <div class="space-y-8">
+                    <!-- いいねの基本説明 -->
+                    <div class="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-thumbs-up text-red-500 mr-2"></i>
+                            いいね機能とは？
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            他のユーザーの読書活動やレビューに「いいね」を送ることで、共感や応援の気持ちを伝えられる機能です。
+                            いいねを受け取ると通知が届き、読書コミュニティとのつながりを感じることができます。
+                        </p>
+                    </div>
+
+                    <!-- いいねできる対象 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            いいねできる投稿
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">📚 読書活動</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                    「読書活動」ページで表示される、みんなの読書状況の更新にいいねできます。
+                                </p>
+                                <ul class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                    <li>• 読み始めた報告</li>
+                                    <li>• 読了報告</li>
+                                    <li>• 読書進捗の更新</li>
+                                </ul>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">✍️ レビュー</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                    本の詳細ページで表示される、他のユーザーのレビューにいいねできます。
+                                </p>
+                                <ul class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                    <li>• 本の感想・書評</li>
+                                    <li>• 評価とコメント</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <strong>注意：</strong>自分の投稿にはいいねできません
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- いいねの方法 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-hand-pointer text-blue-500 mr-2"></i>
+                            いいねの方法
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="bg-red-100 dark:bg-red-900/30 rounded-full p-2 mr-4">
+                                    <i class="far fa-heart text-red-500"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-gray-100">1. ハートアイコンをクリック</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        投稿の下にあるハートアイコンをクリックするだけでいいねが送られます
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="bg-red-500 rounded-full p-2 mr-4">
+                                    <i class="fas fa-heart text-white"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-gray-100">2. いいねの取り消し</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        もう一度クリックすると、いいねを取り消すことができます
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- いいねページの使い方 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-list text-purple-500 mr-2"></i>
+                            いいねページの使い方
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            ユーザーメニューから「いいね」を選択すると、いいねページにアクセスできます。
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-heart text-red-500 mr-2"></i>いいねした投稿
+                                </h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    あなたがいいねした読書活動やレビューの一覧が表示されます。後で見返したい投稿の記録として活用できます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-bell text-blue-500 mr-2"></i>いいねされた投稿
+                                </h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    あなたの投稿が受け取ったいいねの履歴が表示されます。誰がいいねしてくれたかも確認できます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 通知機能 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-bell text-orange-500 mr-2"></i>
+                            通知機能
+                        </h3>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <div class="relative mr-4 mt-1">
+                                        <i class="fas fa-heart text-gray-400 text-xl"></i>
+                                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                                    </div>
+                                    <div>
+                                        <strong class="text-gray-900 dark:text-gray-100">ホームページの通知バッジ</strong>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                            新しいいいねがあると、ホームページ上部のハートボタンに赤いバッジが表示されます。
+                                            数字は未確認のいいね数を示します。
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 text-xl mr-4 mt-1"></i>
+                                    <div>
+                                        <strong class="text-gray-900 dark:text-gray-100">バッジのクリア</strong>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                            ハートボタンをクリックして「いいねされた投稿」タブを開くと、通知バッジがクリアされます。
+                                            次回新しいいいねがあるまで、バッジは表示されません。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ヒント -->
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                        <h4 class="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            活用のヒント
+                        </h4>
+                        <ul class="space-y-2 text-sm text-amber-800 dark:text-amber-200">
+                            <li>• 共感した読書活動にいいねして、読書仲間とつながりましょう</li>
+                            <li>• 参考になったレビューにいいねすることで、感謝の気持ちを伝えられます</li>
+                            <li>• いいねした投稿を後で見返して、気になる本を見つけることができます</li>
+                            <li>• 受け取ったいいねは、あなたの投稿が役立った証。モチベーションアップにつながります</li>
                         </ul>
                     </div>
                 </div>
