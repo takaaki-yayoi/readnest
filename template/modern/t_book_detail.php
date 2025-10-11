@@ -994,7 +994,7 @@ ob_start();
                                                         
                                                         if ($total_days > 0 && $total_pages_read > 0) {
                                                             $daily_pace = round($total_pages_read / $total_days, 1);
-                                                            $days_to_complete = ceil($remaining_pages / $daily_pace);
+                                                            $days_to_complete = ($daily_pace > 0) ? ceil($remaining_pages / $daily_pace) : 0;
                                                     ?>
                                                     <div class="mt-3 pt-3 border-t border-blue-200">
                                                         <div class="flex items-center justify-between text-sm">
