@@ -24,6 +24,14 @@ function getStreakMilestone(int $streak): array {
         500 => ['title' => '500日達成', 'icon' => 'trophy', 'color' => 'gold'],
         730 => ['title' => '2年達成', 'icon' => 'crown', 'color' => 'red'],
         1000 => ['title' => '1000日達成', 'icon' => 'gem', 'color' => 'purple'],
+        1095 => ['title' => '3年達成', 'icon' => 'crown', 'color' => 'purple'],
+        1460 => ['title' => '4年達成', 'icon' => 'crown', 'color' => 'indigo'],
+        1825 => ['title' => '5年達成', 'icon' => 'gem', 'color' => 'pink'],
+        2190 => ['title' => '6年達成', 'icon' => 'crown', 'color' => 'red'],
+        2555 => ['title' => '7年達成', 'icon' => 'trophy', 'color' => 'purple'],
+        2920 => ['title' => '8年達成', 'icon' => 'crown', 'color' => 'indigo'],
+        3285 => ['title' => '9年達成', 'icon' => 'gem', 'color' => 'pink'],
+        3650 => ['title' => '10年達成', 'icon' => 'crown', 'color' => 'gold'],
     ];
     
     $current = null;

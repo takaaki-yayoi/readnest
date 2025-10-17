@@ -207,31 +207,45 @@ function getYearlyReadingData($user_id, $year) {
 // 読書連続記録を計算する関数
 function calculateCurrentStreak($user_id) {
     global $g_db;
-    
+
     $today = date('Y-m-d');
+    $check_date = $today;
     $streak = 0;
-    
-    // 今日から遡って連続記録を確認
-    for ($i = 0; $i < 365; $i++) {
-        $check_date = date('Y-m-d', strtotime("-{$i} days"));
-        $sql = "SELECT COUNT(*) FROM b_book_event 
-                WHERE user_id = ? 
-                AND DATE(event_date) = ? 
+
+    // まず今日の記録があるか確認（進捗更新も含む）
+    $sql = "SELECT COUNT(*) FROM b_book_event
+            WHERE user_id = ? AND DATE(event_date) = ?
+            AND event IN (?, ?, ?)";
+    $today_count = $g_db->getOne($sql, [$user_id, $today, READING_NOW, READING_FINISH, 4]); // 4 = 進捗更新
+
+    if ($today_count > 0) {
+        $has_today_record = true;
+    } else {
+        // 今日の記録がなければ昨日から開始
+        $check_date = date('Y-m-d', strtotime('-1 day'));
+    }
+
+    // 今日から遡って連続記録を確認（上限を撤廃し、実際の記録がある限りカウント）
+    // ただし、パフォーマンス考慮で最大3年（約1095日）まで
+    for ($i = 0; $i < 1095; $i++) {
+        $sql = "SELECT COUNT(*) FROM b_book_event
+                WHERE user_id = ?
+                AND DATE(event_date) = ?
                 AND event IN (?, ?, ?)";
-        
+
         $count = $g_db->getOne($sql, [$user_id, $check_date, READING_NOW, READING_FINISH, 4]);
-        
+
         if ($count > 0) {
             $streak++;
         } else {
-            // 今日読んでいない場合は昨日からカウント
-            if ($i == 0) {
-                continue;
-            }
+            // 記録がない日が見つかったら終了
             break;
         }
+
+        // 次の日（過去に遡る）
+        $check_date = date('Y-m-d', strtotime($check_date . ' -1 day'));
     }
-    
+
     return $streak;
 }
 

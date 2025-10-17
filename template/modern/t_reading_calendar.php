@@ -317,9 +317,33 @@ ob_start();
                         <i class="fas fa-fire"></i>
                     </div>
                 </div>
-                <?php if ($current_streak >= 7): ?>
+                <?php
+                // 年数計算（365日単位）
+                $years = floor($current_streak / 365);
+                if ($years >= 1):
+                ?>
                 <p class="text-xs text-blue-600 mt-2 hidden sm:block">
-                    <i class="fas fa-trophy mr-1"></i>
+                    <i class="fas fa-crown mr-1"></i>
+                    驚異的！<?php echo $years; ?>年達成！
+                </p>
+                <?php elseif ($current_streak >= 200): ?>
+                <p class="text-xs text-blue-600 mt-2 hidden sm:block">
+                    <i class="fas fa-award mr-1"></i>
+                    200日突破！
+                </p>
+                <?php elseif ($current_streak >= 100): ?>
+                <p class="text-xs text-blue-600 mt-2 hidden sm:block">
+                    <i class="fas fa-medal mr-1"></i>
+                    100日突破！
+                </p>
+                <?php elseif ($current_streak >= 30): ?>
+                <p class="text-xs text-blue-600 mt-2 hidden sm:block">
+                    <i class="fas fa-flag mr-1"></i>
+                    1ヶ月達成！
+                </p>
+                <?php elseif ($current_streak >= 7): ?>
+                <p class="text-xs text-blue-600 mt-2 hidden sm:block">
+                    <i class="fas fa-fire mr-1"></i>
                     素晴らしい！1週間継続中です
                 </p>
                 <?php elseif ($current_streak >= 3): ?>
@@ -598,7 +622,23 @@ ob_start();
         <!-- モチベーションメッセージ -->
         <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
             <div class="text-center">
-                <?php if ($current_streak >= 30): ?>
+                <?php
+                // 年数計算（365日単位）
+                $years = floor($current_streak / 365);
+                if ($years >= 2):
+                ?>
+                    <i class="fas fa-crown text-4xl text-purple-600 mb-3"></i>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">伝説の読書家！</h3>
+                    <p class="text-gray-700"><?php echo $years; ?>年の連続記録は前人未到の領域です。あなたは真の読書家です！</p>
+                <?php elseif ($years >= 1): ?>
+                    <i class="fas fa-trophy text-4xl text-yellow-500 mb-3"></i>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">1年達成！読書レジェンド！</h3>
+                    <p class="text-gray-700">365日以上の連続記録は驚異的です。読書があなたの人生の一部になっています！</p>
+                <?php elseif ($current_streak >= 100): ?>
+                    <i class="fas fa-medal text-4xl text-orange-500 mb-3"></i>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">100日突破！読書の達人！</h3>
+                    <p class="text-gray-700">100日以上の継続は素晴らしい偉業です。読書が完全に習慣化されていますね！</p>
+                <?php elseif ($current_streak >= 30): ?>
                     <i class="fas fa-crown text-4xl text-yellow-500 mb-3"></i>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">読書マスター！</h3>
                     <p class="text-gray-700">30日以上の連続記録は素晴らしい成果です。この調子で続けましょう！</p>

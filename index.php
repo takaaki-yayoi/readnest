@@ -1347,20 +1347,21 @@ if ($login_flag) {
             $check_date = date('Y-m-d', strtotime('-1 day'));
         }
         
-        // 連続記録を計算（最大365日）
-        for ($i = 0; $i < 365; $i++) {
-            $sql = "SELECT COUNT(*) FROM b_book_event 
-                    WHERE user_id = ? AND DATE(event_date) = ? 
+        // 連続記録を計算（上限を撤廃し、実際の記録がある限りカウント）
+        // ただし、パフォーマンス考慮で最大3年（約1095日）まで
+        for ($i = 0; $i < 1095; $i++) {
+            $sql = "SELECT COUNT(*) FROM b_book_event
+                    WHERE user_id = ? AND DATE(event_date) = ?
                     AND event IN (?, ?, ?)";
             $count = $g_db->getOne($sql, [$user_id, $check_date, READING_NOW, READING_FINISH, 4]); // 4 = 進捗更新
-            
+
             if ($count > 0) {
                 $current_streak++;
             } else {
                 // 記録がない日が見つかったら終了
                 break;
             }
-            
+
             // 次の日（過去に遡る）
             $check_date = date('Y-m-d', strtotime($check_date . ' -1 day'));
         }
