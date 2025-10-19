@@ -1724,13 +1724,69 @@ ob_start();
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">💡 便利な機能</h3>
                         <div class="space-y-4">
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                                <h4 class="font-semibold text-gray-900 mb-2">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                     <i class="fas fa-fire text-orange-500 mr-2"></i>
                                     連続読書記録
                                 </h4>
-                                <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300">
-                                    毎日読書を続けると連続記録が更新されます。7日以上継続すると特別なメッセージが表示され、モチベーション維持をサポートします。
+                                <p class="text-gray-700 dark:text-gray-300 mb-3">
+                                    毎日読書を続けると連続記録が更新されます。継続日数に応じて特別なメッセージやマイルストーンが表示され、モチベーション維持をサポートします。
                                 </p>
+                                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 mt-3">
+                                    <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">📊 達成マイルストーン</h5>
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-seedling text-green-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">3日 - 読書習慣スタート</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-fire text-orange-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">7日 - 1週間達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-medal text-yellow-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">30日 - 1ヶ月達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-crown text-yellow-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">100日 - 100日達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-trophy text-orange-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">200日 - 200日達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-crown text-indigo-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">365日 - 1年達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-gem text-yellow-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">500日 - 500日達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-crown text-red-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">730日 - 2年達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-gem text-purple-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">1000日 - 1000日達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-crown text-purple-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">1095日 - 3年達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-gem text-pink-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">1825日 - 5年達成</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-crown text-yellow-500"></i>
+                                            <span class="text-gray-700 dark:text-gray-300">3650日 - 10年達成</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-600 dark:text-gray-400 text-xs mt-3 italic">
+                                        ※ その他にも14日、21日、50日、150日、300日、4年、6年、7年、8年、9年のマイルストーンもあります
+                                    </p>
+                                </div>
                             </div>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <h4 class="font-semibold text-gray-900 mb-2">
