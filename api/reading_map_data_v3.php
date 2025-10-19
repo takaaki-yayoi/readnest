@@ -51,7 +51,21 @@ try {
         echo json_encode(['error' => 'Unauthorized']);
         exit;
     }
-    
+
+    // 他人のデータの場合は公開設定を確認
+    if ($user_id != $g_login_id) {
+        $target_user = getUserInformation($user_id);
+        if (!$target_user || $target_user['diary_policy'] != 1 || $target_user['status'] != 1) {
+            // 出力バッファをクリア
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error' => 'Access denied']);
+            exit;
+        }
+    }
+
     // データベース接続
     global $g_db;
     

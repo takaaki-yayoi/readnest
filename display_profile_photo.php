@@ -17,6 +17,22 @@ if(isset($_GET['user_id'])) {
   exit;
 }
 
+// セッション開始（非公開チェック用）
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+$g_login_id = isset($_SESSION['AUTH_USER']) ? $_SESSION['AUTH_USER'] : null;
+
+// 非公開ユーザーのチェック（自分以外の場合）
+if ($user_array != NULL && $user_id != $g_login_id) {
+  if (!isset($user_array['diary_policy']) || $user_array['diary_policy'] != 1 ||
+      !isset($user_array['status']) || $user_array['status'] != 1) {
+    // 非公開ユーザーの場合、デフォルトアイコンを表示
+    // ここではexitして何も表示しない（呼び出し側でデフォルトアイコンが表示される）
+    exit;
+  }
+}
+
 if($user_array != NULL) {
   $profile_photo = $user_array['photo'];
   $profile_photo_state = $user_array['photo_state'];

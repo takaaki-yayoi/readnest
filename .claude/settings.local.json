@@ -7,7 +7,14 @@
       "Bash(! grep -q \"dark:text-gray-\" \"$file\")",
       "Read(//Users/yayoi/Desktop/**)",
       "Bash(grep:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(find /Users/yayoi/workspace/subversion/readnest/api -name \"*.php\" -exec grep -l \"user_id.*GET\\|GET.*user_id\" {})",
+      "Bash(for file in /Users/yayoi/workspace/subversion/readnest/api/reading_map_data_v2.php /Users/yayoi/workspace/subversion/readnest/api/reading_map_data_v3.php /Users/yayoi/workspace/subversion/readnest/api/reading_map_data_simple.php /Users/yayoi/workspace/subversion/readnest/api/reading_suggestions.php /Users/yayoi/workspace/subversion/readnest/api/reading_suggestions_simple.php /Users/yayoi/workspace/subversion/readnest/api/reading_map_images.php)",
+      "Bash(do)",
+      "Bash(if [ -f \"$file\" ])",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

@@ -38,12 +38,12 @@ if (!$login_flag && empty($user_id)) {
 // ユーザー情報取得
 if (!empty($user_id)) {
     $user_info_array = getUserInformation($user_id);
-    
+
     if ($user_info_array === null) {
         header('Location: https://readnest.jp');
         exit;
     }
-    
+
     $d_target_nickname = getNickname($user_id);
 } else {
     $user_id = $mine_user_id;
@@ -53,6 +53,19 @@ if (!empty($user_id)) {
 
 // ページタイトル設定
 $is_own_bookshelf = ($user_id === $mine_user_id);
+
+// 非公開ユーザーのチェック（自分の本棚でない場合）
+if (!$is_own_bookshelf) {
+    // diary_policyを取得（1=公開、0=非公開）
+    $privacy_sql = "SELECT diary_policy FROM b_user WHERE user_id = ?";
+    $privacy_result = $g_db->getOne($privacy_sql, array($user_id));
+
+    if (DB::isError($privacy_result) || $privacy_result != 1) {
+        // 非公開ユーザーの本棚は見れない
+        header('Location: /profile.php?user_id=' . $user_id);
+        exit;
+    }
+}
 $d_site_title = $is_own_bookshelf ? "あなたの本棚 - ReadNest" : "{$d_target_nickname}さんの本棚 - ReadNest";
 
 // メタ情報
