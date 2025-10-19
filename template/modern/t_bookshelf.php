@@ -7,6 +7,9 @@ if(!defined('CONFIG')) {
 // コンテンツ部分を生成
 ob_start();
 
+// 他のユーザーの本棚を見ている場合のuser_idパラメータを準備
+$user_id_param = !$is_own_bookshelf ? '&user_id=' . urlencode($user_id) : '';
+
 // パンくずリストを表示
 if (isset($breadcrumbs)) {
     include(getTemplatePath('components/breadcrumb.php'));
@@ -215,6 +218,9 @@ if (isset($breadcrumbs)) {
                 <button type="submit" class="px-4 py-2 text-sm bg-readnest-primary text-white rounded-lg hover:bg-readnest-accent transition-colors whitespace-nowrap">
                     <i class="fas fa-search mr-1"></i>検索
                 </button>
+                <?php if (!$is_own_bookshelf): ?>
+                <input type="hidden" name="user_id" value="<?php echo html($user_id); ?>">
+                <?php endif; ?>
                 <?php if (!empty($status_filter)): ?>
                 <input type="hidden" name="status" value="<?php echo $status_filter; ?>">
                 <?php endif; ?>
@@ -239,7 +245,7 @@ if (isset($breadcrumbs)) {
                     <i class="fas fa-calendar-alt mr-1"></i><?php echo date('Y年n月', strtotime($filter_month . '-01')); ?>
                 </span>
                 <?php endif; ?>
-                <a href="/bookshelf.php?status=<?php echo $status_filter; ?>" 
+                <a href="/bookshelf.php?status=<?php echo $status_filter; ?><?php echo $user_id_param; ?>"
                    class="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     <i class="fas fa-times mr-1"></i>解除
                 </a>
@@ -272,7 +278,14 @@ if (isset($breadcrumbs)) {
                     </p>
                     <div class="flex items-center gap-2">
                         <?php if ($tag_filter === 'no_tags' || $cover_filter === 'no_cover'): ?>
-                        <a href="?<?php echo http_build_query(array_diff_key($_GET, ['tag_filter' => '', 'cover_filter' => ''])); ?>" 
+                        <?php
+                        // フィルター解除用のパラメータを構築
+                        $clear_params = $_GET;
+                        unset($clear_params['tag_filter']);
+                        unset($clear_params['cover_filter']);
+                        $clear_query = !empty($clear_params) ? '?' . http_build_query($clear_params) : '?';
+                        ?>
+                        <a href="<?php echo $clear_query; ?>"
                            class="inline-flex items-center px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                             <i class="fas fa-times mr-1"></i>
                             フィルター解除
@@ -300,23 +313,23 @@ if (isset($breadcrumbs)) {
             <!-- フィルター（ステータス＋特殊フィルター） -->
             <div class="flex flex-wrap gap-2">
                 <!-- ステータスフィルター -->
-                <a href="?status=<?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+                <a href="?status=<?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                    class="px-4 py-2 rounded-full text-sm font-medium transition-colors <?php echo empty($status_filter) ? 'bg-readnest-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                     すべて
                 </a>
-                <a href="?status=<?php echo BUY_SOMEDAY; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+                <a href="?status=<?php echo BUY_SOMEDAY; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                    class="px-4 py-2 rounded-full text-sm font-medium transition-colors <?php echo $status_filter == BUY_SOMEDAY ? 'bg-gray-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                     いつか買う
                 </a>
-                <a href="?status=<?php echo NOT_STARTED; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+                <a href="?status=<?php echo NOT_STARTED; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                    class="px-4 py-2 rounded-full text-sm font-medium transition-colors <?php echo $status_filter == NOT_STARTED ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                     未読
                 </a>
-                <a href="?status=<?php echo READING_NOW; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+                <a href="?status=<?php echo READING_NOW; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                    class="px-4 py-2 rounded-full text-sm font-medium transition-colors <?php echo $status_filter == READING_NOW ? 'bg-yellow-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                     読書中
                 </a>
-                <a href="?status=<?php echo READING_FINISH; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+                <a href="?status=<?php echo READING_FINISH; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                    class="px-4 py-2 rounded-full text-sm font-medium transition-colors <?php echo $status_filter == READING_FINISH ? 'bg-green-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                     読了
                 </a>
@@ -324,19 +337,19 @@ if (isset($breadcrumbs)) {
                 <!-- 特殊フィルター（表紙なし・タグなし） -->
                 <?php if ($is_own_bookshelf): ?>
                 <div class="inline-flex gap-2 pl-2 border-l-2 border-gray-300 dark:border-gray-600">
-                    <a href="?cover_filter=<?php echo $cover_filter === 'no_cover' ? '' : 'no_cover'; ?><?php echo !empty($status_filter) ? '&status=' . $status_filter : ''; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+                    <a href="?cover_filter=<?php echo $cover_filter === 'no_cover' ? '' : 'no_cover'; ?><?php echo !empty($status_filter) ? '&status=' . $status_filter : ''; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                        class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-all
-                              <?php echo $cover_filter === 'no_cover' 
-                                     ? 'bg-purple-600 text-white' 
+                              <?php echo $cover_filter === 'no_cover'
+                                     ? 'bg-purple-600 text-white'
                                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                         <i class="fas fa-image-slash mr-1.5 text-xs"></i>
                         表紙なし
                     </a>
-                    
-                    <a href="?tag_filter=<?php echo $tag_filter === 'no_tags' ? '' : 'no_tags'; ?><?php echo !empty($status_filter) ? '&status=' . $status_filter : ''; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?>" 
+
+                    <a href="?tag_filter=<?php echo $tag_filter === 'no_tags' ? '' : 'no_tags'; ?><?php echo !empty($status_filter) ? '&status=' . $status_filter : ''; ?><?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo $user_id_param; ?>"
                        class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-all
-                              <?php echo $tag_filter === 'no_tags' 
-                                     ? 'bg-indigo-600 text-white' 
+                              <?php echo $tag_filter === 'no_tags'
+                                     ? 'bg-indigo-600 text-white'
                                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'; ?>">
                         <i class="fas fa-tags mr-1.5 text-xs"></i>
                         タグなし
@@ -351,8 +364,8 @@ if (isset($breadcrumbs)) {
                     <i class="fas fa-sort mr-1"></i>並び順:
                 </label>
                 <div class="relative">
-                    <select id="sort-select" 
-                            onchange="location.href='?status=<?php echo $status_filter; ?>&sort=' + this.value + '<?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo !empty($tag_filter) ? '&tag_filter=' . urlencode($tag_filter) : ''; ?><?php echo !empty($cover_filter) ? '&cover_filter=' . urlencode($cover_filter) : ''; ?>'" 
+                    <select id="sort-select"
+                            onchange="location.href='?status=<?php echo $status_filter; ?>&sort=' + this.value + '<?php echo !empty($search_word) ? '&search_type=' . urlencode($search_type) . '&search_word=' . urlencode($search_word) : ''; ?><?php echo !empty($tag_filter) ? '&tag_filter=' . urlencode($tag_filter) : ''; ?><?php echo !empty($cover_filter) ? '&cover_filter=' . urlencode($cover_filter) : ''; ?><?php echo $user_id_param; ?>'"
                             class="appearance-none px-3 sm:px-4 py-2.5 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-readnest-primary focus:border-transparent transition-all duration-200 shadow-sm cursor-pointer max-w-[200px] sm:max-w-none">
                         <optgroup label="📅 日付で並べ替え">
                             <option value="update_date_desc" <?php echo $sort_order === 'update_date_desc' ? 'selected' : ''; ?>>更新日（新しい→古い）</option>
@@ -531,7 +544,7 @@ if (isset($breadcrumbs)) {
                             $fontSize = $author['font_size'] ?? 14;
                             $isFavorite = $author['is_favorite'] ?? false;
                             ?>
-                            <a href="/bookshelf.php?search_word=<?php echo urlencode($author['author']); ?>&search_type=author" 
+                            <a href="/bookshelf.php?search_word=<?php echo urlencode($author['author']); ?>&search_type=author<?php echo $user_id_param; ?>"
                                class="inline-block px-2 py-1 m-1 rounded-lg transition-all duration-300 hover:scale-110 bg-gradient-to-r <?php echo $colorClass; ?> text-white <?php echo $isFavorite ? 'ring-2 ring-yellow-400' : ''; ?>"
                                style="font-size: <?php echo $fontSize; ?>px;"
                                title="<?php echo htmlspecialchars($author['author']); ?> (<?php echo $author['book_count']; ?>冊)">
@@ -1528,8 +1541,8 @@ function tagCloudComponent() {
             this.tags.forEach(tag => {
                 const size = this.getTagSize(tag.tag_count, minCount, maxCount);
                 const color = this.getTagColor(tag.tag_count, minCount, maxCount);
-                const url = `?search_type=tag&search_word=${encodeURIComponent(tag.tag_name)}${this.currentStatus ? '&status=' + this.currentStatus : ''}`;
-                
+                const url = `?search_type=tag&search_word=${encodeURIComponent(tag.tag_name)}${this.currentStatus ? '&status=' + this.currentStatus : ''}<?php echo $user_id_param; ?>`;
+
                 // 現在の検索タグかどうかチェック
                 const isCurrentTag = '<?php echo $search_type === "tag" ? html($search_word) : ""; ?>' === tag.tag_name;
                 const highlightClass = isCurrentTag ? 'bg-green-100 ring-2 ring-green-500' : '';
