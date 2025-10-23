@@ -166,23 +166,52 @@ if (checkLogin()) {
     
     // ページ数更新処理
     if (isset($_POST['action']) && $_POST['action'] === 'update_pages' && isset($_POST['book_id']) && isset($_POST['total_pages'])) {
+        // CSRF検証
+        requireCSRFToken();
+
         $book_id = (int)$_POST['book_id'];
         $total_pages = (int)$_POST['total_pages'];
-        
+
         // ユーザーがこの本を所有しているか確認
         $sql = "SELECT user_id FROM b_book_list WHERE book_id = ? AND user_id = ?";
         $owner_check = $g_db->getOne($sql, array($book_id, $mine_user_id));
-        
+
         if ($owner_check) {
             // ページ数を更新
             $update_sql = "UPDATE b_book_list SET total_page = ? WHERE book_id = ? AND user_id = ?";
             $result = $g_db->query($update_sql, array($total_pages, $book_id, $mine_user_id));
-            
+
             if (DB::isError($result)) {
                 error_log("Error updating total pages: " . $result->getMessage());
             }
         }
-        
+
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
+    // 著者更新処理
+    if (isset($_POST['action']) && $_POST['action'] === 'update_author' && isset($_POST['book_id']) && isset($_POST['author'])) {
+        // CSRF検証
+        requireCSRFToken();
+
+        $book_id = (int)$_POST['book_id'];
+        $author = trim($_POST['author']);
+
+        // ユーザーがこの本を所有しているか確認
+        $sql = "SELECT user_id FROM b_book_list WHERE book_id = ? AND user_id = ?";
+        $owner_check = $g_db->getOne($sql, array($book_id, $mine_user_id));
+
+        if ($owner_check) {
+            // 著者を更新（update_dateは更新しない - 書誌情報の変更のため）
+            $update_sql = "UPDATE b_book_list SET author = ? WHERE book_id = ? AND user_id = ?";
+            $result = $g_db->query($update_sql, array($author, $book_id, $mine_user_id));
+
+            if (DB::isError($result)) {
+                error_log("Error updating author: " . $result->getMessage());
+            }
+        }
+
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
     }

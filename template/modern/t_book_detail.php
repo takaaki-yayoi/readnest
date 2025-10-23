@@ -227,16 +227,60 @@ ob_start();
                             <!-- 基本情報（コンパクト） -->
                             <div class="text-center">
                                 <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-2"><?php echo html(isset($book['title']) ? $book['title'] : ''); ?></h1>
-                                <p class="text-lg text-gray-700 dark:text-gray-300 mb-3">
+
+                                <!-- 著者名表示 -->
+                                <div class="text-lg text-gray-700 dark:text-gray-300 mb-3">
                                     <?php if (!empty($book['author'])): ?>
-                                        <a href="/author.php?name=<?php echo urlencode($book['author']); ?>" 
-                                           class="hover:text-readnest-primary transition-colors flex items-center justify-center space-x-1"
-                                           title="<?php echo html($book['author']); ?>の作家情報を見る">
-                                            <span><?php echo html($book['author']); ?></span>
-                                            <i class="fas fa-user-edit text-xs opacity-60"></i>
-                                        </a>
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <a href="/author.php?name=<?php echo urlencode($book['author']); ?>"
+                                               class="text-readnest-primary hover:text-readnest-primary-dark underline transition-colors"
+                                               title="<?php echo html($book['author']); ?>の作家情報を見る">
+                                                <?php echo html($book['author']); ?>
+                                            </a>
+                                            <?php if (isset($is_book_owner) && $is_book_owner): ?>
+                                            <button onclick="showAuthorEditForm()" class="text-blue-600 hover:text-blue-800 text-sm" title="著者を編集">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php elseif (isset($is_book_owner) && $is_book_owner): ?>
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <span class="text-gray-500 dark:text-gray-400">著者未設定</span>
+                                            <button onclick="showAuthorEditForm()" class="text-blue-600 hover:text-blue-800 text-sm" title="著者を編集">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
                                     <?php endif; ?>
-                                </p>
+
+                                    <?php if (isset($is_book_owner) && $is_book_owner): ?>
+                                    <!-- 編集フォーム -->
+                                    <div id="authorEditForm" style="display: none;">
+                                        <form action="" method="post" class="flex items-center justify-center space-x-2 mt-2">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="action" value="update_author">
+                                            <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
+                                            <input type="text" name="author" value="<?php echo html($book['author'] ?? ''); ?>"
+                                                   class="w-48 px-3 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-base focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                                                   placeholder="著者名" maxlength="100" required>
+                                            <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm" title="保存">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" onclick="hideAuthorEditForm()" class="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500 text-sm" title="キャンセル">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <script>
+                                    function showAuthorEditForm() {
+                                        document.getElementById('authorEditForm').style.display = 'block';
+                                        document.getElementById('authorEditForm').querySelector('input[name="author"]').focus();
+                                    }
+                                    function hideAuthorEditForm() {
+                                        document.getElementById('authorEditForm').style.display = 'none';
+                                    }
+                                    </script>
+                                    <?php endif; ?>
+                                </div>
                                 
                                 <!-- みんなの評価ページへのリンク -->
                                 <?php
@@ -346,20 +390,6 @@ ob_start();
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                                     <h3 class="font-semibold mb-3">書籍情報</h3>
                                     <dl class="grid grid-cols-1 gap-2 text-sm">
-                                        <?php if (!empty($book['author'])): ?>
-                                        <div class="flex">
-                                            <dt class="font-medium text-gray-600 dark:text-gray-400 w-20">著者:</dt>
-                                            <dd class="text-gray-900">
-                                                <a href="/add_book.php?keyword=<?php echo urlencode($book['author']); ?>" 
-                                                   class="hover:text-readnest-primary transition-colors inline-flex items-center space-x-1"
-                                                   title="「<?php echo html($book['author']); ?>」の作品を検索">
-                                                    <span><?php echo html($book['author']); ?></span>
-                                                    <i class="fas fa-search text-xs opacity-60"></i>
-                                                </a>
-                                            </dd>
-                                        </div>
-                                        <?php endif; ?>
-                                        
                                         <?php if (!empty($book['primary_genre'])): ?>
                                         <div class="flex">
                                             <dt class="font-medium text-gray-600 dark:text-gray-400 w-20">ジャンル:</dt>
@@ -411,11 +441,12 @@ ob_start();
                                                 </div>
                                                 
                                                 <?php if (isset($_SESSION['AUTH_USER']) && isset($is_book_owner) && $is_book_owner): ?>
-                                                <form x-show="editingPages" 
-                                                      action="" 
-                                                      method="post" 
+                                                <form x-show="editingPages"
+                                                      action=""
+                                                      method="post"
                                                       class="flex items-center space-x-2"
                                                       @submit.prevent="if(newPages && newPages > 0) { $el.submit(); }">
+                                                    <?php csrfFieldTag(); ?>
                                                     <input type="hidden" name="action" value="update_pages">
                                                     <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
                                                     <input type="number" 
@@ -1435,7 +1466,38 @@ ob_start();
                 </div>
             </div>
         </div>
-        
+
+        <!-- 削除ボタン -->
+        <?php if (isset($_SESSION['AUTH_USER']) && isset($is_book_owner) && $is_book_owner): ?>
+        <div class="mt-8" x-data="{ showDeleteConfirm: false }">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
+                <button @click="showDeleteConfirm = true"
+                        class="text-red-600 hover:text-red-800 transition-colors font-medium">
+                    <i class="fas fa-trash-alt mr-2"></i>本棚から削除
+                </button>
+
+                <!-- 削除確認ダイアログ -->
+                <div x-show="showDeleteConfirm" x-transition class="mt-4 max-w-md mx-auto">
+                    <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                        <p class="text-red-800 mb-4">本当にこの本を本棚から削除しますか？</p>
+                        <form action="" method="post" class="flex space-x-3">
+                            <?php csrfFieldTag(); ?>
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
+                            <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors">
+                                削除する
+                            </button>
+                            <button type="button" @click="showDeleteConfirm = false"
+                                    class="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 rounded-md transition-colors">
+                                キャンセル
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- AI推薦セクション -->
         <?php if (!empty($ai_recommendations)): ?>
         <div class="mt-8" id="ai-recommendations">
@@ -1757,37 +1819,6 @@ ob_start();
                 </div>
             </div>
         </div>
-        
-        <!-- 削除ボタン（ページ最下部） -->
-        <?php if (isset($_SESSION['AUTH_USER']) && isset($is_book_owner) && $is_book_owner): ?>
-        <div class="mt-8" x-data="{ showDeleteConfirm: false }">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
-                <button @click="showDeleteConfirm = true" 
-                        class="text-red-600 hover:text-red-800 transition-colors font-medium">
-                    <i class="fas fa-trash-alt mr-2"></i>本棚から削除
-                </button>
-                
-                <!-- 削除確認ダイアログ -->
-                <div x-show="showDeleteConfirm" x-transition class="mt-4 max-w-md mx-auto">
-                    <div class="bg-red-50 rounded-lg p-4 border border-red-200">
-                        <p class="text-red-800 mb-4">本当にこの本を本棚から削除しますか？</p>
-                        <form action="" method="post" class="flex space-x-3">
-                            <?php csrfFieldTag(); ?>
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
-                            <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors">
-                                削除する
-                            </button>
-                            <button type="button" @click="showDeleteConfirm = false" 
-                                    class="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 rounded-md transition-colors">
-                                キャンセル
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
     </div>
 </div>
 
