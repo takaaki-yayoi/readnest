@@ -642,7 +642,12 @@ function getBookshelf($user_id, $status, $order='update_date_desc') {
   
   // b_book_repositoryテーブルから著者情報も取得
   // ユーザーが編集した著者情報（bl.author）を優先
-  $select_sql = "SELECT bl.*, COALESCE(bl.author, br.author, '') as author
+  // 注意: bl.*とCOALESCEを併用すると上書きされないため、authorを除外してから追加
+  $select_sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
+                 bl.image_url, bl.detail_url, bl.status, bl.rating, bl.memo,
+                 bl.total_page, bl.current_page, bl.create_date, bl.update_date,
+                 bl.finished_date, bl.number_of_refer, bl.memo_updated,
+                 COALESCE(bl.author, br.author, '') as author
                  FROM b_book_list bl
                  LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
                  WHERE bl.user_id = ? $status_where_clause
@@ -755,7 +760,12 @@ function getBookInformation($book_id) {
   
   // b_book_repositoryテーブルから著者情報も取得
   // ユーザーが編集した著者情報（bl.author）を優先
-  $select_sql = 'SELECT bl.*, COALESCE(bl.author, br.author, "") as author
+  // 注意: bl.*とCOALESCEを併用すると上書きされないため、authorを除外してから追加
+  $select_sql = 'SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
+                 bl.image_url, bl.detail_url, bl.status, bl.rating, bl.memo,
+                 bl.total_page, bl.current_page, bl.create_date, bl.update_date,
+                 bl.finished_date, bl.number_of_refer, bl.memo_updated,
+                 COALESCE(bl.author, br.author, "") as author
                  FROM b_book_list bl
                  LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
                  WHERE bl.book_id = ?';

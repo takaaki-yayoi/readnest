@@ -74,16 +74,9 @@ $g_meta_description = $is_own_bookshelf
     : "{$d_target_nickname}さんの読書記録をご覧ください。";
 $g_meta_keyword = "本棚,読書記録,読書進捗,ReadNest,{$d_target_nickname}";
 
-// キャッシュライブラリを読み込み
+// キャッシュライブラリを読み込み（統計情報のキャッシュ用）
 require_once(dirname(__FILE__) . '/library/cache.php');
 $cache = getCache();
-
-// キャッシュクリア処理（clear_cacheパラメータがある場合）
-if (isset($_GET['clear_cache']) && $is_own_bookshelf) {
-    // 本棚関連のキャッシュを全てクリア
-    $cache->delete('bookshelf_stats_' . md5((string)$user_id));
-    // 本のキャッシュは個別に削除できないので、ページを再読み込み
-}
 
 // 本棚データ取得
 $status_filter = $_GET['status'] ?? '';
@@ -254,24 +247,11 @@ function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $s
     global $g_star_array, $cache, $g_db, $mine_user_id;
     
     
-    // キャッシュキーを生成（検索条件も含める）
-    $booksCacheKey = 'bookshelf_books_' . md5((string)$user_id . '_' . $status . '_' . $sort . '_' . $search_type . '_' . $search_word . '_' . $filter_year . '_' . $filter_month . '_' . $tag_filter . '_' . $cover_filter);
-    $booksCacheTime = 300; // 5分キャッシュ
-
-    // clear_cacheパラメータがある場合はキャッシュをクリア
-    if (isset($_GET['clear_cache'])) {
-        $cache->delete($booksCacheKey);
-    }
-
-    // 検索や日付フィルタ、タグフィルタ、表紙フィルタがある場合はキャッシュを使わない
+    // 本棚データは常に最新のものを取得（キャッシュは使用しない）
+    // Keep it simple: リアルタイム性が重要なため、キャッシュを無効化
     if (!empty($search_word) || !empty($filter_year) || !empty($filter_month) || !empty($tag_filter) || !empty($cover_filter)) {
         $books = getBookshelfWithSearch($user_id, $status, $sort, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
     } else {
-        // キャッシュから取得を試みる
-        $cachedBooks = $cache->get($booksCacheKey);
-        if ($cachedBooks !== false) {
-            return $cachedBooks;
-        }
         $books = getBookshelf($user_id, $status, $sort);
     }
     $formatted_books = [];
@@ -385,10 +365,8 @@ function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $s
             'is_favorite' => $is_favorite
         ];
     }
-    
-    // キャッシュに保存
-    $cache->set($booksCacheKey, $formatted_books, $booksCacheTime);
-    
+
+    // キャッシュは使用しない（常に最新データを提供）
     return $formatted_books;
 }
 
@@ -437,7 +415,11 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
     
     // b_book_repositoryテーブルから著者情報も取得
     // ユーザーが編集した著者情報（bl.author）を優先
-    $sql = "SELECT bl.*,
+    // 注意: bl.*とCOALESCEを併用すると上書きされないため、authorを除外してから追加
+    $sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
+            bl.image_url, bl.detail_url, bl.status, bl.rating, bl.memo,
+            bl.total_page, bl.current_page, bl.create_date, bl.update_date,
+            bl.finished_date, bl.number_of_refer, bl.memo_updated,
             COALESCE(bl.author, br.author, '') as author
             FROM b_book_list bl
             LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin

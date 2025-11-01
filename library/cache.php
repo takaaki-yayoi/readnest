@@ -78,12 +78,13 @@ class SimpleCache {
      */
     public function delete($key) {
         $filename = $this->getCacheFilename($key);
-        
+
         if (file_exists($filename)) {
             return @unlink($filename);
         }
-        
-        return true;
+
+        // ファイルが存在しない場合はfalseを返す（削除されていないため）
+        return false;
     }
 
     /**
@@ -126,8 +127,64 @@ class SimpleCache {
     }
 
     /**
+     * 特定のユーザーの本棚キャッシュを全て削除
+     *
+     * bookshelf_books_*, bookshelf_stats_*, user_tags_* のキャッシュを削除
+     *
+     * @param string $user_id ユーザーID
+     * @return int 削除したファイル数
+     */
+    public function deleteBookshelfCache($user_id) {
+        $deletedCount = 0;
+        $attemptedKeys = [];
+
+        // 本棚統計キャッシュ
+        $key = 'bookshelf_stats_' . md5((string)$user_id);
+        if ($this->delete($key)) {
+            $deletedCount++;
+        }
+        $attemptedKeys[] = $key;
+
+        // タグクラウドキャッシュ
+        $key = 'user_tags_' . md5((string)$user_id);
+        if ($this->delete($key)) {
+            $deletedCount++;
+        }
+        $attemptedKeys[] = $key;
+
+        // 本棚の本一覧キャッシュ - 全ての組み合わせを削除
+        $statuses = ['', '0', '1', '2', '3', '4'];
+        $sorts = [
+            'update_date_desc', 'update_date_asc',
+            'title_asc', 'title_desc',
+            'author_asc', 'author_desc',
+            'rating_desc', 'rating_asc',
+            'finished_date_desc', 'finished_date_asc',
+            'pages_desc', 'pages_asc',
+            'created_date_desc', 'created_date_asc'
+        ];
+
+        // 可能な全ての組み合わせのキャッシュを削除
+        foreach ($statuses as $status) {
+            foreach ($sorts as $sort) {
+                // 検索条件なしの基本キー
+                $key = 'bookshelf_books_' . md5((string)$user_id . '_' . $status . '_' . $sort . '_____');
+                if ($this->delete($key)) {
+                    $deletedCount++;
+                }
+                $attemptedKeys[] = $key;
+            }
+        }
+
+        // デバッグ用: 試行したキー数と実際に削除されたファイル数をログ
+        error_log("Cache deletion: attempted " . count($attemptedKeys) . " keys, actually deleted $deletedCount files for user: $user_id");
+
+        return $deletedCount;
+    }
+
+    /**
      * キャッシュ統計情報を取得
-     * 
+     *
      * @return array
      */
     public function getStats() {
@@ -135,10 +192,10 @@ class SimpleCache {
         $totalSize = 0;
         $validCount = 0;
         $expiredCount = 0;
-        
+
         foreach ($files as $file) {
             $totalSize += filesize($file);
-            
+
             $content = file_get_contents($file);
             if ($content !== false) {
                 $data = unserialize($content);
@@ -149,7 +206,7 @@ class SimpleCache {
                 }
             }
         }
-        
+
         return [
             'total_files' => count($files),
             'valid_count' => $validCount,
