@@ -39,7 +39,7 @@ if (strlen($search_query) >= 2) {
                 SELECT DISTINCT
                     bl.book_id,
                     bl.name as title,
-                    COALESCE(br.author, bl.author, '') as author,
+                    COALESCE(bl.author, br.author, '') as author,
                     bl.image_url,
                     bl.status,
                     bl.rating,
@@ -48,7 +48,7 @@ if (strlen($search_query) >= 2) {
                     bl.update_date,
                     bl.memo,
                     bl.finished_date,
-                    CASE 
+                    CASE
                         WHEN bl.name LIKE ? THEN 1
                         WHEN bl.name LIKE ? THEN 2
                         ELSE 3
@@ -58,7 +58,7 @@ if (strlen($search_query) >= 2) {
                 WHERE bl.user_id = ?
                 AND (
                     bl.name LIKE ?
-                    OR COALESCE(br.author, bl.author, '') LIKE ?
+                    OR COALESCE(bl.author, br.author, '') LIKE ?
                 )
                 ORDER BY relevance, bl.update_date DESC
                 LIMIT ? OFFSET ?
@@ -88,7 +88,7 @@ if (strlen($search_query) >= 2) {
                 WHERE bl.user_id = ?
                 AND (
                     bl.name LIKE ?
-                    OR COALESCE(br.author, bl.author, '') LIKE ?
+                    OR COALESCE(bl.author, br.author, '') LIKE ?
                 )
             ";
             $total_books = $g_db->getOne($count_sql, [$user_id, '%' . $search_query . '%', '%' . $search_query . '%']);
@@ -102,16 +102,16 @@ if (strlen($search_query) >= 2) {
             $offset = ($page - 1) * $per_page;
             $author_sql = "
                 SELECT DISTINCT
-                    COALESCE(br.author, bl.author, '') as author,
+                    COALESCE(bl.author, br.author, '') as author,
                     COUNT(DISTINCT bl.book_id) as book_count,
                     AVG(CASE WHEN bl.rating > 0 THEN bl.rating ELSE NULL END) as avg_rating,
                     GROUP_CONCAT(DISTINCT bl.name ORDER BY bl.update_date DESC SEPARATOR '|||') as book_titles
                 FROM b_book_list bl
                 LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
                 WHERE bl.user_id = ?
-                AND COALESCE(br.author, bl.author, '') LIKE ?
-                AND COALESCE(br.author, bl.author, '') != ''
-                GROUP BY COALESCE(br.author, bl.author, '')
+                AND COALESCE(bl.author, br.author, '') LIKE ?
+                AND COALESCE(bl.author, br.author, '') != ''
+                GROUP BY COALESCE(bl.author, br.author, '')
                 ORDER BY book_count DESC
                 LIMIT ? OFFSET ?
             ";
@@ -128,12 +128,12 @@ if (strlen($search_query) >= 2) {
             
             // 総件数を取得
             $count_sql = "
-                SELECT COUNT(DISTINCT COALESCE(br.author, bl.author, ''))
+                SELECT COUNT(DISTINCT COALESCE(bl.author, br.author, ''))
                 FROM b_book_list bl
                 LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
                 WHERE bl.user_id = ?
-                AND COALESCE(br.author, bl.author, '') LIKE ?
-                AND COALESCE(br.author, bl.author, '') != ''
+                AND COALESCE(bl.author, br.author, '') LIKE ?
+                AND COALESCE(bl.author, br.author, '') != ''
             ";
             $total_authors = $g_db->getOne($count_sql, [$user_id, '%' . $search_query . '%']);
             if (!DB::isError($total_authors)) {
@@ -145,10 +145,10 @@ if (strlen($search_query) >= 2) {
         if ($search_type === 'reviews') {
             $offset = ($page - 1) * $per_page;
             $review_sql = "
-                SELECT 
+                SELECT
                     bl.book_id,
                     bl.name as title,
-                    COALESCE(br.author, bl.author, '') as author,
+                    COALESCE(bl.author, br.author, '') as author,
                     bl.image_url,
                     bl.rating,
                     bl.memo,

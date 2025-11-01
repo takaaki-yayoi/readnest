@@ -166,8 +166,8 @@ if ($profile_accessible) {
         $user_level_info = getReadingLevel($reading_stats['total_pages']);
         
         // 最近読んだ本（b_book_repositoryから著者情報も取得）
-        $recent_books_sql = "SELECT bl.book_id, bl.name, 
-                           COALESCE(br.author, bl.author, '') as author,
+        $recent_books_sql = "SELECT bl.book_id, bl.name,
+                           COALESCE(bl.author, br.author, '') as author,
                            bl.image_url, bl.update_date, bl.status
                            FROM b_book_list bl
                            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin

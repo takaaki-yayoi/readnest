@@ -43,7 +43,7 @@ try {
             SELECT DISTINCT
                 bl.book_id,
                 bl.name as title,
-                COALESCE(br.author, bl.author, '') as author,
+                COALESCE(bl.author, br.author, '') as author,
                 bl.image_url,
                 bl.status,
                 bl.rating,
@@ -52,7 +52,7 @@ try {
                 bl.update_date,
                 bl.amazon_id as asin,
                 bl.isbn,
-                CASE 
+                CASE
                     WHEN bl.name LIKE ? THEN 1
                     WHEN bl.name LIKE ? THEN 2
                     ELSE 3
@@ -62,7 +62,7 @@ try {
             WHERE bl.user_id = ?
             AND (
                 bl.name LIKE ?
-                OR COALESCE(br.author, bl.author, '') LIKE ?
+                OR COALESCE(bl.author, br.author, '') LIKE ?
             )
             ORDER BY relevance, bl.update_date DESC
             LIMIT ?
@@ -106,15 +106,15 @@ try {
     if ($type === 'all' || $type === 'authors') {
         $author_sql = "
             SELECT DISTINCT
-                COALESCE(br.author, bl.author, '') as author,
+                COALESCE(bl.author, br.author, '') as author,
                 COUNT(DISTINCT bl.book_id) as book_count,
                 AVG(CASE WHEN bl.rating > 0 THEN bl.rating ELSE NULL END) as avg_rating
             FROM b_book_list bl
             LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
             WHERE bl.user_id = ?
-            AND COALESCE(br.author, bl.author, '') LIKE ?
-            AND COALESCE(br.author, bl.author, '') != ''
-            GROUP BY COALESCE(br.author, bl.author, '')
+            AND COALESCE(bl.author, br.author, '') LIKE ?
+            AND COALESCE(bl.author, br.author, '') != ''
+            GROUP BY COALESCE(bl.author, br.author, '')
             ORDER BY book_count DESC
             LIMIT 10
         ";

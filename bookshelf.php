@@ -78,6 +78,13 @@ $g_meta_keyword = "本棚,読書記録,読書進捗,ReadNest,{$d_target_nickname
 require_once(dirname(__FILE__) . '/library/cache.php');
 $cache = getCache();
 
+// キャッシュクリア処理（clear_cacheパラメータがある場合）
+if (isset($_GET['clear_cache']) && $is_own_bookshelf) {
+    // 本棚関連のキャッシュを全てクリア
+    $cache->delete('bookshelf_stats_' . md5((string)$user_id));
+    // 本のキャッシュは個別に削除できないので、ページを再読み込み
+}
+
 // 本棚データ取得
 $status_filter = $_GET['status'] ?? '';
 $sort_order = $_GET['sort'] ?? 'update_date_desc';
@@ -250,7 +257,12 @@ function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $s
     // キャッシュキーを生成（検索条件も含める）
     $booksCacheKey = 'bookshelf_books_' . md5((string)$user_id . '_' . $status . '_' . $sort . '_' . $search_type . '_' . $search_word . '_' . $filter_year . '_' . $filter_month . '_' . $tag_filter . '_' . $cover_filter);
     $booksCacheTime = 300; // 5分キャッシュ
-    
+
+    // clear_cacheパラメータがある場合はキャッシュをクリア
+    if (isset($_GET['clear_cache'])) {
+        $cache->delete($booksCacheKey);
+    }
+
     // 検索や日付フィルタ、タグフィルタ、表紙フィルタがある場合はキャッシュを使わない
     if (!empty($search_word) || !empty($filter_year) || !empty($filter_month) || !empty($tag_filter) || !empty($cover_filter)) {
         $books = getBookshelfWithSearch($user_id, $status, $sort, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
@@ -424,10 +436,10 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
     
     
     // b_book_repositoryテーブルから著者情報も取得
-    // bl.*でbl.authorも含まれるが、明示的にauthorカラムを上書き
-    $sql = "SELECT bl.*, 
-            COALESCE(br.author, bl.author, '') as author 
-            FROM b_book_list bl 
+    // ユーザーが編集した著者情報（bl.author）を優先
+    $sql = "SELECT bl.*,
+            COALESCE(bl.author, br.author, '') as author
+            FROM b_book_list bl
             LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
             WHERE bl.user_id = ?";
     $params = [$user_id];
@@ -484,13 +496,21 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
     // 検索条件
     if (!empty($search_word)) {
         if ($search_type === 'author') {
-            // 著者検索: b_book_repositoryテーブルと結合して検索（曖昧検索対応）
-            $sql .= " AND amazon_id IN (
-                SELECT asin FROM b_book_repository 
-                WHERE author LIKE ? 
-                OR author LIKE ?
-                OR REPLACE(author, ' ', '') LIKE ?
+            // 著者検索: bl.author（ユーザー編集）とbr.author（レポジトリ）の両方を検索（曖昧検索対応）
+            $sql .= " AND (
+                bl.author LIKE ?
+                OR bl.author LIKE ?
+                OR REPLACE(bl.author, ' ', '') LIKE ?
+                OR amazon_id IN (
+                    SELECT asin FROM b_book_repository
+                    WHERE author LIKE ?
+                    OR author LIKE ?
+                    OR REPLACE(author, ' ', '') LIKE ?
+                )
             )";
+            $params[] = '%' . $search_word . '%';
+            $params[] = '%' . str_replace(' ', '%', $search_word) . '%'; // スペースを%に置換
+            $params[] = '%' . str_replace(' ', '', $search_word) . '%'; // スペースを削除
             $params[] = '%' . $search_word . '%';
             $params[] = '%' . str_replace(' ', '%', $search_word) . '%'; // スペースを%に置換
             $params[] = '%' . str_replace(' ', '', $search_word) . '%'; // スペースを削除
@@ -503,11 +523,16 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
             $params[] = $user_id;
             $params[] = $search_word;
         } else {
-            // デフォルトはタイトルと著者両方で検索
-            $sql .= " AND (name LIKE ? OR amazon_id IN (
-                SELECT asin FROM b_book_repository 
-                WHERE author LIKE ?
-            ))";
+            // デフォルトはタイトルと著者両方で検索（bl.authorとbr.authorの両方）
+            $sql .= " AND (
+                name LIKE ?
+                OR bl.author LIKE ?
+                OR amazon_id IN (
+                    SELECT asin FROM b_book_repository
+                    WHERE author LIKE ?
+                )
+            )";
+            $params[] = '%' . $search_word . '%';
             $params[] = '%' . $search_word . '%';
             $params[] = '%' . $search_word . '%';
         }

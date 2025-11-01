@@ -94,7 +94,7 @@ if ($cachedData !== false) {
         be.page,
         be.memo as comment,
         COALESCE(bl.name, CONCAT('Book ID: ', be.book_id)) as book_title,
-        COALESCE(br.author, bl.author, '') as author,
+        COALESCE(bl.author, br.author, '') as author,
         COALESCE(bl.image_url, '') as image_url,
         bl.amazon_id,
         u.nickname,

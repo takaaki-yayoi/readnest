@@ -209,6 +209,26 @@ if (checkLogin()) {
 
             if (DB::isError($result)) {
                 error_log("Error updating author: " . $result->getMessage());
+            } else {
+                // 著者更新成功時、本棚のキャッシュをクリア
+                require_once(dirname(__FILE__) . '/library/cache.php');
+                $cache = getCache();
+
+                // 本棚統計キャッシュをクリア
+                $cache->delete('bookshelf_stats_' . md5((string)$mine_user_id));
+
+                // 本棚の本一覧キャッシュをクリア（全ステータス・全ソート順）
+                $statuses = ['', '0', '1', '2', '3', '4']; // 全ステータス
+                $sorts = ['update_date_desc', 'update_date_asc', 'title_asc', 'title_desc', 'author_asc', 'author_desc', 'rating_desc', 'rating_asc'];
+                foreach ($statuses as $status) {
+                    foreach ($sorts as $sort) {
+                        $booksCacheKey = 'bookshelf_books_' . md5((string)$mine_user_id . '_' . $status . '_' . $sort . '_____');
+                        $cache->delete($booksCacheKey);
+                    }
+                }
+
+                // タグクラウドキャッシュもクリア（念のため）
+                $cache->delete('user_tags_' . md5((string)$mine_user_id));
             }
         }
 

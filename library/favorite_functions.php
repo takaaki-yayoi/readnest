@@ -44,9 +44,9 @@ function getUserFavoriteBooks($user_id, $limit = 100, $offset = 0, $public_only 
     global $g_db;
     
     $sql = sprintf(
-        "SELECT 
+        "SELECT
             bl.*,
-            COALESCE(br.author, bl.author, '') as author,
+            COALESCE(bl.author, br.author, '') as author,
             f.created_at as favorite_date,
             f.is_public,
             f.sort_order
