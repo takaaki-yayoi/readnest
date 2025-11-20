@@ -879,13 +879,16 @@ ob_start();
                                         </div>
                                         <?php endif; ?>
 
-                                        <!-- いいねボタン（ログインユーザーかつ本の所有者でない場合） -->
+                                        <!-- いいねボタンまたはいいね数表示 -->
+                                        <?php
+                                        require_once(dirname(dirname(dirname(__FILE__))) . '/library/like_helpers.php');
+                                        $review_target_id = generateReviewTargetId($book['book_id'], $public_user_review['user_id']);
+                                        $like_count = getLikeCount('review', $review_target_id);
+                                        ?>
                                         <?php if ($login_flag && $mine_user_id != $public_user_review['user_id']): ?>
+                                        <!-- いいねボタン（ログインユーザーかつ本の所有者でない場合） -->
                                         <div class="mt-3">
                                             <?php
-                                            require_once(dirname(dirname(dirname(__FILE__))) . '/library/like_helpers.php');
-                                            $review_target_id = generateReviewTargetId($book['book_id'], $public_user_review['user_id']);
-                                            $like_count = getLikeCount('review', $review_target_id);
                                             $is_liked = isUserLiked($mine_user_id, 'review', $review_target_id);
                                             echo generateLikeButton(
                                                 'review',
