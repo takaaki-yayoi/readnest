@@ -770,12 +770,40 @@ ob_start();
                     <!-- 右側：レビューと読書進捗 -->
                     <div class="lg:col-span-1 flex flex-col space-y-6">
                         <!-- 本の説明文（Google Books APIから取得） -->
-                        <?php 
-                        // b_book_repositoryテーブルから説明文を取得
-                        $description_sql = "SELECT description FROM b_book_repository WHERE asin = ?";
-                        $book_description = $g_db->getOne($description_sql, [$book['amazon_id'] ?? $book['isbn'] ?? '']);
+                        <?php
+                        // 手動追加の本（amazon_idがMANUAL_で始まる、またはisbn/amazon_idが両方空）の場合は説明文を表示しない
+                        $is_manual_book = false;
+                        if (!empty($book['amazon_id'])) {
+                            $is_manual_book = (strpos($book['amazon_id'], 'MANUAL_') === 0);
+                        } elseif (empty($book['amazon_id']) && empty($book['isbn'])) {
+                            $is_manual_book = true;
+                        }
+
+                        $book_description = null;
+                        $is_valid_description = false;
+
+                        if (!$is_manual_book) {
+                            // b_book_repositoryテーブルから説明文を取得
+                            $description_sql = "SELECT description FROM b_book_repository WHERE asin = ?";
+                            $book_description = $g_db->getOne($description_sql, [$book['amazon_id'] ?? $book['isbn'] ?? '']);
+
+                            // 説明文の品質チェック：日本語の本なのに英語の説明文の場合は表示しない
+                            if (!empty($book_description) && !DB::isError($book_description)) {
+                                // タイトルが日本語を含む場合
+                                $has_japanese_title = preg_match('/[\x{3040}-\x{309F}\x{30A0}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $book['name'] ?? '');
+
+                                if ($has_japanese_title) {
+                                    // タイトルに日本語があるなら、説明文も日本語を含むべき
+                                    $has_japanese_description = preg_match('/[\x{3040}-\x{309F}\x{30A0}-\x{30FF}\x{4E00}-\x{9FFF}]/u', $book_description);
+                                    $is_valid_description = $has_japanese_description;
+                                } else {
+                                    // タイトルが英語の本なら、説明文はそのまま表示
+                                    $is_valid_description = true;
+                                }
+                            }
+                        }
                         ?>
-                        <?php if (!empty($book_description) && !DB::isError($book_description)): ?>
+                        <?php if ($is_valid_description): ?>
                         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mt-4">
                             <h3 class="font-semibold mb-3 flex items-center">
                                 <i class="fas fa-book-open mr-2 text-gray-600 dark:text-gray-400"></i>
