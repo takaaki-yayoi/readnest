@@ -1,2 +1,5 @@
 RewriteEngine On
-RewriteRule ^messages$ messages.php [L]
+
+# Authorizationヘッダーを環境変数として渡す
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
