@@ -94,8 +94,17 @@ if (!$message) {
 }
 
 // MCPメッセージを処理
+error_log("MCP message received: method=" . ($message['method'] ?? 'none') . ", user_id=$user_id");
 $response = handleMcpMessage($message, $user_id);
 
+// notificationの場合はレスポンスを返さない
+if ($response === null) {
+    error_log("MCP notification processed (no response)");
+    http_response_code(204); // No Content
+    exit;
+}
+
+error_log("MCP response: " . json_encode($response));
 echo json_encode($response, JSON_UNESCAPED_UNICODE);
 
 /**
@@ -122,6 +131,10 @@ function handleMcpMessage($message, $user_id) {
                     ]
                 ]
             ];
+
+        case 'notifications/initialized':
+            // クライアントの初期化完了通知（レスポンス不要）
+            return null;
 
         case 'tools/list':
             return [
