@@ -158,6 +158,7 @@ if ($grant_type === 'refresh_token') {
     $refresh_token = $_POST['refresh_token'] ?? '';
 
     if (empty($refresh_token)) {
+        error_log("Refresh token missing");
         http_response_code(400);
         echo json_encode(['error' => 'invalid_request']);
         exit;
@@ -168,9 +169,17 @@ if ($grant_type === 'refresh_token') {
                     WHERE refresh_token = ? AND client_id = ?";
     $refresh_data = $g_db->getRow($refresh_sql, [$refresh_token, $client_id], DB_FETCHMODE_ASSOC);
 
-    if (DB::isError($refresh_data) || !$refresh_data) {
+    if (DB::isError($refresh_data)) {
+        error_log("DB error fetching refresh token: " . $refresh_data->getMessage());
         http_response_code(400);
-        echo json_encode(['error' => 'invalid_grant']);
+        echo json_encode(['error' => 'invalid_grant', 'error_description' => 'Database error']);
+        exit;
+    }
+
+    if (!$refresh_data) {
+        error_log("Refresh token not found: $refresh_token for client: $client_id");
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid_grant', 'error_description' => 'Refresh token not found']);
         exit;
     }
 
