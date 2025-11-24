@@ -161,6 +161,12 @@ ob_start();
                         <span class="font-medium text-gray-900 dark:text-gray-100">X（Twitter）連携</span>
                     </div>
                 </a>
+                <a href="#api-integration" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <i class="fas fa-plug text-readnest-primary text-xl mr-3"></i>
+                        <span class="font-medium text-gray-900 dark:text-gray-100">API連携（Claude.ai）</span>
+                    </div>
+                </a>
                 <a href="/leveling_guide.php" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center">
                         <i class="fas fa-trophy text-readnest-primary text-xl mr-3"></i>
@@ -2154,6 +2160,121 @@ ob_start();
                         <p class="text-yellow-800 dark:text-yellow-300">
                             <i class="fas fa-info-circle mr-2"></i>
                             <strong>注意：</strong>読書記録が「公開」設定の場合のみ投稿されます。
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API連携（Claude.ai） -->
+            <section id="api-integration" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                    <i class="fas fa-plug text-readnest-primary mr-3"></i>
+                    API連携（Claude.ai）
+                </h2>
+
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🤖 Claude.aiと連携</h3>
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                Claude.aiからあなたの本棚データに直接アクセスできるようになります。
+                                読書統計の確認や本の検索などを、会話形式で簡単に行えます。
+                            </p>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                                <p class="text-sm text-blue-800 dark:text-blue-300">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>できること：</strong>本棚の閲覧、読書統計の取得、本の検索など
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🔗 連携手順</h3>
+                        <div class="grid gap-4">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">1</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-2">OAuthクライアントを作成</p>
+                                        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside ml-2">
+                                            <li>
+                                                <a href="/account.php" class="text-readnest-primary hover:underline">アカウント設定</a> →
+                                                「API連携設定」タブ →
+                                                「OAuthクライアントを管理」をクリック
+                                            </li>
+                                            <li>クライアント名: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">Claude.ai</code></li>
+                                            <li>リダイレクトURI: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">https://claude.ai/api/mcp/auth_callback</code></li>
+                                            <li><strong>Client IDとClient Secretをコピー</strong>（一度しか表示されません）</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">2</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-2">Claude.aiで設定</p>
+                                        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside ml-2">
+                                            <li>Claude.aiで「Custom Connectors」を開く</li>
+                                            <li>「Add custom connector」をクリック</li>
+                                            <li>Name: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">ReadNest</code></li>
+                                            <li>URL: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">https://readnest.jp/mcp/messages.php</code></li>
+                                            <li>Advanced settingsを開いて、Client IDとSecretを入力</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">3</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-2">認可して完了</p>
+                                        <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside ml-2">
+                                            <li>「Add」→「Connect」をクリック</li>
+                                            <li>ReadNestの認可画面で「許可する」をクリック</li>
+                                            <li>接続完了！</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">💬 使い方の例</h3>
+                        <div class="space-y-3">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                <p class="text-sm font-mono text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-comment text-readnest-primary mr-2"></i>
+                                    「本棚の本を見せて」
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                <p class="text-sm font-mono text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-comment text-readnest-primary mr-2"></i>
+                                    「読書統計を教えて」
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                <p class="text-sm font-mono text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-comment text-readnest-primary mr-2"></i>
+                                    「積読の本をリストアップして」
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                <p class="text-sm font-mono text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-comment text-readnest-primary mr-2"></i>
+                                    「読書中の本の進捗は？」
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6">
+                        <p class="text-yellow-800 dark:text-yellow-300">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            <strong>セキュリティ：</strong>OAuth 2.0を使用した安全な認証です。ReadNestのパスワードをClaude.aiに入力する必要はありません。
                         </p>
                     </div>
                 </div>
