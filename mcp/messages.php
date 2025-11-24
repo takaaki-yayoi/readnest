@@ -167,7 +167,7 @@ function handleMcpMessage($message, $user_id) {
   - reading: 読書中
   - finished: 読了
   - read: 既読
-- limit (optional): 取得件数 (デフォルト: 100)
+- limit (optional): 取得件数 (デフォルト: 500、最大: 5000)
 - offset (optional): オフセット (デフォルト: 0)',
                             'inputSchema' => [
                                 'type' => 'object',
@@ -179,8 +179,8 @@ function handleMcpMessage($message, $user_id) {
                                     ],
                                     'limit' => [
                                         'type' => 'integer',
-                                        'description' => '取得件数',
-                                        'default' => 100
+                                        'description' => '取得件数（最大5000）',
+                                        'default' => 500
                                     ],
                                     'offset' => [
                                         'type' => 'integer',
@@ -247,7 +247,7 @@ function handleGetBookshelf($args, $user_id, $id) {
     global $g_db;
 
     $status = $args['status'] ?? null;
-    $limit = min((int)($args['limit'] ?? 100), 1000);
+    $limit = min((int)($args['limit'] ?? 500), 5000);
     $offset = (int)($args['offset'] ?? 0);
 
     $status_map = [
