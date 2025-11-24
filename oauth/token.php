@@ -52,12 +52,18 @@ if (DB::isError($valid_client) || !$valid_client) {
 }
 
 $grant_type = $_POST['grant_type'] ?? '';
+$resource = $_POST['resource'] ?? ''; // RFC 8707
 
 // authorization_codeグラント
 if ($grant_type === 'authorization_code') {
     $code = $_POST['code'] ?? '';
     $redirect_uri = $_POST['redirect_uri'] ?? '';
     $code_verifier = $_POST['code_verifier'] ?? '';
+
+    // resourceパラメータのログ記録（MCP仕様）
+    if ($resource) {
+        error_log("Resource parameter: $resource");
+    }
 
     if (empty($code) || empty($redirect_uri)) {
         http_response_code(400);

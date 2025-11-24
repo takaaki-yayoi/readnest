@@ -26,6 +26,12 @@ $scope = $_GET['scope'] ?? '';
 $state = $_GET['state'] ?? '';
 $code_challenge = $_GET['code_challenge'] ?? '';
 $code_challenge_method = $_GET['code_challenge_method'] ?? '';
+$resource = $_GET['resource'] ?? ''; // RFC 8707
+
+// resourceパラメータのログ記録（MCP仕様）
+if ($resource) {
+    error_log("Authorization request with resource parameter: $resource");
+}
 
 // バリデーション
 if (empty($client_id) || empty($redirect_uri) || $response_type !== 'code') {

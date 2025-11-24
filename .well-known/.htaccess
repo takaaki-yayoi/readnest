@@ -1,4 +1,4 @@
 # OAuth Authorization Server Metadata
 RewriteEngine On
 RewriteRule ^oauth-authorization-server$ oauth-authorization-server.php [L]
-RewriteRule ^mcp$ mcp.php [L]
+RewriteRule ^oauth-protected-resource$ oauth-protected-resource.php [L]
