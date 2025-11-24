@@ -204,6 +204,112 @@ function handleMcpMessage($message, $user_id) {
                                 'type' => 'object',
                                 'properties' => (object)[]
                             ]
+                        ],
+                        [
+                            'name' => 'search_books',
+                            'description' => '本を検索します。
+
+パラメータ:
+- query (required): 検索キーワード（タイトル、著者名、ISBN）
+- limit (optional): 取得件数 (デフォルト: 50、最大: 500)',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'query' => [
+                                        'type' => 'string',
+                                        'description' => '検索キーワード'
+                                    ],
+                                    'limit' => [
+                                        'type' => 'integer',
+                                        'description' => '取得件数（最大500）',
+                                        'default' => 50
+                                    ]
+                                ],
+                                'required' => ['query']
+                            ]
+                        ],
+                        [
+                            'name' => 'get_book_detail',
+                            'description' => '特定の本の詳細情報を取得します。
+
+パラメータ:
+- book_id (required): 本のID',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'book_id' => [
+                                        'type' => 'integer',
+                                        'description' => '本のID'
+                                    ]
+                                ],
+                                'required' => ['book_id']
+                            ]
+                        ],
+                        [
+                            'name' => 'get_reading_history',
+                            'description' => '読書履歴を取得します。
+
+パラメータ:
+- year (optional): 年を指定（例: 2024）
+- month (optional): 月を指定（例: 11）
+- limit (optional): 取得件数 (デフォルト: 100、最大: 1000)',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'year' => [
+                                        'type' => 'integer',
+                                        'description' => '年'
+                                    ],
+                                    'month' => [
+                                        'type' => 'integer',
+                                        'description' => '月'
+                                    ],
+                                    'limit' => [
+                                        'type' => 'integer',
+                                        'description' => '取得件数（最大1000）',
+                                        'default' => 100
+                                    ]
+                                ]
+                            ]
+                        ],
+                        [
+                            'name' => 'get_favorite_genres',
+                            'description' => 'よく読むジャンル（タグ）を取得します。
+
+パラメータ:
+- limit (optional): 取得件数 (デフォルト: 20)',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'limit' => [
+                                        'type' => 'integer',
+                                        'description' => '取得件数',
+                                        'default' => 20
+                                    ]
+                                ]
+                            ]
+                        ],
+                        [
+                            'name' => 'get_reviews',
+                            'description' => 'レビューを取得します。
+
+パラメータ:
+- book_id (optional): 特定の本のレビューのみ取得
+- limit (optional): 取得件数 (デフォルト: 50)',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'book_id' => [
+                                        'type' => 'integer',
+                                        'description' => '本のID'
+                                    ],
+                                    'limit' => [
+                                        'type' => 'integer',
+                                        'description' => '取得件数',
+                                        'default' => 50
+                                    ]
+                                ]
+                            ]
                         ]
                     ]
                 ]
@@ -217,6 +323,16 @@ function handleMcpMessage($message, $user_id) {
                 return handleGetBookshelf($tool_args, $user_id, $id);
             } elseif ($tool_name === 'get_reading_stats') {
                 return handleGetReadingStats($user_id, $id);
+            } elseif ($tool_name === 'search_books') {
+                return handleSearchBooks($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'get_book_detail') {
+                return handleGetBookDetail($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'get_reading_history') {
+                return handleGetReadingHistory($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'get_favorite_genres') {
+                return handleGetFavoriteGenres($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'get_reviews') {
+                return handleGetReviews($tool_args, $user_id, $id);
             } else {
                 return [
                     'jsonrpc' => '2.0',
@@ -423,6 +539,400 @@ function handleGetReadingStats($user_id, $id) {
                 [
                     'type' => 'text',
                     'text' => implode("\n", $output_lines)
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * 本を検索
+ */
+function handleSearchBooks($args, $user_id, $id) {
+    global $g_db;
+
+    $query = $args['query'] ?? '';
+    $limit = min((int)($args['limit'] ?? 50), 500);
+
+    if (empty($query)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32602,
+                'message' => 'query parameter is required'
+            ]
+        ];
+    }
+
+    $sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
+            bl.image_url, bl.status, bl.rating, bl.total_page, bl.current_page,
+            bl.finished_date, bl.update_date,
+            COALESCE(bl.author, br.author, '') as author
+            FROM b_book_list bl
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE bl.user_id = ?
+            AND (bl.name LIKE ? OR COALESCE(bl.author, br.author, '') LIKE ? OR bl.isbn LIKE ?)
+            ORDER BY bl.update_date DESC
+            LIMIT ?";
+
+    $search_term = '%' . $query . '%';
+    $results = $g_db->getAll($sql, [$user_id, $search_term, $search_term, $search_term, $limit], DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error'
+            ]
+        ];
+    }
+
+    $status_name = [1 => '積読', 2 => '読書中', 3 => '読了', 4 => '既読'];
+
+    $output_lines = [];
+    foreach ($results as $book) {
+        $line = "📖 {$book['name']}";
+        if ($book['author']) {
+            $line .= " / {$book['author']}";
+        }
+        $line .= " ({$status_name[(int)$book['status']]})";
+        if ($book['rating']) {
+            $line .= " ⭐️ {$book['rating']}";
+        }
+        $line .= " [ID: {$book['book_id']}]";
+        $output_lines[] = $line;
+    }
+
+    $text = count($output_lines) > 0
+        ? "検索結果: " . count($output_lines) . "件\n\n" . implode("\n", $output_lines)
+        : "「{$query}」に一致する本が見つかりませんでした";
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $text
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * 本の詳細情報を取得
+ */
+function handleGetBookDetail($args, $user_id, $id) {
+    global $g_db;
+
+    $book_id = (int)($args['book_id'] ?? 0);
+
+    if ($book_id <= 0) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32602,
+                'message' => 'book_id parameter is required'
+            ]
+        ];
+    }
+
+    $sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
+            bl.image_url, bl.status, bl.rating, bl.total_page, bl.current_page,
+            bl.finished_date, bl.update_date, bl.reg_date,
+            COALESCE(bl.author, br.author, '') as author,
+            br.publisher, br.description
+            FROM b_book_list bl
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE bl.user_id = ? AND bl.book_id = ?";
+
+    $book = $g_db->getRow($sql, [$user_id, $book_id], DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($book) || !$book) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Book not found'
+            ]
+        ];
+    }
+
+    // レビューを取得
+    $review_sql = "SELECT review FROM b_book_list WHERE book_id = ?";
+    $review = $g_db->getOne($review_sql, [$book_id]);
+
+    $status_name = [1 => '積読', 2 => '読書中', 3 => '読了', 4 => '既読'];
+
+    $output = "📚 {$book['name']}\n\n";
+    $output .= "著者: {$book['author']}\n";
+    if ($book['publisher']) {
+        $output .= "出版社: {$book['publisher']}\n";
+    }
+    $output .= "ステータス: {$status_name[(int)$book['status']]}\n";
+    if ($book['rating']) {
+        $output .= "評価: ⭐️ {$book['rating']}\n";
+    }
+    if ($book['current_page'] && $book['total_page']) {
+        $progress = (int)(($book['current_page'] / $book['total_page']) * 100);
+        $output .= "進捗: {$book['current_page']}/{$book['total_page']}ページ ({$progress}%)\n";
+    }
+    if ($book['finished_date'] && $book['finished_date'] !== '0000-00-00') {
+        $output .= "読了日: {$book['finished_date']}\n";
+    }
+    $output .= "登録日: {$book['reg_date']}\n";
+
+    if (!empty($review) && !DB::isError($review)) {
+        $output .= "\nレビュー:\n{$review}\n";
+    }
+
+    if ($book['description']) {
+        $output .= "\n説明:\n{$book['description']}\n";
+    }
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $output
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * 読書履歴を取得
+ */
+function handleGetReadingHistory($args, $user_id, $id) {
+    global $g_db;
+
+    $year = (int)($args['year'] ?? 0);
+    $month = (int)($args['month'] ?? 0);
+    $limit = min((int)($args['limit'] ?? 100), 1000);
+
+    $where_conditions = ["bl.user_id = ?"];
+    $params = [$user_id];
+
+    if ($year > 0) {
+        $where_conditions[] = "YEAR(bl.finished_date) = ?";
+        $params[] = $year;
+    }
+    if ($month > 0) {
+        $where_conditions[] = "MONTH(bl.finished_date) = ?";
+        $params[] = $month;
+    }
+
+    $where_clause = implode(" AND ", $where_conditions);
+
+    $sql = "SELECT bl.book_id, bl.name,
+            COALESCE(bl.author, br.author, '') as author,
+            bl.status, bl.rating, bl.finished_date, bl.total_page
+            FROM b_book_list bl
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE {$where_clause}
+            AND bl.finished_date IS NOT NULL
+            AND bl.finished_date != '0000-00-00'
+            ORDER BY bl.finished_date DESC
+            LIMIT ?";
+
+    $params[] = $limit;
+    $results = $g_db->getAll($sql, $params, DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error'
+            ]
+        ];
+    }
+
+    $output_lines = [];
+    $total_pages = 0;
+
+    foreach ($results as $book) {
+        $line = "{$book['finished_date']} - 📖 {$book['name']}";
+        if ($book['author']) {
+            $line .= " / {$book['author']}";
+        }
+        if ($book['rating']) {
+            $line .= " ⭐️ {$book['rating']}";
+        }
+        if ($book['total_page']) {
+            $line .= " ({$book['total_page']}ページ)";
+            $total_pages += (int)$book['total_page'];
+        }
+        $output_lines[] = $line;
+    }
+
+    $header = "📅 読書履歴";
+    if ($year > 0) {
+        $header .= " ({$year}年";
+        if ($month > 0) {
+            $header .= "{$month}月";
+        }
+        $header .= ")";
+    }
+    $header .= "\n\n";
+    $header .= "読了冊数: " . count($output_lines) . "冊\n";
+    $header .= "総ページ数: " . number_format($total_pages) . "ページ\n\n";
+
+    $text = count($output_lines) > 0
+        ? $header . implode("\n", $output_lines)
+        : "指定された期間の読書履歴がありません";
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $text
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * お気に入りジャンルを取得
+ */
+function handleGetFavoriteGenres($args, $user_id, $id) {
+    global $g_db;
+
+    $limit = min((int)($args['limit'] ?? 20), 100);
+
+    $sql = "SELECT t.tag_name, COUNT(*) as count
+            FROM b_book_list_tag blt
+            JOIN b_tag t ON blt.tag_id = t.tag_id
+            WHERE blt.user_id = ?
+            GROUP BY t.tag_id, t.tag_name
+            ORDER BY count DESC
+            LIMIT ?";
+
+    $results = $g_db->getAll($sql, [$user_id, $limit], DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error'
+            ]
+        ];
+    }
+
+    $output_lines = [];
+    foreach ($results as $row) {
+        $output_lines[] = "🏷️ {$row['tag_name']} ({$row['count']}冊)";
+    }
+
+    $text = count($output_lines) > 0
+        ? "よく読むジャンル:\n\n" . implode("\n", $output_lines)
+        : "タグが登録されていません";
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $text
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * レビューを取得
+ */
+function handleGetReviews($args, $user_id, $id) {
+    global $g_db;
+
+    $book_id = (int)($args['book_id'] ?? 0);
+    $limit = min((int)($args['limit'] ?? 50), 500);
+
+    if ($book_id > 0) {
+        // 特定の本のレビュー
+        $sql = "SELECT bl.book_id, bl.name,
+                COALESCE(bl.author, br.author, '') as author,
+                bl.review, bl.rating, bl.update_date
+                FROM b_book_list bl
+                LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+                WHERE bl.user_id = ? AND bl.book_id = ?
+                AND bl.review IS NOT NULL AND bl.review != ''";
+        $params = [$user_id, $book_id];
+    } else {
+        // 全てのレビュー
+        $sql = "SELECT bl.book_id, bl.name,
+                COALESCE(bl.author, br.author, '') as author,
+                bl.review, bl.rating, bl.update_date
+                FROM b_book_list bl
+                LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+                WHERE bl.user_id = ?
+                AND bl.review IS NOT NULL AND bl.review != ''
+                ORDER BY bl.update_date DESC
+                LIMIT ?";
+        $params = [$user_id, $limit];
+    }
+
+    $results = $g_db->getAll($sql, $params, DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error'
+            ]
+        ];
+    }
+
+    $output_lines = [];
+    foreach ($results as $row) {
+        $output = "📖 {$row['name']}";
+        if ($row['author']) {
+            $output .= " / {$row['author']}";
+        }
+        if ($row['rating']) {
+            $output .= " ⭐️ {$row['rating']}";
+        }
+        $output .= "\n";
+        $output .= $row['review'];
+        $output .= "\n({$row['update_date']})";
+        $output_lines[] = $output;
+    }
+
+    $text = count($output_lines) > 0
+        ? implode("\n\n---\n\n", $output_lines)
+        : "レビューがありません";
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $text
                 ]
             ]
         ]
