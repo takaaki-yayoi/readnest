@@ -27,6 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// デバッグ：リクエスト情報をログに記録
+error_log("MCP Request Headers: " . json_encode(getallheaders()));
+error_log("MCP Request Body: " . file_get_contents('php://input'));
+
 // 認証（デバッグ用：一時的にスキップ）
 // TODO: Claude.aiからの認証方法を確認後、正しい認証に修正
 $user_id = 1; // 暫定的にuser_id=1を使用
