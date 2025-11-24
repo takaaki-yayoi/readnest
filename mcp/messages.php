@@ -31,8 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $headers = getallheaders();
 $auth_header = $headers['Authorization'] ?? '';
 
+error_log("MCP auth check: Authorization header = " . ($auth_header ? 'present' : 'missing'));
+error_log("All headers: " . json_encode($headers));
+
 if (!$auth_header || !preg_match('/^Bearer\s+(.+)$/i', $auth_header, $matches)) {
     // 認証ヘッダーがない場合は401を返す
+    error_log("MCP auth failed: Invalid or missing Authorization header");
     http_response_code(401);
     header('WWW-Authenticate: Bearer realm="ReadNest MCP Server"');
     echo json_encode([
