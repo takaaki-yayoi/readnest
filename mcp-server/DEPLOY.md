@@ -154,8 +154,10 @@ sudo systemctl reload nginx
 
 ```bash
 # ヘルスチェック
-curl https://readnest.jp/mcp-server/sse \
-  -H "Authorization: Bearer YOUR_API_KEY"
+curl https://readnest.jp/mcp-server/
+
+# レスポンス例:
+# {"status":"ok","service":"ReadNest MCP Server","version":"0.1.0"}
 ```
 
 ### 7. Claude Desktopの設定
@@ -166,19 +168,20 @@ curl https://readnest.jp/mcp-server/sse \
 {
   "mcpServers": {
     "readnest": {
-      "url": "https://readnest.jp/mcp-server/sse",
-      "headers": {
-        "Authorization": "Bearer YOUR_API_KEY_HERE"
-      }
+      "url": "https://readnest.jp/mcp-server/messages",
+      "apiKey": "YOUR_API_KEY_HERE"
     }
   }
 }
 ```
 
+**重要:** API Keyは `https://readnest.jp/api_keys.php` で生成したものを使用してください。
+
 Claude Desktopを再起動して動作確認:
 
 ```
 「読了した本を10冊教えて」
+「今年何冊読んだ？」
 ```
 
 ## トラブルシューティング

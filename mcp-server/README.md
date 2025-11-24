@@ -49,23 +49,25 @@ ReadNest Remote MCP Serverは、レンタルサーバー上で動作するMCPサ
 
 ### Claude Desktopの設定
 
+`~/Library/Application Support/Claude/claude_desktop_config.json` を編集:
+
 ```json
 {
   "mcpServers": {
     "readnest": {
-      "url": "https://readnest.jp/mcp-server/sse",
-      "headers": {
-        "Authorization": "Bearer YOUR_API_KEY"
-      }
+      "url": "https://readnest.jp/mcp-server/messages",
+      "apiKey": "YOUR_API_KEY_HERE"
     }
   }
 }
 ```
 
+API Keyは `/api_keys.php` で生成したものを使用してください。
+
 ## API エンドポイント
 
-- `GET /sse` - SSEエンドポイント（MCP接続）
-- `POST /messages` - MCPメッセージ処理
+- `GET /` - ヘルスチェック
+- `POST /messages` - MCPメッセージ処理（JSON-RPC）
 
 ## 利用可能なツール
 

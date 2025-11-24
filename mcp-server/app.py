@@ -323,45 +323,10 @@ async def handle_get_reading_stats(user_id: int, msg_id: Any) -> Dict[str, Any]:
         conn.close()
 
 
-@app.get("/sse")
-async def sse_endpoint(request: Request):
-    """SSEエンドポイント（MCP接続用）"""
-    # Authorization ヘッダーからAPI Keyを取得
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
-
-    api_key = auth_header[7:]  # "Bearer " を除去
-    user_id = authenticate_api_key(api_key)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-
-    async def event_generator():
-        """SSEイベントを生成"""
-        # エンドポイント情報を送信
-        yield f"event: endpoint\n"
-        yield f"data: {json.dumps({'url': str(request.url)})}\n\n"
-
-        # メッセージ待機ループ
-        while True:
-            try:
-                # リクエストボディからメッセージを取得（実装は環境に依存）
-                # 実際にはWebSocketやポーリングを使用する必要があるかもしれません
-                await asyncio.sleep(1)
-
-            except asyncio.CancelledError:
-                break
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
-        }
-    )
+@app.get("/")
+async def root():
+    """ヘルスチェック"""
+    return {"status": "ok", "service": "ReadNest MCP Server", "version": "0.1.0"}
 
 
 @app.post("/messages")
