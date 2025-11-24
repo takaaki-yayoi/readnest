@@ -580,12 +580,13 @@ function handleSearchBooks($args, $user_id, $id) {
     $results = $g_db->getAll($sql, [$user_id, $search_term, $search_term, $search_term, $limit], DB_FETCHMODE_ASSOC);
 
     if (DB::isError($results)) {
+        error_log("handleSearchBooks DB error: " . $results->getMessage() . " | Query: " . $query);
         return [
             'jsonrpc' => '2.0',
             'id' => $id,
             'error' => [
                 'code' => -32603,
-                'message' => 'Database error'
+                'message' => 'Database error: ' . $results->getMessage()
             ]
         ];
     }
@@ -645,16 +646,28 @@ function handleGetBookDetail($args, $user_id, $id) {
 
     $sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
             bl.image_url, bl.status, bl.rating, bl.total_page, bl.current_page,
-            bl.finished_date, bl.update_date, bl.reg_date,
+            bl.finished_date, bl.update_date, bl.create_date,
             COALESCE(bl.author, br.author, '') as author,
-            br.publisher, br.description
+            br.description
             FROM b_book_list bl
             LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
             WHERE bl.user_id = ? AND bl.book_id = ?";
 
     $book = $g_db->getRow($sql, [$user_id, $book_id], DB_FETCHMODE_ASSOC);
 
-    if (DB::isError($book) || !$book) {
+    if (DB::isError($book)) {
+        error_log("handleGetBookDetail DB error: " . $book->getMessage() . " | book_id: " . $book_id);
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error: ' . $book->getMessage()
+            ]
+        ];
+    }
+
+    if (!$book) {
         return [
             'jsonrpc' => '2.0',
             'id' => $id,
@@ -666,16 +679,13 @@ function handleGetBookDetail($args, $user_id, $id) {
     }
 
     // レビューを取得
-    $review_sql = "SELECT review FROM b_book_list WHERE book_id = ?";
+    $review_sql = "SELECT memo FROM b_book_list WHERE book_id = ?";
     $review = $g_db->getOne($review_sql, [$book_id]);
 
     $status_name = [1 => '積読', 2 => '読書中', 3 => '読了', 4 => '既読'];
 
     $output = "📚 {$book['name']}\n\n";
     $output .= "著者: {$book['author']}\n";
-    if ($book['publisher']) {
-        $output .= "出版社: {$book['publisher']}\n";
-    }
     $output .= "ステータス: {$status_name[(int)$book['status']]}\n";
     if ($book['rating']) {
         $output .= "評価: ⭐️ {$book['rating']}\n";
@@ -687,7 +697,7 @@ function handleGetBookDetail($args, $user_id, $id) {
     if ($book['finished_date'] && $book['finished_date'] !== '0000-00-00') {
         $output .= "読了日: {$book['finished_date']}\n";
     }
-    $output .= "登録日: {$book['reg_date']}\n";
+    $output .= "登録日: {$book['create_date']}\n";
 
     if (!empty($review) && !DB::isError($review)) {
         $output .= "\nレビュー:\n{$review}\n";
@@ -750,12 +760,13 @@ function handleGetReadingHistory($args, $user_id, $id) {
     $results = $g_db->getAll($sql, $params, DB_FETCHMODE_ASSOC);
 
     if (DB::isError($results)) {
+        error_log("handleGetReadingHistory DB error: " . $results->getMessage() . " | Year: " . $year . " | Month: " . $month);
         return [
             'jsonrpc' => '2.0',
             'id' => $id,
             'error' => [
                 'code' => -32603,
-                'message' => 'Database error'
+                'message' => 'Database error: ' . $results->getMessage()
             ]
         ];
     }
@@ -816,23 +827,23 @@ function handleGetFavoriteGenres($args, $user_id, $id) {
 
     $limit = min((int)($args['limit'] ?? 20), 100);
 
-    $sql = "SELECT t.tag_name, COUNT(*) as count
-            FROM b_book_list_tag blt
-            JOIN b_tag t ON blt.tag_id = t.tag_id
-            WHERE blt.user_id = ?
-            GROUP BY t.tag_id, t.tag_name
+    $sql = "SELECT tag_name, COUNT(*) as count
+            FROM b_book_tags
+            WHERE user_id = ?
+            GROUP BY tag_name
             ORDER BY count DESC
             LIMIT ?";
 
     $results = $g_db->getAll($sql, [$user_id, $limit], DB_FETCHMODE_ASSOC);
 
     if (DB::isError($results)) {
+        error_log("handleGetFavoriteGenres DB error: " . $results->getMessage() . " | SQL: " . $sql);
         return [
             'jsonrpc' => '2.0',
             'id' => $id,
             'error' => [
                 'code' => -32603,
-                'message' => 'Database error'
+                'message' => 'Database error: ' . $results->getMessage()
             ]
         ];
     }
@@ -873,22 +884,22 @@ function handleGetReviews($args, $user_id, $id) {
         // 特定の本のレビュー
         $sql = "SELECT bl.book_id, bl.name,
                 COALESCE(bl.author, br.author, '') as author,
-                bl.review, bl.rating, bl.update_date
+                bl.memo as review, bl.rating, bl.memo_updated as update_date
                 FROM b_book_list bl
                 LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
                 WHERE bl.user_id = ? AND bl.book_id = ?
-                AND bl.review IS NOT NULL AND bl.review != ''";
+                AND bl.memo IS NOT NULL AND bl.memo != ''";
         $params = [$user_id, $book_id];
     } else {
         // 全てのレビュー
         $sql = "SELECT bl.book_id, bl.name,
                 COALESCE(bl.author, br.author, '') as author,
-                bl.review, bl.rating, bl.update_date
+                bl.memo as review, bl.rating, bl.memo_updated as update_date
                 FROM b_book_list bl
                 LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
                 WHERE bl.user_id = ?
-                AND bl.review IS NOT NULL AND bl.review != ''
-                ORDER BY bl.update_date DESC
+                AND bl.memo IS NOT NULL AND bl.memo != ''
+                ORDER BY bl.memo_updated DESC
                 LIMIT ?";
         $params = [$user_id, $limit];
     }
@@ -896,12 +907,13 @@ function handleGetReviews($args, $user_id, $id) {
     $results = $g_db->getAll($sql, $params, DB_FETCHMODE_ASSOC);
 
     if (DB::isError($results)) {
+        error_log("handleGetReviews DB error: " . $results->getMessage() . " | SQL: " . $sql . " | Params: " . json_encode($params));
         return [
             'jsonrpc' => '2.0',
             'id' => $id,
             'error' => [
                 'code' => -32603,
-                'message' => 'Database error'
+                'message' => 'Database error: ' . $results->getMessage()
             ]
         ];
     }

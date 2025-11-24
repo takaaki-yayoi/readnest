@@ -543,22 +543,22 @@ async function sendChat() {
     showTypingIndicator();
     
     try {
-        // 拡張されたコンテキストを準備
-        const context = {
-            recent_books: recentBooks,
-            favorite_genres: favoriteGenres,
-            reading_stats: readingStats,
-            conversation_history: conversation.slice(-10) // 直近10件の会話
-        };
-        
-        const response = await fetch('/api/ai_assistant_chat.php', {
+        // 会話履歴を準備（MCPツールで直接データ取得するため、コンテキストはシンプルに）
+        const conversationHistory = conversation
+            .slice(-10) // 直近10件の会話
+            .map(msg => ({
+                role: msg.isUser ? 'user' : 'assistant',
+                content: msg.content
+            }));
+
+        const response = await fetch('/api/ai_assistant_mcp.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 message: message,
-                user_context: context
+                conversation_history: conversationHistory
             })
         });
         
