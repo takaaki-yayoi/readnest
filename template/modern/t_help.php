@@ -2514,15 +2514,15 @@ ob_start();
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100">主な機能:</h4>
                                 <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                                    <li><strong>読書相談：</strong>次に読む本の選び方、読書習慣の改善などのアドバイス</li>
-                                    <li><strong>データベース検索（Text2SQL）：</strong>自然な言葉で読書データを検索
+                                    <li><strong>読書データアクセス：</strong>7つの専用ツールで正確にデータを取得
                                         <ul class="list-circle list-inside ml-6 mt-1 text-sm">
-                                            <li>「今年読了した本は？」</li>
-                                            <li>「評価が4以上の本」</li>
-                                            <li>「積読の本を10冊」</li>
+                                            <li>本棚・読書統計・検索</li>
+                                            <li>読書履歴・よく読むジャンル</li>
+                                            <li>レビュー・本の詳細情報</li>
                                         </ul>
                                     </li>
-                                    <li><strong>本の推薦：</strong>好みに合わせた本の提案</li>
+                                    <li><strong>自然言語での質問：</strong>「今年読了した本は？」「評価が4以上の本」「積読の中からおすすめは？」など</li>
+                                    <li><strong>本の推薦：</strong>読書傾向に基づいた本の提案</li>
                                     <li><strong>会話履歴：</strong>過去の会話を保存・復元・削除</li>
                                     <li><strong>動的リンク：</strong>本の状況に応じて適切なページへ誘導</li>
                                 </ul>
@@ -2533,19 +2533,35 @@ ob_start();
                                     <li>各ページ右下のアシスタントアイコンから（reading_assistant.phpページ以外）</li>
                                 </ul>
                                 
-                                <h4 class="font-semibold text-gray-900 mt-4">使い方:</h4>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">使い方:</h4>
                                 <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300">
                                     <li>アシスタントページまたはオーバーレイを開く</li>
                                     <li>質問をチャット欄に入力</li>
                                     <li>サンプル質問ボタンから選択も可能</li>
-                                    <li>AIが回答し、必要に応じてデータベースを検索</li>
+                                    <li>AIが適切なツールを自動選択してデータを取得</li>
                                     <li>会話履歴から過去の会話を復元可能</li>
                                 </ol>
-                                
+
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">質問例:</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <strong class="text-gray-900 dark:text-gray-100">📊 統計:</strong> 「読了した本は何冊？」「今年読んだ本は？」
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <strong class="text-gray-900 dark:text-gray-100">🔍 検索:</strong> 「村上春樹の本を検索して」「ミステリー小説を探して」
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <strong class="text-gray-900 dark:text-gray-100">📅 履歴:</strong> 「今月読んだ本の一覧」「2024年の読書履歴」
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <strong class="text-gray-900 dark:text-gray-100">📝 レビュー:</strong> 「レビューを書いた本を見せて」「高評価の本は？」
+                                    </div>
+                                </div>
+
                                 <div class="mt-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm">
                                     <p class="text-green-800 dark:text-green-300">
                                         <i class="fas fa-lightbulb mr-1"></i>
-                                        <strong class="dark:text-gray-200">ヒント：</strong>具体的な数字や期間を含めると、より正確な検索結果が得られます。
+                                        <strong class="dark:text-gray-200">ヒント：</strong>複数のツールを組み合わせた複雑な質問にも対応できます。例：「積読の中から次に読むべき本を推薦して」
                                     </p>
                                 </div>
                             </div>
