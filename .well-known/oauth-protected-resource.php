@@ -10,7 +10,7 @@ header('Access-Control-Allow-Origin: *');
 $base_url = 'https://readnest.jp';
 
 $metadata = [
-    'resource' => $base_url . '/mcp/messages.php',
+    'resource' => $base_url . '/mcp/messages',
     'authorization_servers' => [
         $base_url
     ],
