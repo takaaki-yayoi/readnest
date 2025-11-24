@@ -27,13 +27,43 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// デバッグ：リクエスト情報をログに記録
-error_log("MCP Request Headers: " . json_encode(getallheaders()));
-error_log("MCP Request Body: " . file_get_contents('php://input'));
+// 認証：AuthorizationヘッダーからAPI Keyを取得
+$headers = getallheaders();
+$auth_header = $headers['Authorization'] ?? '';
 
-// 認証（デバッグ用：一時的にスキップ）
-// TODO: Claude.aiからの認証方法を確認後、正しい認証に修正
-$user_id = 1; // 暫定的にuser_id=1を使用
+if (!$auth_header || !preg_match('/^Bearer\s+(.+)$/i', $auth_header, $matches)) {
+    // 認証ヘッダーがない場合は401を返す
+    http_response_code(401);
+    header('WWW-Authenticate: Bearer realm="ReadNest MCP Server"');
+    echo json_encode([
+        'jsonrpc' => '2.0',
+        'error' => [
+            'code' => -32001,
+            'message' => 'Authentication required. Please provide API key in Authorization header.'
+        ]
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$api_key = $matches[1];
+
+// API Keyを検証してuser_idを取得
+global $g_db;
+$sql = "SELECT user_id FROM b_api_keys WHERE api_key = ? AND is_active = 1";
+$user_id = $g_db->getOne($sql, [$api_key]);
+
+if (DB::isError($user_id) || !$user_id) {
+    http_response_code(401);
+    header('WWW-Authenticate: Bearer realm="ReadNest MCP Server", error="invalid_token"');
+    echo json_encode([
+        'jsonrpc' => '2.0',
+        'error' => [
+            'code' => -32001,
+            'message' => 'Invalid API key'
+        ]
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // リクエストボディを取得
 $input = file_get_contents('php://input');
