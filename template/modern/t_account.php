@@ -154,6 +154,11 @@ ob_start();
                                 class="w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             <i class="fas fa-shield-alt mr-2"></i>プライバシー設定
                         </button>
+                        <button @click="activeTab = 'api'"
+                                :class="activeTab === 'api' ? 'bg-readnest-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                class="w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-plug mr-2"></i>API連携設定
+                        </button>
                     </nav>
                 </div>
             </div>
@@ -762,7 +767,92 @@ ob_start();
                                     </form>
                                 </div>
                             </div>
-                            
+
+                    </div>
+
+                    <!-- API連携設定 -->
+                    <div x-show="activeTab === 'api'" x-transition class="p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">API連携設定</h3>
+
+                        <div class="space-y-6">
+                            <!-- OAuthクライアント管理 -->
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-key text-blue-500 text-2xl"></i>
+                                    </div>
+                                    <div class="ml-4 flex-1">
+                                        <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                            OAuthクライアント管理
+                                        </h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                            Claude.aiなどの外部アプリケーションからReadNestのデータにアクセスするためのOAuthクライアントを管理します。
+                                        </p>
+                                        <a href="/oauth_clients.php"
+                                           class="inline-flex items-center px-4 py-2 bg-readnest-primary text-white rounded-md hover:bg-readnest-primary-dark transition-colors">
+                                            <i class="fas fa-cog mr-2"></i>
+                                            OAuthクライアントを管理
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Claude.ai連携ガイド -->
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6">
+                                <h4 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                    <i class="fas fa-book mr-2 text-readnest-primary"></i>
+                                    Claude.ai連携ガイド
+                                </h4>
+
+                                <div class="prose prose-sm dark:prose-invert max-w-none">
+                                    <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                        Claude.aiからあなたの本棚データにアクセスできるようにします。
+                                    </p>
+
+                                    <h5 class="font-semibold text-gray-900 dark:text-gray-100 mt-4 mb-2">セットアップ手順</h5>
+                                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                                        <li>
+                                            <strong>OAuthクライアントを作成</strong>
+                                            <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                                                <li>上の「OAuthクライアントを管理」ボタンをクリック</li>
+                                                <li>クライアント名: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">Claude.ai</code></li>
+                                                <li>リダイレクトURI: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">https://claude.ai/api/mcp/auth_callback</code></li>
+                                                <li>Client IDとClient Secretをコピー（一度しか表示されません）</li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <strong>Claude.aiで設定</strong>
+                                            <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                                                <li>Claude.aiで「Custom Connectors」を開く</li>
+                                                <li>「Add custom connector」をクリック</li>
+                                                <li>Name: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">ReadNest</code></li>
+                                                <li>URL: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">https://readnest.jp/mcp/messages.php</code></li>
+                                                <li>Advanced settingsを開いて、Client IDとSecretを入力</li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <strong>認可</strong>
+                                            <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                                                <li>「Add」→「Connect」をクリック</li>
+                                                <li>ReadNestの認可画面で「許可する」をクリック</li>
+                                                <li>接続完了！</li>
+                                            </ul>
+                                        </li>
+                                    </ol>
+
+                                    <h5 class="font-semibold text-gray-900 dark:text-gray-100 mt-4 mb-2">使い方</h5>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                                        Claude.aiで以下のようなプロンプトを試してみてください：
+                                    </p>
+                                    <ul class="list-disc list-inside ml-4 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                                        <li>「本棚の本を見せて」</li>
+                                        <li>「読書統計を教えて」</li>
+                                        <li>「積読の本を教えて」</li>
+                                        <li>「読書中の本の進捗は？」</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
