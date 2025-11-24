@@ -185,24 +185,30 @@ if ($grant_type === 'refresh_token') {
 
     // 有効期限チェック
     if (strtotime($refresh_data['expires_at']) < time()) {
+        error_log("Refresh token expired: expires_at=" . $refresh_data['expires_at'] . ", now=" . date('Y-m-d H:i:s'));
         http_response_code(400);
         echo json_encode(['error' => 'invalid_grant', 'error_description' => 'Refresh token expired']);
         exit;
     }
+
+    error_log("Refresh token valid, generating new access token");
 
     // 新しいアクセストークンを生成
     $new_access_token = bin2hex(random_bytes(32));
     $token_expires_at = date('Y-m-d H:i:s', time() + 3600);
 
     // 古いアクセストークンを削除
-    $g_db->query("DELETE FROM b_oauth_access_tokens WHERE access_token = ?", [$refresh_data['access_token']]);
+    $delete_result = $g_db->query("DELETE FROM b_oauth_access_tokens WHERE access_token = ?", [$refresh_data['access_token']]);
+    if (DB::isError($delete_result)) {
+        error_log("Failed to delete old access token: " . $delete_result->getMessage());
+    }
 
     // 新しいアクセストークンを保存
     $insert_access = "INSERT INTO b_oauth_access_tokens
                       (access_token, client_id, user_id, scope, expires_at)
                       VALUES (?, ?, ?, ?, ?)";
 
-    $g_db->query($insert_access, [
+    $insert_result = $g_db->query($insert_access, [
         $new_access_token,
         $client_id,
         $refresh_data['user_id'],
@@ -210,9 +216,22 @@ if ($grant_type === 'refresh_token') {
         $token_expires_at
     ]);
 
+    if (DB::isError($insert_result)) {
+        error_log("Failed to insert new access token: " . $insert_result->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'server_error', 'error_description' => 'Failed to create access token']);
+        exit;
+    }
+
     // リフレッシュトークンのaccess_tokenを更新
-    $g_db->query("UPDATE b_oauth_refresh_tokens SET access_token = ? WHERE refresh_token = ?",
+    $update_result = $g_db->query("UPDATE b_oauth_refresh_tokens SET access_token = ? WHERE refresh_token = ?",
                  [$new_access_token, $refresh_token]);
+
+    if (DB::isError($update_result)) {
+        error_log("Failed to update refresh token: " . $update_result->getMessage());
+    }
+
+    error_log("Successfully generated new access token for user_id=" . $refresh_data['user_id']);
 
     // トークンレスポンス
     echo json_encode([
