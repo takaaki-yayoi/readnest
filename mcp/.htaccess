@@ -1,5 +1,5 @@
 RewriteEngine On
 
-# /mcp/messages を messages.php にリライト（Authorizationヘッダーを保持）
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule ^messages$ messages.php [E=HTTP_AUTHORIZATION:%1,L]
+# Authorizationヘッダーを環境変数として渡す
+RewriteCond %{HTTP:Authorization} .+
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
