@@ -11,6 +11,9 @@ header('Access-Control-Allow-Origin: *');
 
 require_once(dirname(__DIR__) . '/config.php');
 
+// デバッグログ
+error_log("Token endpoint called: " . json_encode($_POST));
+
 // POSTのみ受け付け
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

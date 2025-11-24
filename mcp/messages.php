@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// 認証：AuthorizationヘッダーからAPI Keyを取得
+// 認証：Authorizationヘッダーからトークンを取得
 $headers = getallheaders();
 $auth_header = $headers['Authorization'] ?? '';
 
@@ -39,30 +39,53 @@ if (!$auth_header || !preg_match('/^Bearer\s+(.+)$/i', $auth_header, $matches)) 
         'jsonrpc' => '2.0',
         'error' => [
             'code' => -32001,
-            'message' => 'Authentication required. Please provide API key in Authorization header.'
+            'message' => 'Authentication required'
         ]
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$api_key = $matches[1];
+$token = $matches[1];
 
-// API Keyを検証してuser_idを取得
+// トークンを検証してuser_idを取得
 global $g_db;
-$sql = "SELECT user_id FROM b_api_keys WHERE api_key = ? AND is_active = 1";
-$user_id = $g_db->getOne($sql, [$api_key]);
 
-if (DB::isError($user_id) || !$user_id) {
-    http_response_code(401);
-    header('WWW-Authenticate: Bearer realm="ReadNest MCP Server", error="invalid_token"');
-    echo json_encode([
-        'jsonrpc' => '2.0',
-        'error' => [
-            'code' => -32001,
-            'message' => 'Invalid API key'
-        ]
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+// まずOAuthアクセストークンをチェック
+$sql = "SELECT user_id, expires_at FROM b_oauth_access_tokens WHERE access_token = ?";
+$token_data = $g_db->getRow($sql, [$token], DB_FETCHMODE_ASSOC);
+
+if (!DB::isError($token_data) && $token_data) {
+    // 有効期限チェック
+    if (strtotime($token_data['expires_at']) < time()) {
+        http_response_code(401);
+        header('WWW-Authenticate: Bearer realm="ReadNest MCP Server", error="invalid_token", error_description="Token expired"');
+        echo json_encode([
+            'jsonrpc' => '2.0',
+            'error' => [
+                'code' => -32001,
+                'message' => 'Token expired'
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $user_id = $token_data['user_id'];
+} else {
+    // OAuthトークンでない場合は、API Keyとして検証（後方互換性）
+    $sql = "SELECT user_id FROM b_api_keys WHERE api_key = ? AND is_active = 1";
+    $user_id = $g_db->getOne($sql, [$token]);
+
+    if (DB::isError($user_id) || !$user_id) {
+        http_response_code(401);
+        header('WWW-Authenticate: Bearer realm="ReadNest MCP Server", error="invalid_token"');
+        echo json_encode([
+            'jsonrpc' => '2.0',
+            'error' => [
+                'code' => -32001,
+                'message' => 'Invalid token'
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
 
 // リクエストボディを取得
