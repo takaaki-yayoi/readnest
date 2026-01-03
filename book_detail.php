@@ -819,34 +819,178 @@ if (!empty($book['amazon_id'])) {
                 }
             }
             
-            // 類似本を検索
-            $candidates_sql = "
-                SELECT 
-                    br.asin,
-                    br.title,
-                    br.author,
-                    br.image_url,
-                    br.description,
-                    br.combined_embedding,
-                    (SELECT COUNT(*) FROM b_book_list WHERE amazon_id = br.asin) as reader_count,
-                    (SELECT AVG(rating) FROM b_book_list WHERE amazon_id = br.asin AND rating > 0) as avg_rating
-                FROM b_book_repository br
-                WHERE br.combined_embedding IS NOT NULL
-                AND br.asin NOT IN ('" . implode("','", $exclude_asins) . "')
-                LIMIT 200
-            ";
-            
-            $candidates = $g_db->getAll($candidates_sql, [], DB_FETCHMODE_ASSOC);
+            // 類似本を検索（カテゴリベースのフィルタリングで精度向上）
+            $book_categories_raw = $repo_info['google_categories'] ?? '';
+            $book_categories = [];
+            $main_category = '';
+            $candidates = [];
+
+            // タイトルからジャンルを推測する関数
+            $detectGenreFromTitle = function($title) {
+                $title_lower = mb_strtolower($title);
+
+                // 技術書キーワード（誤判定を防ぐため厳選）
+                $tech_keywords = [
+                    'プログラミング', 'コーディング', '開発入門', 'エンジニア',
+                    'python', 'javascript', 'java入門', 'ruby', 'php', 'go言語', 'rust', 'swift',
+                    'html', 'css', 'sql', 'xml', 'json', 'データベース', 'api',
+                    'linux', 'unix',
+                    '機械学習', 'ディープラーニング', '人工知能', 'chatgpt',
+                    'aws', 'azure', 'gcp', 'クラウド', 'docker', 'kubernetes',
+                    'git', 'github', 'アルゴリズム', 'データ構造',
+                    'devops', 'agile', 'スクラム',
+                    'バイブコーディング', 'vibe coding',
+                    'c言語', 'c#', 'c++', 'typescript', 'kotlin', 'scala', 'perl',
+                    'react', 'vue', 'angular', 'node.js', 'rails', 'django', 'laravel',
+                    'terraform', 'ansible', 'jenkins', 'テスト駆動'
+                ];
+
+                foreach ($tech_keywords as $keyword) {
+                    if (mb_strpos($title_lower, $keyword) !== false) {
+                        return 'tech';
+                    }
+                }
+
+                // 小説・ラノベ・漫画キーワード
+                $fiction_keywords = [
+                    '小説', 'ノベル', 'ライトノベル', '文庫', '物語', '新書',
+                    '殺人', '事件', '探偵', 'ミステリ', 'ミステリー',
+                    '恋愛', 'ラブ', '青春', '学園', 'スクール',
+                    'ファンタジー', '異世界', '転生', '魔法', '冒険', '勇者',
+                    // 出版社・レーベル
+                    '講談社box', '新潮', '角川', 'ハヤカワ', '早川', '集英社',
+                    '電撃', 'メディアワークス', 'ga文庫', 'mf文庫',
+                    // シリーズ表記（ラノベ・漫画の特徴）
+                    'vol.', '〈', '《', '（上）', '（下）', '（前編）', '（後編）',
+                    // その他
+                    'コミック', 'マンガ', '漫画', 'アニメ',
+                    'スラム', 'カレイドスコープ', 'ローレライ', 'ビジョン'
+                ];
+
+                foreach ($fiction_keywords as $keyword) {
+                    if (mb_strpos($title_lower, $keyword) !== false) {
+                        return 'fiction';
+                    }
+                }
+
+                return 'unknown';
+            };
+
+            // この本のジャンルを推測
+            $book_genre = $detectGenreFromTitle($book['title']);
+
+            // カテゴリをパース（JSON配列形式）
+            if (!empty($book_categories_raw)) {
+                $book_categories = json_decode($book_categories_raw, true) ?: [];
+                if (!empty($book_categories) && is_array($book_categories)) {
+                    // 最初のカテゴリをメインカテゴリとして使用
+                    $first_category = $book_categories[0] ?? '';
+                    // "Computers / Programming" のような形式から主要部分を抽出
+                    $category_parts = explode('/', $first_category);
+                    $main_category = trim($category_parts[0] ?? '');
+                }
+            }
+
+            // 同じカテゴリの本を優先的に検索
+            if (!empty($main_category)) {
+                $candidates_sql = "
+                    SELECT
+                        br.asin,
+                        br.title,
+                        br.author,
+                        br.image_url,
+                        br.description,
+                        br.combined_embedding,
+                        br.google_categories,
+                        (SELECT COUNT(*) FROM b_book_list WHERE amazon_id = br.asin) as reader_count,
+                        (SELECT AVG(rating) FROM b_book_list WHERE amazon_id = br.asin AND rating > 0) as avg_rating
+                    FROM b_book_repository br
+                    WHERE br.combined_embedding IS NOT NULL
+                    AND br.asin NOT IN ('" . implode("','", $exclude_asins) . "')
+                    AND br.google_categories LIKE ?
+                    LIMIT 200
+                ";
+
+                $candidates = $g_db->getAll($candidates_sql, ['%' . $main_category . '%'], DB_FETCHMODE_ASSOC);
+                if (DB::isError($candidates)) {
+                    $candidates = [];
+                }
+            }
+
+            // カテゴリマッチが少ない場合は全体から追加検索
+            if (count($candidates) < 50) {
+                $fallback_sql = "
+                    SELECT
+                        br.asin,
+                        br.title,
+                        br.author,
+                        br.image_url,
+                        br.description,
+                        br.combined_embedding,
+                        br.google_categories,
+                        (SELECT COUNT(*) FROM b_book_list WHERE amazon_id = br.asin) as reader_count,
+                        (SELECT AVG(rating) FROM b_book_list WHERE amazon_id = br.asin AND rating > 0) as avg_rating
+                    FROM b_book_repository br
+                    WHERE br.combined_embedding IS NOT NULL
+                    AND br.asin NOT IN ('" . implode("','", $exclude_asins) . "')
+                    LIMIT 200
+                ";
+
+                $fallback_candidates = $g_db->getAll($fallback_sql, [], DB_FETCHMODE_ASSOC);
+                if (!DB::isError($fallback_candidates) && $fallback_candidates) {
+                    // 重複を避けて追加
+                    $existing_asins = array_column($candidates, 'asin');
+                    foreach ($fallback_candidates as $fc) {
+                        if (!in_array($fc['asin'], $existing_asins)) {
+                            $candidates[] = $fc;
+                        }
+                    }
+                }
+            }
             
             if (!DB::isError($candidates) && $candidates) {
+                // カテゴリ一致判定用の関数（JSON配列対応）
+                $getMainCategory = function($categories_raw) {
+                    if (empty($categories_raw)) return '';
+                    $categories = is_array($categories_raw) ? $categories_raw : (json_decode($categories_raw, true) ?: []);
+                    if (empty($categories)) return '';
+                    $first_category = $categories[0] ?? '';
+                    $parts = explode('/', $first_category);
+                    return trim($parts[0] ?? '');
+                };
+
                 // 類似度計算
                 foreach ($candidates as $candidate) {
-                    $similarity = VectorSimilarity::cosineSimilarity(
+                    $base_similarity = VectorSimilarity::cosineSimilarity(
                         $book_embedding,
                         $candidate['combined_embedding']
                     );
-                    
-                    if ($similarity > 0.7) { // 70%以上の類似度
+
+                    // カテゴリ一致ボーナス/ペナルティ
+                    $candidate_categories_raw = $candidate['google_categories'] ?? '';
+                    $candidate_main_category = $getMainCategory($candidate_categories_raw);
+                    $category_match = !empty($main_category) && !empty($candidate_main_category)
+                                      && $main_category === $candidate_main_category;
+
+                    // タイトルベースのジャンル推測（カテゴリ情報がない場合のフォールバック）
+                    $candidate_genre = $detectGenreFromTitle($candidate['title']);
+                    $genre_match = ($book_genre !== 'unknown' && $candidate_genre !== 'unknown')
+                                   && $book_genre === $candidate_genre;
+                    $genre_mismatch = ($book_genre !== 'unknown' && $candidate_genre !== 'unknown')
+                                      && $book_genre !== $candidate_genre;
+
+                    // カテゴリまたはジャンルが一致する場合はボーナス、不一致の場合はペナルティ
+                    if ($category_match || $genre_match) {
+                        $similarity = min($base_similarity * 1.08, 1.0); // 8%ボーナス（上限100%）
+                    } elseif (!empty($main_category) && !empty($candidate_main_category)) {
+                        $similarity = $base_similarity * 0.80; // 20%ペナルティ（異なるカテゴリ）
+                    } elseif ($genre_mismatch) {
+                        $similarity = $base_similarity * 0.75; // 25%ペナルティ（異なるジャンル：技術書 vs 小説）
+                    } else {
+                        $similarity = $base_similarity;
+                    }
+
+                    if ($similarity > 0.5) { // 50%以上の類似度（正規化削除後の適正値）
                         $ai_recommendations[] = [
                             'asin' => $candidate['asin'],
                             'title' => $candidate['title'],
@@ -855,16 +999,27 @@ if (!empty($book['amazon_id'])) {
                             'description' => $candidate['description'] ?? '',
                             'similarity' => round($similarity * 100, 1),
                             'reader_count' => $candidate['reader_count'] ?? 0,
-                            'avg_rating' => round((float)($candidate['avg_rating'] ?? 0), 1)
+                            'avg_rating' => round((float)($candidate['avg_rating'] ?? 0), 1),
+                            'category_match' => $category_match,
+                            'genre_match' => $genre_match
                         ];
                     }
                 }
                 
+                // 技術書の場合、小説/ラノベを除外
+                if ($book_genre === 'tech') {
+                    $ai_recommendations = array_filter($ai_recommendations, function($rec) use ($detectGenreFromTitle) {
+                        $candidate_genre = $detectGenreFromTitle($rec['title']);
+                        return $candidate_genre !== 'fiction'; // fictionは除外
+                    });
+                    $ai_recommendations = array_values($ai_recommendations); // インデックスをリセット
+                }
+
                 // 類似度でソート
                 usort($ai_recommendations, function($a, $b) {
                     return $b['similarity'] <=> $a['similarity'];
                 });
-                
+
                 // 上位10件に限定
                 $ai_recommendations = array_slice($ai_recommendations, 0, 10);
                 

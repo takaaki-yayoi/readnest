@@ -47,9 +47,10 @@ class VectorSimilarity {
             return 0;
         }
         
-        // -1〜1の範囲を0〜1に正規化
+        // コサイン類似度を計算（OpenAIのembeddingは正の値が多いため、通常0〜1の範囲）
         $similarity = $dotProduct / ($magnitude1 * $magnitude2);
-        return ($similarity + 1) / 2;
+        // 負の値が出た場合は0にクリップ
+        return max(0, $similarity);
     }
     
     /**
