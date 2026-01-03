@@ -102,36 +102,56 @@ try {
     if (empty($ranking_data)) {
         error_log("No ranking data from getUserRanking, trying fallback approach...");
         
-        // フォールバック: 従来の方法でランキングを計算
+        // フォールバック: updateUserReadingStatと同じロジックでランキングを計算
         if ($sort_key === 'read_books_month') {
-            // 今月読んだ本の数でランキング（リアルタイムで集計）
-            $month_start = date('Y-m-01');
-            $month_end = date('Y-m-t');
+            // 今月読んだ本の数でランキング（b_book_event + finished_date）
+            $month_start = date('Y-m-01 00:00:00');
+            $month_end = date('Y-m-t 23:59:59');
             $fallback_sql = "
-                SELECT 
+                SELECT
                     u.user_id,
                     u.nickname,
                     u.photo,
                     u.photo_state,
                     u.diary_policy,
-                    COUNT(DISTINCT be.book_id) as score
+                    (
+                      COALESCE((SELECT COUNT(DISTINCT be.book_id)
+                       FROM b_book_event be
+                       WHERE be.user_id = u.user_id
+                       AND be.event = " . READING_FINISH . "
+                       AND be.event_date BETWEEN ? AND ?), 0)
+                      +
+                      COALESCE((SELECT COUNT(DISTINCT bl.book_id)
+                       FROM b_book_list bl
+                       WHERE bl.user_id = u.user_id
+                       AND bl.finished_date >= DATE(?)
+                       AND bl.finished_date <= DATE(?)
+                       AND bl.status IN (" . READING_FINISH . ", " . READ_BEFORE . ")
+                       AND NOT EXISTS (
+                         SELECT 1 FROM b_book_event be2
+                         WHERE be2.user_id = bl.user_id
+                         AND be2.book_id = bl.book_id
+                         AND be2.event = " . READING_FINISH . "
+                         AND be2.event_date BETWEEN ? AND ?
+                       )), 0)
+                    ) as score
                 FROM b_user u
-                LEFT JOIN b_book_event be ON u.user_id = be.user_id 
-                    AND be.event = " . READING_FINISH . "
-                    AND be.event_date BETWEEN ? AND ?
                 WHERE u.user_id IS NOT NULL
                 AND u.diary_policy = 1
                 AND u.status = 1
-                GROUP BY u.user_id
                 HAVING score > 0
                 ORDER BY score DESC, u.user_id ASC
                 LIMIT 50
             ";
-            $ranking_data = $g_db->getAll($fallback_sql, array($month_start, $month_end));
+            $ranking_data = $g_db->getAll($fallback_sql, array(
+                $month_start, $month_end,
+                $month_start, $month_end,
+                $month_start, $month_end
+            ));
         } else {
             // 全期間の読了数でランキング（集計済みカラムを使用）
             $fallback_sql = "
-                SELECT 
+                SELECT
                     u.user_id,
                     u.nickname,
                     u.photo,
@@ -146,13 +166,7 @@ try {
                 ORDER BY u.read_books_total DESC, u.user_id ASC
                 LIMIT 50
             ";
-        }
-        
-        error_log("Fallback ranking SQL: " . $fallback_sql);
-        
-        if ($sort_key === 'read_books_month') {
-            $ranking_data = $g_db->getAll($fallback_sql, array($month_start, $month_end));
-        } else {
+            error_log("Fallback ranking SQL: " . $fallback_sql);
             $ranking_data = $g_db->getAll($fallback_sql);
         }
         

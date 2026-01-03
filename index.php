@@ -779,36 +779,44 @@ function getUserReadingStats($user_id) {
         }
         $stats['this_year_books'] = intval($this_year_books ?? 0);
         
-        // 今月読んだ本（finished_dateベース、なければupdate_dateを使用）
-        $this_month_books_sql = "SELECT COUNT(*) FROM b_book_list WHERE user_id = ? AND status IN (?, ?)
-                                AND (
-                                    (finished_date IS NOT NULL 
-                                     AND YEAR(finished_date) = YEAR(NOW()) 
-                                     AND MONTH(finished_date) = MONTH(NOW()))
-                                    OR
-                                    (finished_date IS NULL AND update_date IS NOT NULL 
-                                     AND update_date != '0000-00-00 00:00:00'
-                                     AND update_date > '1970-01-01 00:00:00'
-                                     AND YEAR(update_date) = YEAR(NOW()) 
-                                     AND MONTH(update_date) = MONTH(NOW()))
-                                    OR
-                                    (finished_date IS NULL AND update_date REGEXP '^[0-9]+$' 
-                                     AND CAST(update_date AS UNSIGNED) > 1000000000 
-                                     AND YEAR(FROM_UNIXTIME(CAST(update_date AS UNSIGNED))) = YEAR(NOW())
-                                     AND MONTH(FROM_UNIXTIME(CAST(update_date AS UNSIGNED))) = MONTH(NOW()))
-                                )";
-        $this_month_books = $g_db->getOne($this_month_books_sql, [$user_id, READING_FINISH, READ_BEFORE]);
-        if (DB::isError($this_month_books)) {
-            // フォールバック：読了ステータスの本の総数の一部を使用
-            $fallback_sql = "SELECT COUNT(*) FROM b_book_list WHERE user_id = ? AND status = ?";
-            $total_finished = $g_db->getOne($fallback_sql, [$user_id, READING_FINISH]);
-            if (!DB::isError($total_finished) && $total_finished > 0) {
-                $this_month_books = min(intval($total_finished / 6), 2); // 6ヶ月で分散、最大2冊
-            } else {
-                $this_month_books = 0;
-            }
+        // 今月読んだ本（updateUserReadingStatと同じロジックで統一）
+        $month_start = date('Y-m-01 00:00:00');
+        $month_end = date('Y-m-t 23:59:59');
+
+        // 1. b_book_eventからREADING_FINISHイベントをカウント
+        $events_sql = "SELECT COUNT(DISTINCT book_id) FROM b_book_event
+                       WHERE user_id = ? AND event_date BETWEEN ? AND ? AND event = ?";
+        $this_month_events = $g_db->getOne($events_sql, [$user_id, $month_start, $month_end, READING_FINISH]);
+        if (DB::isError($this_month_events)) {
+            $this_month_events = 0;
         }
-        $stats['this_month_books'] = intval($this_month_books ?? 0);
+
+        // 2. b_book_list.finished_dateから今月読了の本をカウント（イベントがないもの）
+        $finished_sql = "SELECT COUNT(DISTINCT bl.book_id) FROM b_book_list bl
+                         WHERE bl.user_id = ?
+                         AND bl.finished_date >= DATE(?)
+                         AND bl.finished_date <= DATE(?)
+                         AND bl.status IN (?, ?)
+                         AND NOT EXISTS (
+                           SELECT 1 FROM b_book_event be
+                           WHERE be.user_id = bl.user_id
+                           AND be.book_id = bl.book_id
+                           AND be.event = ?
+                           AND be.event_date BETWEEN ? AND ?
+                         )";
+        $this_month_finished = $g_db->getOne($finished_sql, [
+            $user_id,
+            $month_start, $month_end,
+            READING_FINISH, READ_BEFORE,
+            READING_FINISH,
+            $month_start, $month_end
+        ]);
+        if (DB::isError($this_month_finished)) {
+            $this_month_finished = 0;
+        }
+
+        // 両方の合計
+        $stats['this_month_books'] = intval($this_month_events) + intval($this_month_finished);
         
         // 現在読書中の本
         $reading_now = $g_db->getOne("SELECT COUNT(*) FROM b_book_list WHERE user_id = ? AND status = ?", 

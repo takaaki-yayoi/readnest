@@ -3384,30 +3384,51 @@ function getUserRanking($order_key) {
     return array();
   }
   
-  // 月間統計の場合はリアルタイムで集計
+  // 月間統計の場合はリアルタイムで集計（updateUserReadingStatと同じロジック）
   if ($order_key === 'read_books_month') {
-    $month_start = date('Y-m-01');
-    $month_end = date('Y-m-t');
-    
-    $select_sql = "SELECT 
-                     u.user_id, 
-                     u.nickname, 
-                     u.photo, 
-                     u.photo_state, 
+    $month_start = date('Y-m-01 00:00:00');
+    $month_end = date('Y-m-t 23:59:59');
+
+    // b_book_eventからの本 + finished_dateからの本（イベントがないもの）を合算
+    $select_sql = "SELECT
+                     u.user_id,
+                     u.nickname,
+                     u.photo,
+                     u.photo_state,
                      u.diary_policy,
-                     COUNT(DISTINCT be.book_id) as `$order_key`
+                     (
+                       COALESCE((SELECT COUNT(DISTINCT be.book_id)
+                        FROM b_book_event be
+                        WHERE be.user_id = u.user_id
+                        AND be.event = " . READING_FINISH . "
+                        AND be.event_date BETWEEN ? AND ?), 0)
+                       +
+                       COALESCE((SELECT COUNT(DISTINCT bl.book_id)
+                        FROM b_book_list bl
+                        WHERE bl.user_id = u.user_id
+                        AND bl.finished_date >= DATE(?)
+                        AND bl.finished_date <= DATE(?)
+                        AND bl.status IN (" . READING_FINISH . ", " . READ_BEFORE . ")
+                        AND NOT EXISTS (
+                          SELECT 1 FROM b_book_event be2
+                          WHERE be2.user_id = bl.user_id
+                          AND be2.book_id = bl.book_id
+                          AND be2.event = " . READING_FINISH . "
+                          AND be2.event_date BETWEEN ? AND ?
+                        )), 0)
+                     ) as `$order_key`
                    FROM b_user u
-                   LEFT JOIN b_book_event be ON u.user_id = be.user_id 
-                     AND be.event = " . READING_FINISH . "
-                     AND be.event_date BETWEEN ? AND ?
                    WHERE u.diary_policy = 1
                    AND u.status = 1
-                   GROUP BY u.user_id
                    HAVING `$order_key` > 0
-                   ORDER BY `$order_key` DESC 
+                   ORDER BY `$order_key` DESC
                    LIMIT 200";
-    
-    $result = $g_db->getAll($select_sql, array($month_start, $month_end), DB_FETCHMODE_ASSOC);
+
+    $result = $g_db->getAll($select_sql, array(
+      $month_start, $month_end,  // for b_book_event
+      $month_start, $month_end,  // for finished_date comparison
+      $month_start, $month_end   // for NOT EXISTS
+    ), DB_FETCHMODE_ASSOC);
   } else {
     // その他の統計は既存のカラムを使用
     $select_sql = "SELECT user_id, nickname, photo, photo_state, diary_policy, `$order_key` 
