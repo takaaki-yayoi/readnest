@@ -738,12 +738,20 @@ if (isLatestActivitiesEnabled()) {
 
 // 読書統計取得関数
 function getUserReadingStats($user_id) {
-    global $g_db;
-    
+    global $g_db, $cache;
+
+    // キャッシュキー（5分間有効）
+    $cache_key = 'user_reading_stats_' . $user_id;
+    if (isset($cache)) {
+        $cached = $cache->get($cache_key);
+        if ($cached !== false) {
+            return $cached;
+        }
+    }
+
     try {
         $stats = array();
-        
-        
+
         // 総読書数
         $total_books = $g_db->getOne("SELECT COUNT(*) FROM b_book_list WHERE user_id = ? AND status IN (?, ?)", 
                                    [$user_id, READING_FINISH, READ_BEFORE]);
@@ -841,7 +849,12 @@ function getUserReadingStats($user_id) {
             $total_reviews = 0;
         }
         $stats['total_reviews'] = intval($total_reviews ?? 0);
-        
+
+        // キャッシュに保存（5分間）
+        if (isset($cache)) {
+            $cache->set($cache_key, $stats, 300);
+        }
+
         return $stats;
     } catch (Exception $e) {
         return array(
@@ -1011,8 +1024,17 @@ function getYearlyReadingProgress($user_id) {
 
 // 日別のページ読書進捗を取得（page_history_amdata.phpを参考に）
 function getDailyPageProgress($user_id, $days = 30) {
-    global $g_db;
-    
+    global $g_db, $cache;
+
+    // キャッシュチェック（30分間有効）
+    $cacheKey = 'daily_page_progress_' . $user_id . '_' . $days;
+    if (isset($cache)) {
+        $cached = $cache->get($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+    }
+
     try {
         // 表示期間より前に読了した本の総ページ数を取得（ベース値）
         $start_date = date('Y-m-d', time() - ($days * 24 * 60 * 60));
@@ -1137,9 +1159,14 @@ function getDailyPageProgress($user_id, $days = 30) {
                 'cumulative_pages' => $cumulative
             ];
         }
-        
+
+        // キャッシュに保存（30分間）
+        if (isset($cache)) {
+            $cache->set($cacheKey, $result, 1800);
+        }
+
         return $result;
-        
+
     } catch (Exception $e) {
         return [];
     }
@@ -1339,39 +1366,36 @@ if ($login_flag) {
     // データベースから直接計算（最適化版）
     try {
         $today = date('Y-m-d');
-        $check_date = $today;
-        $has_today_record = false;
-        
-        // まず今日の記録があるか確認（進捗更新も含む）
-        $sql = "SELECT COUNT(*) FROM b_book_event 
-                WHERE user_id = ? AND DATE(event_date) = ? 
-                AND event IN (?, ?, ?)";
-        $today_count = $g_db->getOne($sql, [$user_id, $today, READING_NOW, READING_FINISH, 4]); // 4 = 進捗更新
-        
-        if ($today_count > 0) {
-            $has_today_record = true;
-        } else {
-            // 今日の記録がなければ昨日から開始
-            $check_date = date('Y-m-d', strtotime('-1 day'));
-        }
-        
-        // 連続記録を計算（上限を撤廃し、実際の記録がある限りカウント）
-        // ただし、パフォーマンス考慮で最大3年（約1095日）まで
-        for ($i = 0; $i < 1095; $i++) {
-            $sql = "SELECT COUNT(*) FROM b_book_event
-                    WHERE user_id = ? AND DATE(event_date) = ?
-                    AND event IN (?, ?, ?)";
-            $count = $g_db->getOne($sql, [$user_id, $check_date, READING_NOW, READING_FINISH, 4]); // 4 = 進捗更新
 
-            if ($count > 0) {
-                $current_streak++;
-            } else {
-                // 記録がない日が見つかったら終了
-                break;
+        // 最適化: 1クエリで過去の全イベント日を取得してPHPで連続日数を計算
+        $streak_sql = "
+            SELECT DISTINCT DATE(event_date) as event_day
+            FROM b_book_event
+            WHERE user_id = ?
+            AND event IN (?, ?, ?)
+            AND event_date >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+            ORDER BY event_day DESC
+        ";
+        $event_days = $g_db->getAll($streak_sql, [$user_id, READING_NOW, READING_FINISH, 4], DB_FETCHMODE_ASSOC);
+
+        if (!DB::isError($event_days) && !empty($event_days)) {
+            // イベント日を配列に変換
+            $event_dates = array_column($event_days, 'event_day');
+
+            // 今日または昨日から開始
+            $check_date = $today;
+            if (!in_array($today, $event_dates)) {
+                $check_date = date('Y-m-d', strtotime('-1 day'));
             }
 
-            // 次の日（過去に遡る）
-            $check_date = date('Y-m-d', strtotime($check_date . ' -1 day'));
+            // 連続日数をカウント（PHP内で高速処理）
+            while (in_array($check_date, $event_dates)) {
+                $current_streak++;
+                $check_date = date('Y-m-d', strtotime($check_date . ' -1 day'));
+
+                // 安全のため上限設定
+                if ($current_streak >= 1095) break;
+            }
         }
     } catch (Exception $e) {
         error_log('Error calculating streak: ' . $e->getMessage());
