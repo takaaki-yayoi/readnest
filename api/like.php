@@ -13,6 +13,8 @@ ini_set('display_errors', '0');
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/library/database.php';
 require_once dirname(__DIR__) . '/library/csrf.php';
+require_once dirname(__DIR__) . '/library/like_helpers.php';
+require_once dirname(__DIR__) . '/library/notification_helpers.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -161,6 +163,9 @@ try {
                         updated_at = NOW()";
             $g_db->query($sql, [$target_type, $target_id]);
 
+            // 通知を削除
+            deleteLikeNotification($target_user_id, $user_id, $target_type, $target_id);
+
             $new_state = false;
 
         } else {
@@ -182,6 +187,9 @@ try {
                         like_count = like_count + 1,
                         updated_at = NOW()";
             $g_db->query($sql, [$target_type, $target_id]);
+
+            // 通知を作成
+            createLikeNotification($target_user_id, $user_id, $target_type, $target_id);
 
             $new_state = true;
         }
@@ -205,6 +213,9 @@ try {
                         like_count = like_count + 1,
                         updated_at = NOW()";
             $g_db->query($sql, [$target_type, $target_id]);
+
+            // 通知を作成
+            createLikeNotification($target_user_id, $user_id, $target_type, $target_id);
         }
         $new_state = true;
 
@@ -226,6 +237,9 @@ try {
                         like_count = GREATEST(0, like_count - 1),
                         updated_at = NOW()";
             $g_db->query($sql, [$target_type, $target_id]);
+
+            // 通知を削除
+            deleteLikeNotification($target_user_id, $user_id, $target_type, $target_id);
         }
         $new_state = false;
     }

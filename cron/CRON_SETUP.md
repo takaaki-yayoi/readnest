@@ -70,6 +70,15 @@
 - **影響**: データベースのクリーン化とメールアドレスの再利用可能化
 - **注意**: 仮登録のURLは1時間で無効になるため、必ず設定してください
 
+### 9. 月間レポート通知（重要度：中）
+```bash
+# 毎月1日午前9時に実行
+0 9 1 * * /usr/bin/php /home/icotfeels/readnest.jp/public_html/cron/generate_monthly_notifications.php
+```
+- **目的**: 前月に読書活動があったユーザーに月間レポート通知を送信
+- **影響**: ユーザーエンゲージメントの向上
+- **注意**: b_notificationsテーブルが必要
+
 ## cron設定方法
 
 ### 1. crontabを編集

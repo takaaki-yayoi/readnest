@@ -126,6 +126,12 @@ ob_start();
                         <span class="font-medium text-gray-900 dark:text-gray-100">読書カレンダー</span>
                     </div>
                 </a>
+                <a href="#monthly-report" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <i class="fas fa-chart-bar text-teal-500 text-xl mr-3"></i>
+                        <span class="font-medium text-gray-900 dark:text-gray-100">月間レポート</span>
+                    </div>
+                </a>
                 <a href="#reading-insights" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center">
                         <i class="fas fa-brain text-purple-500 text-xl mr-3"></i>
@@ -1193,56 +1199,60 @@ ob_start();
                             いいねページの使い方
                         </h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">
-                            ユーザーメニューから「いいね」を選択すると、いいねページにアクセスできます。
+                            トップページのハートボタン、またはユーザーメニューから「いいね」を選択すると、いいねページにアクセスできます。
                         </p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                                    <i class="fas fa-heart text-red-500 mr-2"></i>いいねした投稿
+                                    <i class="fas fa-hand-holding-heart text-red-500 mr-2"></i>いいねしたタブ
                                 </h4>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">
                                     あなたがいいねした読書活動やレビューの一覧が表示されます。後で見返したい投稿の記録として活用できます。
+                                    読書活動とレビューでフィルタリングも可能です。
                                 </p>
                             </div>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                                    <i class="fas fa-bell text-blue-500 mr-2"></i>いいねされた投稿
+                                    <i class="fas fa-heart text-red-500 mr-2"></i>いいねされたタブ
                                 </h4>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                                    あなたの投稿が受け取ったいいねの履歴が表示されます。誰がいいねしてくれたかも確認できます。
+                                    あなたの投稿が受け取ったいいねの履歴が表示されます。誰がどの投稿にいいねしてくれたかが、本の表紙とともに確認できます。
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 通知機能 -->
+                    <!-- 月間レポート通知 -->
                     <div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                             <i class="fas fa-bell text-orange-500 mr-2"></i>
-                            通知機能
+                            月間レポート通知
                         </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            毎月初めに、前月の読書レポートができたことをお知らせする通知が届きます。
+                        </p>
                         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
                             <div class="space-y-3">
                                 <div class="flex items-start">
                                     <div class="relative mr-4 mt-1">
-                                        <i class="fas fa-heart text-gray-400 text-xl"></i>
-                                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                                        <i class="fas fa-bell text-gray-400 text-xl"></i>
+                                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">1</span>
                                     </div>
                                     <div>
-                                        <strong class="text-gray-900 dark:text-gray-100">ホームページの通知バッジ</strong>
+                                        <strong class="text-gray-900 dark:text-gray-100">通知の確認</strong>
                                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            新しいいいねがあると、ホームページ上部のハートボタンに赤いバッジが表示されます。
-                                            数字は未確認のいいね数を示します。
+                                            ヘッダーのベルアイコンに未読通知があると赤いバッジが表示されます。
+                                            クリックすると通知一覧ページで確認できます。
                                         </p>
                                     </div>
                                 </div>
                                 <div class="flex items-start">
-                                    <i class="fas fa-check-circle text-green-500 text-xl mr-4 mt-1"></i>
+                                    <i class="fas fa-chart-bar text-teal-500 text-xl mr-4 mt-1"></i>
                                     <div>
-                                        <strong class="text-gray-900 dark:text-gray-100">バッジのクリア</strong>
+                                        <strong class="text-gray-900 dark:text-gray-100">レポートへ移動</strong>
                                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            ハートボタンをクリックして「いいねされた投稿」タブを開くと、通知バッジがクリアされます。
-                                            次回新しいいいねがあるまで、バッジは表示されません。
+                                            通知をクリックすると月間レポートページに移動し、
+                                            読了冊数や読んだページ数、日別グラフなどを確認できます。
                                         </p>
                                     </div>
                                 </div>
@@ -1836,6 +1846,145 @@ ob_start();
                             <li>• 読書カレンダーの緑色の丸が途切れないように意識すると継続しやすいです</li>
                             <li>• 連続記録が途切れても気にせず、また今日から始めましょう</li>
                         </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 月間レポート -->
+            <section id="monthly-report" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                    <i class="fas fa-chart-bar text-teal-500 mr-3"></i>
+                    月間レポート
+                </h2>
+
+                <div class="space-y-8">
+                    <!-- 概要 -->
+                    <div class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">📊 月別の読書を振り返り</h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            月間レポートは、1ヶ月間の読書活動を集計して視覚的に表示する機能です。読了冊数、読んだページ数、日別の読書量などを確認できます。
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">表示される統計：</h4>
+                                <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
+                                    <li>読了した本の冊数</li>
+                                    <li>読んだページ数の合計</li>
+                                    <li>1日あたりの平均ページ数</li>
+                                    <li>月間目標への達成率</li>
+                                    <li>日別読書量グラフ</li>
+                                </ul>
+                            </div>
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">こんな方におすすめ：</h4>
+                                <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
+                                    <li>毎月の読書量を把握したい</li>
+                                    <li>読書のペースを確認したい</li>
+                                    <li>月ごとの比較をしたい</li>
+                                    <li>読書の成果をシェアしたい</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 使い方 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🚀 月間レポートの使い方</h3>
+                        <div class="grid gap-4">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">1</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">アクセス方法</p>
+                                        <p class="text-gray-700 dark:text-gray-300">ナビゲーションメニューから「月間レポート」を選択、またはトップページの統計セクションから「月間レポートを見る」をクリック</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">2</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">月を切り替える</p>
+                                        <p class="text-gray-700 dark:text-gray-300">左右の矢印ボタンで過去の月のレポートを確認できます。「今月のレポートを見る」ボタンで現在月に戻れます</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">3</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">シェアする</p>
+                                        <p class="text-gray-700 dark:text-gray-300">「Xでシェア」ボタンで読書成果をシェアできます。OGP画像が自動生成され、魅力的な投稿になります</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 機能詳細 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">💡 便利な機能</h3>
+                        <div class="space-y-4">
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-chart-bar text-teal-500 mr-2"></i>
+                                    日別読書グラフ
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    月間の読書量を日別の棒グラフで確認できます。どの日にたくさん読んだか、読書のリズムを把握できます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-book text-teal-500 mr-2"></i>
+                                    読了本リスト
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    その月に読了した本が表紙画像付きで一覧表示されます。本をクリックすると詳細ページに移動できます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-bullseye text-yellow-500 mr-2"></i>
+                                    目標達成状況
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    月間の読書目標を設定している場合、達成率がパーセントで表示されます。目標達成でトロフィーアイコンが表示されます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-share-alt text-blue-500 mr-2"></i>
+                                    シェア機能
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    X（Twitter）にレポートをシェアできます。読了冊数やページ数を含む画像が自動生成され、魅力的な読書記録として投稿できます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-calendar-check text-purple-500 mr-2"></i>
+                                    カレンダーとの連携
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    「この月のカレンダーを見る」リンクから、同じ月の読書カレンダーに直接移動できます。日々の詳細な記録を確認したい場合に便利です。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 通知について -->
+                    <div class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700 rounded-lg p-6">
+                        <h4 class="font-semibold text-teal-900 dark:text-teal-100 mb-2">
+                            <i class="fas fa-bell text-teal-600 mr-2"></i>
+                            月間レポート通知
+                        </h4>
+                        <p class="text-teal-800 dark:text-teal-300 text-sm mb-2">
+                            毎月初めに、前月の読書レポートができたことをお知らせする通知が届きます。通知をクリックするとレポートページに移動できます。
+                        </p>
+                        <p class="text-teal-700 dark:text-teal-400 text-xs">
+                            ※ 通知はヘッダーのベルアイコンまたは通知ページで確認できます
+                        </p>
                     </div>
                 </div>
             </section>

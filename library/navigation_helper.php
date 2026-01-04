@@ -77,17 +77,6 @@ function getWeeklyAddedCount($user_id) {
 }
 
 /**
- * 未読の通知数を取得（将来の実装用）
- * 
- * @param int $user_id ユーザーID
- * @return int 未読通知数
- */
-function getUnreadNotificationCount($user_id) {
-    // 将来の実装のためのプレースホルダー
-    return 0;
-}
-
-/**
  * パンくずリストを生成
  * 
  * @param string $page_type ページタイプ

@@ -280,14 +280,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </div>
                 
                 <!-- Desktop Navigation -->
-                <?php 
+                <?php
                 // ナビゲーションヘルパーを読み込み
                 require_once(dirname(dirname(dirname(__FILE__))) . '/library/navigation_helper.php');
-                
+
                 // 読書中の本の数を取得
                 $reading_count = 0;
+                $unread_notification_count = 0;
                 if (isset($_SESSION['AUTH_USER'])) {
                     $reading_count = getReadingCount($_SESSION['AUTH_USER']);
+
+                    // 通知ヘルパーを読み込み、未読件数を取得
+                    $notification_helper_path = dirname(dirname(dirname(__FILE__))) . '/library/notification_helpers.php';
+                    if (file_exists($notification_helper_path)) {
+                        require_once($notification_helper_path);
+                        $unread_notification_count = getUnreadNotificationCount($_SESSION['AUTH_USER']);
+                    }
                 }
                 ?>
                 <!-- iPad用コンパクトナビゲーション（768px-1024px） -->
@@ -493,6 +501,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <!-- Global Search and User Menu -->
                 <div class="flex items-center space-x-3">
                     <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                    <!-- Notification Bell -->
+                    <a href="/notifications.php"
+                       class="relative p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                       title="通知">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 <?php echo $unread_notification_count > 0 ? '' : 'hidden'; ?>">
+                            <?php echo $unread_notification_count > 9 ? '9+' : $unread_notification_count; ?>
+                        </span>
+                    </a>
+
                     <!-- Dark Mode Toggle -->
                     <button @click="toggleDarkMode()"
                             class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

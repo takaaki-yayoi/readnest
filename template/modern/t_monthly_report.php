@@ -126,6 +126,16 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
             <?php endif; ?>
         </div>
 
+        <!-- 今月へのリンク（今月以外を表示中の場合） -->
+        <?php if ($year != $current_year || $month != $current_month): ?>
+        <div class="mt-3 text-center">
+            <a href="/report/<?php echo $current_year; ?>/<?php echo $current_month; ?><?php echo $url_user_path; ?>"
+               class="inline-flex items-center px-4 py-2 bg-readnest-primary hover:bg-readnest-accent text-white text-sm rounded-lg transition-colors">
+                <i class="fas fa-calendar-day mr-2"></i>今月のレポートを見る
+            </a>
+        </div>
+        <?php endif; ?>
+
         <!-- カレンダーへのリンク（自分のレポートのみ表示） -->
         <?php if ($is_my_report): ?>
         <div class="mt-3 text-center">

@@ -219,7 +219,7 @@ $welcome_greeting = ($hour >= 21 || $hour < 5) ? $greeting : $welcome_variations
                     <p class="text-gray-600 dark:text-gray-400 text-sm"><?php echo $selected_message; ?></p>
                 </div>
                 <!-- いいねボタン（タイトル右側・モバイルのみ） -->
-                <a href="/my_likes.php?tab=received" class="btn-secondary px-3 py-2 text-sm shrink-0 relative" title="いいね">
+                <a href="/my_likes.php" class="btn-secondary px-3 py-2 text-sm shrink-0 relative" title="いいねした投稿">
                     <i class="fas fa-heart text-red-500"></i>
                     <?php if (isset($recent_likes) && !empty($recent_likes)): ?>
                     <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -251,7 +251,7 @@ $welcome_greeting = ($hour >= 21 || $hour < 5) ? $greeting : $welcome_variations
             </div>
             <div class="flex gap-3">
                 <!-- いいねボタン（常時表示） -->
-                <a href="/my_likes.php?tab=received" class="btn-secondary px-4 py-2 text-sm relative" title="いいね">
+                <a href="/my_likes.php" class="btn-secondary px-4 py-2 text-sm relative" title="いいね">
                     <i class="fas fa-heart mr-2"></i>
                     <!-- いいね通知バッジ（新しいいいねがある時のみ表示） -->
                     <?php if (isset($recent_likes) && !empty($recent_likes)): ?>
