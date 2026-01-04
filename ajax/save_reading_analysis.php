@@ -69,13 +69,16 @@ try {
     
     // 分析内容の著者名を修正してから保存
     $corrected_content = AuthorCorrections::correctInText($input['analysis_content']);
-    
+
+    // 公開設定（パラメータがあれば使用、なければ非公開）
+    $is_public = isset($input['is_public']) ? (int)$input['is_public'] : 0;
+
     // Save the analysis
     $analysis_id = saveReadingAnalysis(
         $user_id,
         'trend',
         $corrected_content,
-        0 // デフォルトは非公開
+        $is_public
     );
     
     if ($analysis_id) {

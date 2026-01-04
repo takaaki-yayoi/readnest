@@ -110,8 +110,8 @@ ob_start();
             <?php if (!$is_my_insights): ?>
                 <?php echo html($display_nickname); ?>さんの
             <?php endif; ?>
-            📊 読書インサイト
-            <a href="/help.php#reading-insights" class="ml-3 text-base text-gray-500 hover:text-gray-700 transition-colors" title="読書インサイトのヘルプ">
+            📊 読書分析
+            <a href="/help.php#reading-insights" class="ml-3 text-base text-gray-500 hover:text-gray-700 transition-colors" title="読書分析のヘルプ">
                 <i class="fas fa-question-circle"></i>
             </a>
         </h1>
@@ -133,10 +133,16 @@ ob_start();
                class="px-6 py-3 text-sm font-medium <?php echo $view_mode === 'map' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-600 hover:text-gray-900'; ?>">
                 <i class="fas fa-map mr-2"></i>読書マップ
             </a>
-            <a href="?mode=pace<?php echo !$is_my_insights ? '&user=' . $user_id : ''; ?>" 
+            <a href="?mode=pace<?php echo !$is_my_insights ? '&user=' . $user_id : ''; ?>"
                class="px-6 py-3 text-sm font-medium <?php echo $view_mode === 'pace' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-600 hover:text-gray-900'; ?>">
                 <i class="fas fa-gauge-high mr-2"></i>読書ペース
             </a>
+            <?php if ($is_my_insights): ?>
+            <a href="?mode=trend"
+               class="px-6 py-3 text-sm font-medium <?php echo $view_mode === 'trend' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-600 hover:text-gray-900'; ?>">
+                <i class="fas fa-magic mr-2"></i>AI傾向診断
+            </a>
+            <?php endif; ?>
         </nav>
     </div>
     
@@ -589,6 +595,140 @@ ob_start();
     <?php elseif ($view_mode === 'pace'): ?>
     <!-- 読書ペース分析ビュー -->
     <?php include(getTemplatePath('t_reading_pace_analysis.php')); ?>
+
+    <?php elseif ($view_mode === 'trend' && $is_my_insights): ?>
+    <!-- AI傾向診断ビュー -->
+    <div class="space-y-6">
+        <!-- 説明セクション -->
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-6">
+            <div class="flex items-start space-x-4">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                        <i class="fas fa-magic text-purple-600 dark:text-purple-400 text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">AI傾向診断</h2>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm">
+                        AIがあなたの読書履歴を分析し、読書傾向や好みの特徴をテキストで解説します。<br>
+                        分析結果はプロフィールに保存して公開することもできます。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分析実行ボタン -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="text-center">
+                <button id="analyze-trends-btn"
+                        onclick="analyzeReadingTrends()"
+                        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl">
+                    <i class="fas fa-magic mr-2"></i>
+                    傾向を分析する
+                </button>
+                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                    分析には数秒かかる場合があります
+                </p>
+            </div>
+
+            <!-- ローディング表示 -->
+            <div id="trend-loading" class="hidden mt-6">
+                <div class="flex items-center justify-center space-x-3">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    <span class="text-gray-600 dark:text-gray-300">AIが分析中...</span>
+                </div>
+            </div>
+
+            <!-- 分析結果表示エリア -->
+            <div id="trend-result" class="hidden mt-6">
+                <div class="border-t dark:border-gray-700 pt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                        <i class="fas fa-chart-line mr-2 text-purple-600"></i>分析結果
+                    </h3>
+                    <div id="trend-content" class="prose prose-sm dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <!-- 分析結果がここに表示される -->
+                    </div>
+
+                    <!-- 保存・共有オプション -->
+                    <div class="mt-6 p-4 bg-purple-50 dark:bg-gray-700 rounded-lg">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            保存するとマイページに表示されます。公開にチェックを入れると他のユーザーにも表示されます。
+                        </p>
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="trend-public-toggle" class="sr-only peer">
+                                    <div class="relative w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                                    <span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="fas fa-globe mr-1"></i>公開する
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button id="save-analysis-btn" onclick="saveAnalysisToProfile()"
+                                        class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                                    <i class="fas fa-save mr-2"></i>マイページに保存
+                                </button>
+                            </div>
+                        </div>
+                        <!-- 保存成功メッセージ -->
+                        <div id="save-success-message" class="hidden mt-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="text-green-800 dark:text-green-300">
+                                    <i class="fas fa-check-circle mr-2"></i>マイページに保存しました
+                                </span>
+                                <a href="/profile.php" class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-user mr-1"></i>マイページを見る
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分析履歴 -->
+        <?php if (!empty($analysis_history) && count($analysis_history) > 1): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                <i class="fas fa-history mr-2 text-gray-500"></i>過去の分析履歴
+            </h3>
+            <div class="space-y-3">
+                <?php foreach ($analysis_history as $index => $history): ?>
+                <?php if ($index === 0) continue; // 最新はスキップ（上に表示済み） ?>
+                <div class="border dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            <?php echo date('Y年n月j日', strtotime($history['created_at'])); ?>
+                        </span>
+                        <button onclick="showFullAnalysis(<?php echo $history['analysis_id']; ?>)"
+                                class="text-sm text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 font-medium">
+                            <i class="fas fa-eye mr-1"></i>表示
+                        </button>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- 最新の保存済み分析を表示 -->
+        <?php if (!empty($latest_analysis)): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                <i class="fas fa-bookmark mr-2 text-purple-600"></i>保存済みの分析
+                <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                    (<?php echo date('Y年n月j日', strtotime($latest_analysis['created_at'])); ?>)
+                </span>
+            </h3>
+            <div class="prose prose-sm dark:prose-invert max-w-none">
+                <?php echo nl2br(html($latest_analysis['analysis_content'])); ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
     <?php endif; ?>
 </div>
 
@@ -1596,6 +1736,167 @@ if (paceCtx) {
             }
         }
     });
+}
+<?php endif; ?>
+
+<?php if ($view_mode === 'trend' && $is_my_insights): ?>
+// AI傾向診断の変数
+let currentAnalysisData = null;
+
+// 読書傾向分析を実行
+async function analyzeReadingTrends() {
+    const btn = document.getElementById('analyze-trends-btn');
+    const loading = document.getElementById('trend-loading');
+    const result = document.getElementById('trend-result');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>分析中...';
+    loading.classList.remove('hidden');
+    result.classList.add('hidden');
+
+    try {
+        // 読書履歴を取得
+        const historyResponse = await fetch('/api/get_reading_history.php?limit=50');
+        const historyData = await historyResponse.json();
+
+        if (!historyData.success || !historyData.books || historyData.books.length < 3) {
+            throw new Error('分析に必要な読書履歴が不足しています（最低3冊必要）');
+        }
+
+        // AI分析を実行
+        const analysisResponse = await fetch('/ai_review_simple.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'analyze_trends',
+                reading_history: historyData.books
+            })
+        });
+
+        const analysisData = await analysisResponse.json();
+
+        if (!analysisData.success) {
+            throw new Error(analysisData.error || '分析に失敗しました');
+        }
+
+        // 結果を表示
+        currentAnalysisData = analysisData;
+        const contentEl = document.getElementById('trend-content');
+        contentEl.innerHTML = formatAnalysisResult(analysisData.analysis || analysisData.content);
+
+        result.classList.remove('hidden');
+
+    } catch (error) {
+        alert('エラー: ' + error.message);
+        console.error('Analysis error:', error);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>傾向を分析する';
+        loading.classList.add('hidden');
+    }
+}
+
+// 分析結果をフォーマット
+function formatAnalysisResult(text) {
+    if (!text) return '';
+    // Markdown風の変換
+    let html = text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^## (.+)$/gm, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+        .replace(/^### (.+)$/gm, '<h4 class="font-semibold mt-3 mb-1">$1</h4>')
+        .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
+        .replace(/\n/g, '<br>');
+    return html;
+}
+
+// プロフィールに保存
+async function saveAnalysisToProfile() {
+    if (!currentAnalysisData) {
+        alert('先に分析を実行してください');
+        return;
+    }
+
+    const isPublic = document.getElementById('trend-public-toggle').checked;
+    const saveBtn = document.getElementById('save-analysis-btn');
+    const successMsg = document.getElementById('save-success-message');
+
+    // ボタンを無効化
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+
+    try {
+        const response = await fetch('/ajax/save_reading_analysis.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                analysis_content: currentAnalysisData.analysis || currentAnalysisData.content,
+                analysis_type: 'trend',
+                is_public: isPublic ? 1 : 0
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 保存ボタンを保存済み表示に変更
+            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>保存済み';
+            saveBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+            saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+
+            // 成功メッセージを表示
+            successMsg.classList.remove('hidden');
+            successMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            throw new Error(data.error || '保存に失敗しました');
+        }
+    } catch (error) {
+        // エラー時はボタンを元に戻す
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>マイページに保存';
+        alert('エラー: ' + error.message);
+        console.error('Save error:', error);
+    }
+}
+
+// 過去の分析を全文表示
+function showFullAnalysis(analysisId) {
+    // モーダルで表示
+    fetch(`/ajax/get_analysis_history.php?analysis_id=${analysisId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.analysis) {
+                const createdAt = new Date(data.analysis.created_at);
+                const dateStr = createdAt.toLocaleDateString('ja-JP', {year: 'numeric', month: 'long', day: 'numeric'});
+
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                        <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                <i class="fas fa-magic mr-2 text-purple-500"></i>${dateStr} の分析
+                            </h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 overflow-y-auto max-h-[60vh]">
+                            <div class="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200">
+                                ${formatAnalysisResult(data.analysis.analysis_content)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } else {
+                alert('分析データを取得できませんでした');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('エラーが発生しました');
+        });
 }
 <?php endif; ?>
 </script>

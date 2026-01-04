@@ -247,21 +247,31 @@ ob_start();
                                     title="過去の分析">
                                 <i class="fas fa-history mr-0.5 sm:mr-1 text-xs"></i>履歴
                             </button>
-                            <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" 
-                                       id="analysis-public-toggle" 
+                            <label class="inline-flex items-center cursor-pointer" title="他のユーザーに公開する">
+                                <input type="checkbox"
+                                       id="analysis-public-toggle"
                                        <?php echo ($reading_analysis['is_public'] == 1) ? 'checked' : ''; ?>
                                        onchange="toggleAnalysisVisibility(<?php echo $reading_analysis['analysis_id']; ?>)"
-                                       class="mr-1 sm:mr-2">
-                                <span class="text-xs sm:text-sm text-gray-600">公開</span>
+                                       class="sr-only peer">
+                                <div class="relative w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                <span class="ms-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-<?php echo ($reading_analysis['is_public'] == 1) ? 'globe' : 'lock'; ?> mr-1" id="analysis-public-icon"></i>
+                                    <span id="analysis-public-text"><?php echo ($reading_analysis['is_public'] == 1) ? '公開中' : '非公開'; ?></span>
+                                </span>
                             </label>
-                            <button onclick="shareAnalysisToX(<?php echo $reading_analysis['analysis_id']; ?>)" 
+                            <button onclick="shareAnalysisToX(<?php echo $reading_analysis['analysis_id']; ?>)"
                                     class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700"
-                                    title="Xに投稿">
-                                <i class="fab fa-x-twitter mr-0.5 sm:mr-1 text-xs"></i><span class="hidden xs:inline">Xに投稿</span>
+                                    title="Xでシェア">
+                                <i class="fab fa-x-twitter mr-0.5 sm:mr-1 text-xs"></i><span class="hidden sm:inline">シェア</span>
                             </button>
-                            <a href="/bookshelf.php" class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700">
-                                <i class="fas fa-sync-alt mr-0.5 sm:mr-1 text-xs"></i><span class="hidden xs:inline">再分析</span>
+                            <a href="/og-image/analysis/<?php echo $reading_analysis['analysis_id']; ?>.png"
+                               download="readnest_reading_analysis_<?php echo date('Ymd', strtotime($reading_analysis['created_at'])); ?>.png"
+                               class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700"
+                               title="画像を保存">
+                                <i class="fas fa-download mr-0.5 sm:mr-1 text-xs"></i><span class="hidden sm:inline">保存</span>
+                            </a>
+                            <a href="/reading_insights.php?mode=trend" class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700" title="再分析">
+                                <i class="fas fa-sync-alt mr-0.5 sm:mr-1 text-xs"></i><span class="hidden sm:inline">再分析</span>
                             </a>
                         </div>
                         <?php endif; ?>
@@ -338,8 +348,13 @@ ob_start();
 // 読書傾向分析の公開設定を切り替え
 async function toggleAnalysisVisibility(analysisId) {
     const checkbox = document.getElementById('analysis-public-toggle');
+    const icon = document.getElementById('analysis-public-icon');
+    const text = document.getElementById('analysis-public-text');
     const isPublic = checkbox.checked ? 1 : 0;
-    
+
+    // UIを即時更新
+    updatePublicUI(isPublic);
+
     try {
         const response = await fetch('/ajax/update_analysis_visibility.php', {
             method: 'POST',
@@ -351,88 +366,87 @@ async function toggleAnalysisVisibility(analysisId) {
                 is_public: isPublic
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (!data.success) {
             // エラーの場合は元に戻す
             checkbox.checked = !checkbox.checked;
+            updatePublicUI(checkbox.checked ? 1 : 0);
             alert('設定の更新に失敗しました');
         }
     } catch (error) {
         console.error('Error:', error);
         checkbox.checked = !checkbox.checked;
+        updatePublicUI(checkbox.checked ? 1 : 0);
         alert('通信エラーが発生しました');
+    }
+}
+
+// 公開状態のUI更新
+function updatePublicUI(isPublic) {
+    const icon = document.getElementById('analysis-public-icon');
+    const text = document.getElementById('analysis-public-text');
+    if (icon && text) {
+        if (isPublic) {
+            icon.className = 'fas fa-globe mr-1';
+            text.textContent = '公開中';
+        } else {
+            icon.className = 'fas fa-lock mr-1';
+            text.textContent = '非公開';
+        }
     }
 }
 
 // 読書傾向分析をXに投稿
 async function shareAnalysisToX(analysisId) {
-    const button = event.target;
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+
+    // 公開設定を確認
+    const publicToggle = document.getElementById('analysis-public-toggle');
+    if (publicToggle && !publicToggle.checked) {
+        if (!confirm('Xでシェアするには分析を公開する必要があります。\n公開設定をONにしてシェアしますか？')) {
+            return;
+        }
+        // 公開設定をONにする
+        publicToggle.checked = true;
+        await toggleAnalysisVisibility(analysisId);
+        // 少し待ってからシェア処理を続行
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
     button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>処理中...';
-    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>準備中...';
+
     try {
-        // 画像を生成
-        const imageResponse = await fetch('/ajax/generate_analysis_image.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                analysis_id: analysisId
-            })
+        // OGP画像のURL
+        const ogImageUrl = '/og-image/analysis/' + analysisId + '.png';
+
+        // 画像を事前に生成（キャッシュ作成のため）
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>画像生成中...';
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = ogImageUrl + '?t=' + Date.now();
         });
-        
-        // レスポンスのテキストを先に取得してデバッグ
-        const responseText = await imageResponse.text();
-        console.log('Response status:', imageResponse.status);
-        console.log('Response text:', responseText);
-        
-        let imageData;
-        try {
-            imageData = JSON.parse(responseText);
-        } catch (e) {
-            console.error('JSON parse error:', e);
-            console.error('Response was:', responseText);
-            throw new Error('サーバーからの応答が不正です');
-        }
-        
-        if (!imageData.success) {
-            throw new Error(imageData.error || '画像の生成に失敗しました');
-        }
-        
+
         // ツイートテキストを作成
         const tweetText = '私の読書傾向分析を公開しました！\n\n#ReadNest #読書記録';
-        // user_idを含むURLを生成
         const currentUserId = '<?php echo html($target_user_id); ?>';
-        const profileUrl = window.location.origin + '/profile/' + currentUserId;
-        
-        // X投稿画面を開く（画像はBase64で渡せないため、テキストのみ）
+        const profileUrl = window.location.origin + '/profile/' + currentUserId + '#current-analysis-section';
+
+        // X投稿画面を開く
         const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(profileUrl)}`;
-        
-        // 画像をダウンロード可能にする
-        const link = document.createElement('a');
-        link.href = imageData.image_url;
-        link.download = 'reading_analysis_' + analysisId + '.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // 少し遅延を入れてからX投稿画面を開く
-        setTimeout(() => {
-            window.open(xUrl, '_blank');
-        }, 500);
-        
-        // 案内メッセージ
-        alert('画像をダウンロードしました。Xの投稿画面で画像を添付してください。');
-        
+        window.open(xUrl, '_blank');
+
     } catch (error) {
         console.error('Error:', error);
-        alert('エラーが発生しました: ' + error.message);
+        alert('画像の生成に失敗しました。しばらく待ってから再度お試しください。');
     } finally {
         button.disabled = false;
-        button.innerHTML = '<i class="fab fa-x-twitter mr-1"></i>Xに投稿';
+        button.innerHTML = originalHtml;
     }
 }
 
@@ -557,7 +571,7 @@ async function loadAnalysis(analysisId) {
                                 title="Xに投稿">
                             <i class="fab fa-x-twitter mr-1"></i>Xに投稿
                         </button>
-                        <a href="/bookshelf.php" class="text-sm text-indigo-600 hover:text-indigo-700">
+                        <a href="/reading_insights.php?mode=trend" class="text-sm text-indigo-600 hover:text-indigo-700">
                             <i class="fas fa-sync-alt mr-1"></i>再分析
                         </a>
                     </div>

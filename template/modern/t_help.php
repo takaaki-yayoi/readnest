@@ -135,7 +135,7 @@ ob_start();
                 <a href="#reading-insights" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center">
                         <i class="fas fa-brain text-purple-500 text-xl mr-3"></i>
-                        <span class="font-medium text-gray-900 dark:text-gray-100">読書インサイト</span>
+                        <span class="font-medium text-gray-900 dark:text-gray-100">読書分析</span>
                         <span class="ml-2 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-0.5 rounded-full">New</span>
                     </div>
                 </a>
@@ -1296,7 +1296,7 @@ ob_start();
                         </div>
                         <div class="bg-gradient-to-br from-readnest-beige to-white dark:from-gray-700 dark:to-gray-800 rounded-lg p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">📊 統計表示</h3>
-                            <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300 dark:text-gray-300 mb-3">読書統計や月別の読書数などを確認できます。読書インサイトで多面的な分析も可能。</p>
+                            <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300 dark:text-gray-300 mb-3">読書統計や月別の読書数などを確認できます。読書分析で多面的な分析も可能。</p>
                             <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded p-3 text-sm">
                                 <p class="text-blue-800 dark:text-blue-200">
                                     <i class="fas fa-chart-line mr-1"></i>
@@ -1305,8 +1305,8 @@ ob_start();
                             </div>
                         </div>
                         <div class="bg-gradient-to-br from-readnest-beige to-white dark:from-gray-700 dark:to-gray-800 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">🧠 読書インサイト連携</h3>
-                            <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300">読書インサイトとシームレスに連携。ワンクリックでAI分析や視覚的な読書分析へ移動できます。</p>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">🧠 読書分析連携</h3>
+                            <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300">読書分析とシームレスに連携。ワンクリックでAI分析や視覚的な読書分析へ移動できます。</p>
                         </div>
                         <div class="bg-gradient-to-br from-readnest-beige to-white dark:from-gray-700 dark:to-gray-800 rounded-lg p-6">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">📝 マイレビュー機能</h3>
@@ -1341,17 +1341,17 @@ ob_start();
                             <div class="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded text-sm">
                                 <p class="text-blue-800 dark:text-blue-300">
                                     <i class="fas fa-lightbulb mr-1"></i>
-                                    <strong>連携機能：</strong>著者検索やタグ検索の結果から「マップで確認」をクリックすると、読書インサイトのマップモードで該当項目をすぐに確認できます。
+                                    <strong>連携機能：</strong>著者検索やタグ検索の結果から「マップで確認」をクリックすると、読書分析のマップモードで該当項目をすぐに確認できます。
                                 </p>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- 読書インサイトとの連携 -->
+                    <!-- 読書分析との連携 -->
                     <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                             <i class="fas fa-link text-green-600 mr-3"></i>
-                            読書インサイトとの連携
+                            読書分析との連携
                         </h3>
                         
                         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-4">
@@ -1360,14 +1360,14 @@ ob_start();
                                 <div class="flex items-start">
                                     <i class="fas fa-arrow-right text-green-600 mt-1 mr-3"></i>
                                     <div class="dark:text-gray-300">
-                                        <p class="font-medium text-gray-900 dark:text-gray-100">本棚 → 読書インサイト</p>
-                                        <p class="text-sm text-gray-700 dark:text-gray-300">ヘッダーの「読書インサイト」ボタンから各種分析ページへ</p>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">本棚 → 読書分析</p>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300">ヘッダーの「読書分析」ボタンから各種分析ページへ</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start">
                                     <i class="fas fa-arrow-left text-green-600 mt-1 mr-3"></i>
                                     <div class="dark:text-gray-300">
-                                        <p class="font-medium text-gray-900 dark:text-gray-100">読書インサイト → 本棚</p>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">読書分析 → 本棚</p>
                                         <p class="text-sm text-gray-700 dark:text-gray-300">マップのバブルやクラスタから該当する本の検索結果へ</p>
                                     </div>
                                 </div>
@@ -1383,7 +1383,7 @@ ob_start();
                             <div class="mt-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm">
                                 <p class="text-green-800 dark:text-green-300">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    <strong>効率的な使い方：</strong>読書インサイトで全体的な傾向を把握し、本棚で詳細な管理を行う、というように使い分けることで効率的な読書管理が可能です。
+                                    <strong>効率的な使い方：</strong>読書分析で全体的な傾向を把握し、本棚で詳細な管理を行う、というように使い分けることで効率的な読書管理が可能です。
                                 </p>
                             </div>
                         </div>
@@ -2755,20 +2755,6 @@ ob_start();
                                     </ol>
                                 </div>
                                 
-                                <!-- 読書チャレンジ -->
-                                <div class="border-l-4 border-pink-500 pl-4">
-                                    <h4 class="font-semibold text-pink-900 mb-2">
-                                        <i class="fas fa-trophy mr-2"></i>読書チャレンジ
-                                    </h4>
-                                    <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-2">新しいジャンルに挑戦</p>
-                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                                        <li>「チャレンジを見る」ボタンをクリック</li>
-                                        <li>AIがあなたの読書の幅を広げる提案を作成</li>
-                                        <li>未読のジャンルや新しい著者への挑戦を促す</li>
-                                        <li>チャレンジに取り組んで読書の世界を広げる</li>
-                                    </ol>
-                                </div>
-                                
                                 <div class="mt-4 p-3 bg-purple-100 dark:bg-purple-900/30 rounded text-sm">
                                     <p class="text-purple-800 dark:text-purple-300">
                                         <i class="fas fa-lightbulb mr-1"></i>
@@ -2891,11 +2877,11 @@ ob_start();
                 </div>
             </section>
 
-            <!-- 読書インサイト -->
+            <!-- 読書分析 -->
             <section id="reading-insights" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                     <i class="fas fa-brain text-readnest-primary mr-3"></i>
-                    読書インサイト
+                    読書分析
                     <span class="ml-3 text-sm bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full">New</span>
                 </h2>
                 
@@ -2999,8 +2985,8 @@ ob_start();
                         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
                             <h4 class="font-semibold text-gray-900 dark:text-gray-100">複数の方法でアクセスできます：</h4>
                             <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                                <li><strong>本棚ページから</strong>：ヘッダーの「読書インサイト」ボタンをクリック</li>
-                                <li><strong>直接アクセス</strong>：メニューから「読書インサイト」を選択</li>
+                                <li><strong>本棚ページから</strong>：ヘッダーの「読書分析」ボタンをクリック</li>
+                                <li><strong>直接アクセス</strong>：メニューから「読書分析」を選択</li>
                                 <li><strong>URLパラメータ</strong>：?mode=でoverviewp/clusters/map/paceを指定して各モードへ直接移動</li>
                             </ol>
                             

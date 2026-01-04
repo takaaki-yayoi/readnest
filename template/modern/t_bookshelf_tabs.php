@@ -143,64 +143,47 @@
                 
                 <!-- AI読書アドバイザーコンテンツ -->
                 <div x-show="activeTab === 'ai'" x-cloak style="min-height: 150px;">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- 読書推薦 -->
-                        <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-4">
-                            <h3 class="font-semibold text-purple-900 dark:text-purple-100 mb-2">
-                                <i class="fas fa-book mr-2"></i>おすすめの本
-                            </h3>
-                            <p class="text-sm text-purple-700 dark:text-purple-300 mb-3">読書履歴に基づく推薦</p>
-                            <a href="/recommendations.php" 
-                               class="block w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm font-medium text-center">
-                                AIに推薦してもらう
-                            </a>
-                        </div>
-                        
-                        <!-- 読書傾向分析 -->
-                        <div class="bg-indigo-50 dark:bg-indigo-900 rounded-lg p-4">
-                            <h3 class="font-semibold text-indigo-900 dark:text-indigo-100 mb-2">
-                                <i class="fas fa-chart-line mr-2"></i>読書傾向
-                            </h3>
-                            <p class="text-sm text-indigo-700 dark:text-indigo-300 mb-3">あなたの読書パターン</p>
-                            <button onclick="analyzeReadingTrends()" 
-                                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">
-                                分析を見る
-                            </button>
-                        </div>
-                        
-                        <!-- 読書チャレンジ -->
-                        <div class="bg-pink-50 dark:bg-pink-900 rounded-lg p-4">
-                            <h3 class="font-semibold text-pink-900 dark:text-pink-100 mb-2">
-                                <i class="fas fa-trophy mr-2"></i>今月の目標
-                            </h3>
-                            <p class="text-sm text-pink-700 dark:text-pink-300 mb-3">パーソナライズされた目標</p>
-                            <button onclick="getReadingChallenge()" 
-                                    class="w-full bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700 text-sm font-medium">
-                                チャレンジを見る
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- 結果表示エリア -->
-                    <div id="ai-recommendation-result" class="mt-6 hidden">
-                        <div class="border-t pt-6">
-                            <div id="ai-loading" class="hidden text-center py-8">
-                                <svg class="animate-spin h-8 w-8 mx-auto text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <p class="mt-2 text-gray-600 dark:text-gray-400">AIが分析中...</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- AI推薦へのリンク -->
+                        <a href="/recommendations.php"
+                           class="block bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-700 hover:shadow-lg transition-all duration-300 group">
+                            <div class="flex items-center mb-3">
+                                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-800 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-magic text-purple-600 dark:text-purple-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-purple-900 dark:text-purple-100 text-lg">AI推薦</h3>
+                                    <span class="text-xs text-purple-600 dark:text-purple-300">おすすめの本を発見</span>
+                                </div>
                             </div>
-                            
-                            <div id="ai-error" class="hidden bg-red-50 border-l-4 border-red-400 p-4">
-                                <p class="text-red-700"></p>
+                            <p class="text-sm text-purple-700 dark:text-purple-200 mb-4">あなたの読書傾向を分析して、次に読むべき本を提案します</p>
+                            <div class="flex items-center text-purple-600 dark:text-purple-300 font-medium text-sm group-hover:translate-x-1 transition-transform">
+                                <span>AI推薦を見る</span>
+                                <i class="fas fa-arrow-right ml-2"></i>
                             </div>
-                            
-                            <div id="ai-content" class="prose max-w-none"></div>
-                        </div>
+                        </a>
+
+                        <!-- 読書分析へのリンク -->
+                        <a href="/reading_insights.php"
+                           class="block bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 rounded-lg p-6 border-2 border-indigo-200 dark:border-indigo-700 hover:shadow-lg transition-all duration-300 group">
+                            <div class="flex items-center mb-3">
+                                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-chart-pie text-indigo-600 dark:text-indigo-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-indigo-900 dark:text-indigo-100 text-lg">読書分析</h3>
+                                    <span class="text-xs text-indigo-600 dark:text-indigo-300">統計・傾向・マップ</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-indigo-700 dark:text-indigo-200 mb-4">読書統計、AI傾向診断、読書マップなど詳細な分析を確認できます</p>
+                            <div class="flex items-center text-indigo-600 dark:text-indigo-300 font-medium text-sm group-hover:translate-x-1 transition-transform">
+                                <span>分析を見る</span>
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </div>
+                        </a>
                     </div>
                 </div>
-                
+
                 <!-- 作家クラウドコンテンツ -->
                 <div x-show="activeTab === 'authors'" x-cloak style="min-height: 150px;">
                     <!-- 説明文 -->

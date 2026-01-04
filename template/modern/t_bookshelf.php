@@ -37,19 +37,14 @@ if (isset($breadcrumbs)) {
             </div>
             <?php if ($is_own_bookshelf): ?>
             <!-- モバイル用グリッドボタン -->
-            <div class="mt-3 grid grid-cols-3 gap-1 tablet:hidden">
-                <a href="/recommendations.php" class="btn bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 px-1 py-2 text-xs font-medium text-center shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-yellow-400 text-xs text-black px-1 rounded-bl" style="font-size: 8px;">AI</div>
-                    <i class="fas fa-magic text-sm"></i>
-                    <span class="block mt-1" style="font-size: 9px;">AI推薦</span>
-                </a>
+            <div class="mt-3 grid grid-cols-2 gap-1 tablet:hidden">
                 <a href="/reading_calendar.php" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-1 py-2 text-xs font-medium text-center">
                     <i class="fas fa-calendar-check text-sm"></i>
                     <span class="block mt-1" style="font-size: 9px;">カレンダー</span>
                 </a>
-                <a href="/reading_insights.php?mode=map" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-1 py-2 text-xs font-medium text-center">
-                    <i class="fas fa-brain text-sm"></i>
-                    <span class="block mt-1" style="font-size: 9px;">分析</span>
+                <a href="/reading_insights.php" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-1 py-2 text-xs font-medium text-center">
+                    <i class="fas fa-chart-pie text-sm"></i>
+                    <span class="block mt-1" style="font-size: 9px;">読書分析</span>
                 </a>
             </div>
             <div class="mt-1 grid grid-cols-3 gap-1 tablet:hidden">
@@ -69,14 +64,11 @@ if (isset($breadcrumbs)) {
             
             <!-- タブレット用ボタン -->
             <div class="hidden tablet:flex tablet-lg:hidden mt-4 gap-2 flex-wrap">
-                <a href="/recommendations.php" class="btn bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 px-4 py-2 text-sm font-medium shadow-lg">
-                    <i class="fas fa-magic mr-1"></i>AI推薦
-                </a>
                 <a href="/reading_calendar.php" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-4 py-2 text-sm font-medium">
                     <i class="fas fa-calendar-check mr-1"></i>カレンダー
                 </a>
-                <a href="/reading_insights.php?mode=map" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-4 py-2 text-sm font-medium">
-                    <i class="fas fa-brain mr-1"></i>分析
+                <a href="/reading_insights.php" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-4 py-2 text-sm font-medium">
+                    <i class="fas fa-chart-pie mr-1"></i>読書分析
                 </a>
                 <a href="/my_reviews.php" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-4 py-2 text-sm font-medium">
                     <i class="fas fa-pen-to-square mr-1"></i>レビュー
@@ -91,12 +83,8 @@ if (isset($breadcrumbs)) {
             
             <!-- デスクトップ用ボタン -->
             <div class="hidden tablet-lg:flex mt-0 flex-row gap-3">
-                <a href="/recommendations.php" class="btn bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 px-6 py-3 font-semibold shadow-lg relative overflow-hidden">
-                    <span class="absolute top-0 right-0 bg-yellow-400 text-xs text-black px-2 py-0.5 rounded-bl font-bold">AI</span>
-                    <i class="fas fa-magic mr-2"></i>AI推薦
-                </a>
-                <a href="/reading_insights.php?mode=map" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-6 py-3 font-semibold">
-                    <i class="fas fa-brain mr-2"></i>読書インサイト
+                <a href="/reading_insights.php" class="btn bg-white dark:bg-gray-800 text-readnest-primary dark:text-white hover:bg-readnest-beige dark:hover:bg-gray-700 px-6 py-3 font-semibold">
+                    <i class="fas fa-chart-pie mr-2"></i>読書分析
                 </a>
                 <a href="/add_book.php" class="btn bg-transparent border-2 border-white dark:border-gray-600 text-white hover:bg-white dark:hover:bg-gray-800 hover:text-readnest-primary dark:hover:text-white px-6 py-3 font-semibold">
                     <i class="fas fa-plus-circle mr-2"></i>本を追加
@@ -441,62 +429,45 @@ if (isset($breadcrumbs)) {
             <!-- コンテンツ -->
             <div x-show="aiAdvisorOpen" x-collapse>
                 <div class="p-4 sm:p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- AI推薦へのリンク -->
-                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200">
-                    <h3 class="font-semibold text-purple-900 mb-2">
-                        <i class="fas fa-robot mr-2"></i>AI推薦
-                        <span class="ml-2 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">New</span>
-                    </h3>
-                    <p class="text-sm text-purple-700 mb-3">あなたの読書傾向を分析して、似た本を提案します</p>
-                    <a href="/recommendations.php" 
-                       class="block w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm font-medium text-center transition-colors">
-                        <i class="fas fa-magic mr-2"></i>AI推薦を見る
-                    </a>
-                </div>
-                
-                <!-- 読書傾向分析 -->
-                <div class="bg-indigo-50 rounded-lg p-4">
-                    <h3 class="font-semibold text-indigo-900 mb-2">
-                        <i class="fas fa-chart-line mr-2"></i>読書傾向分析
-                    </h3>
-                    <p class="text-sm text-indigo-700 mb-3">あなたの読書パターンを分析</p>
-                    <button onclick="analyzeReadingTrends()" 
-                            class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">
-                        傾向を分析する
-                    </button>
-                </div>
-                
-                <!-- 読書チャレンジ -->
-                <div class="bg-pink-50 rounded-lg p-4">
-                    <h3 class="font-semibold text-pink-900 mb-2">
-                        <i class="fas fa-trophy mr-2"></i>読書チャレンジ
-                    </h3>
-                    <p class="text-sm text-pink-700 mb-3">新しいジャンルに挑戦</p>
-                    <button onclick="getReadingChallenge()" 
-                            class="w-full bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700 text-sm font-medium">
-                        チャレンジを見る
-                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- AI推薦へのリンク -->
+                        <a href="/recommendations.php"
+                           class="block bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-700 hover:shadow-lg transition-all duration-300 group">
+                            <div class="flex items-center mb-3">
+                                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-800 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-magic text-purple-600 dark:text-purple-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-purple-900 dark:text-purple-100 text-lg">AI推薦</h3>
+                                    <span class="text-xs text-purple-600 dark:text-purple-300">おすすめの本を発見</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-purple-700 dark:text-purple-200 mb-4">あなたの読書傾向を分析して、次に読むべき本を提案します</p>
+                            <div class="flex items-center text-purple-600 dark:text-purple-300 font-medium text-sm group-hover:translate-x-1 transition-transform">
+                                <span>AI推薦を見る</span>
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </div>
+                        </a>
+
+                        <!-- 読書分析へのリンク -->
+                        <a href="/reading_insights.php"
+                           class="block bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 rounded-lg p-6 border-2 border-indigo-200 dark:border-indigo-700 hover:shadow-lg transition-all duration-300 group">
+                            <div class="flex items-center mb-3">
+                                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-chart-pie text-indigo-600 dark:text-indigo-300 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-indigo-900 dark:text-indigo-100 text-lg">読書分析</h3>
+                                    <span class="text-xs text-indigo-600 dark:text-indigo-300">統計・傾向・マップ</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-indigo-700 dark:text-indigo-200 mb-4">読書統計、AI傾向診断、読書マップなど詳細な分析を確認できます</p>
+                            <div class="flex items-center text-indigo-600 dark:text-indigo-300 font-medium text-sm group-hover:translate-x-1 transition-transform">
+                                <span>分析を見る</span>
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </div>
+                        </a>
                     </div>
-                </div>
-            </div>
-            
-            <!-- 結果表示エリア -->
-            <div x-show="aiAdvisorOpen" x-cloak id="ai-recommendation-result" class="mt-6 hidden px-4 sm:px-6 pb-4 sm:pb-6">
-                <div class="border-t pt-6">
-                    <div id="ai-loading" class="hidden text-center py-8">
-                        <svg class="animate-spin h-8 w-8 mx-auto text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="mt-2 text-gray-600">AIが分析中...</p>
-                    </div>
-                    
-                    <div id="ai-error" class="hidden bg-red-50 border-l-4 border-red-400 p-4">
-                        <p class="text-red-700"></p>
-                    </div>
-                    
-                    <div id="ai-content" class="prose max-w-none"></div>
                 </div>
             </div>
         </div>
@@ -716,7 +687,7 @@ if (isset($breadcrumbs)) {
                 <?php if ($tag_filter === 'no_tags'): ?>
                     すべての本にタグが付けられています
                 <?php elseif (!empty($search_word)): ?>
-                    別のキーワードで検索してみるか、読書インサイトで探索してみましょう
+                    別のキーワードで検索してみるか、読書分析で探索してみましょう
                 <?php else: ?>
                     <?php echo $is_own_bookshelf ? '最初の本を追加してみましょう！' : 'また後でチェックしてみてください。'; ?>
                 <?php endif; ?>
@@ -725,7 +696,7 @@ if (isset($breadcrumbs)) {
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
                 <?php if (!empty($search_word)): ?>
                 <a href="/reading_insights.php?mode=map" class="btn bg-readnest-primary text-white px-6 py-3 font-semibold">
-                    <i class="fas fa-brain mr-2"></i>読書インサイトで探索
+                    <i class="fas fa-chart-pie mr-2"></i>読書分析で探索
                 </a>
                 <a href="/bookshelf.php" class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 px-6 py-3 font-semibold">
                     <i class="fas fa-list mr-2"></i>すべての本を見る
@@ -896,6 +867,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // action=analyze パラメータがある場合、自動的に分析を開始
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'analyze') {
+        // 少し遅延させてページ読み込み完了を待つ
+        setTimeout(function() {
+            const analyzeBtn = document.getElementById('analyze-trends-btn');
+            if (analyzeBtn) {
+                analyzeBtn.click();
+            }
+        }, 500);
+    }
 });
 </script>
 <script>
@@ -921,546 +904,6 @@ const readingHistory = [
     }
     ?>
 ];
-
-// AI推薦を取得
-async function getAIRecommendations() {
-    console.log('Reading history:', readingHistory);
-    
-    if (readingHistory.length === 0) {
-        showAIError('読了済みの本がありません。本を読み終えてから推薦機能をお使いください。');
-        return;
-    }
-    
-    window.currentAIMode = 'recommend'; // モードを設定
-    showAILoading();
-    
-    try {
-        const response = await fetch('/ai_review_simple.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'recommend_books',
-                reading_history: readingHistory.slice(0, 10), // 最新10冊
-                preferences: {},
-                count: 5
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('AI Recommendations Response:', data);
-        
-        if (data.success) {
-            displayRecommendations(data);
-        } else {
-            showAIError(data.error || 'エラーが発生しました');
-        }
-    } catch (error) {
-        showAIError('通信エラーが発生しました: ' + error.message);
-        console.error('AI Recommendation Error:', error);
-    }
-}
-
-// 現在の分析結果を保存
-let currentAnalysisData = null;
-
-// 読書傾向を分析
-async function analyzeReadingTrends() {
-    if (readingHistory.length === 0) {
-        showAIError('読了済みの本がありません。本を読み終えてから分析機能をお使いください。');
-        return;
-    }
-    
-    showAILoading();
-    
-    try {
-        const response = await fetch('/ai_review_simple.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'analyze_trends',
-                reading_history: readingHistory
-            })
-        });
-        
-        // まずレスポンスをテキストとして取得
-        const responseText = await response.text();
-        console.log('Response text:', responseText);
-        
-        let data;
-        try {
-            data = JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            console.error('Response was:', responseText);
-            showAIError('サーバーからの応答が正しくありません: ' + responseText.substring(0, 100));
-            return;
-        }
-        
-        if (data.success) {
-            // 分析結果を保存
-            currentAnalysisData = data;
-            // 分析結果を渡す
-            displayAnalysis(data.analysis);
-        } else {
-            showAIError(data.error || 'エラーが発生しました');
-        }
-    } catch (error) {
-        showAIError('通信エラーが発生しました');
-        console.error('AI Analysis Error:', error);
-    }
-}
-
-// 読書傾向を分析
-async function getReadingAnalysis() {
-    if (readingHistory.length === 0) {
-        showAIError('読了済みの本がありません。本を読み終えてから分析機能をお使いください。');
-        return;
-    }
-    
-    window.currentAIMode = 'analysis'; // モードを設定
-    showAILoading();
-    
-    try {
-        const response = await fetch('/ai_review_simple.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'analyze_trends',
-                reading_history: readingHistory.slice(0, 20), // 最新20冊
-                user_id: <?php echo json_encode($user_id); ?>
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Analysis Response:', data);
-        
-        if (data.success) {
-            displayAnalysisResults(data);
-        } else {
-            showAIError(data.error || 'エラーが発生しました');
-        }
-    } catch (error) {
-        showAIError('通信エラーが発生しました: ' + error.message);
-        console.error('Analysis Error:', error);
-    }
-}
-
-// 読書チャレンジを取得
-async function getReadingChallenge() {
-    if (readingHistory.length === 0) {
-        showAIError('読了済みの本がありません。本を読み終えてからチャレンジ機能をお使いください。');
-        return;
-    }
-    
-    window.currentAIMode = 'challenge'; // モードを設定
-    showAILoading();
-    
-    try {
-        const response = await fetch('/ai_review_simple.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'suggest_challenge',
-                reading_history: readingHistory.slice(0, 5), // 最新5冊
-                challenge: '新しいジャンル'
-            })
-        });
-        
-        const data = await response.json();
-        console.log('AI Challenge Response:', data);
-        
-        if (data.success) {
-            displayChallenge(data);
-        } else {
-            showAIError(data.error || 'エラーが発生しました');
-        }
-    } catch (error) {
-        showAIError('通信エラーが発生しました');
-        console.error('AI Challenge Error:', error);
-    }
-}
-
-// 分析結果を表示
-function displayAnalysisResults(data) {
-    const content = document.getElementById('ai-content');
-    
-    if (data && data.raw_text) {
-        const formattedText = formatAnalysisText(data.raw_text);
-        content.innerHTML = `
-            <h3 class="text-xl font-bold mb-4 text-indigo-900">
-                <i class="fas fa-chart-line mr-2"></i>読書傾向分析
-            </h3>
-            ${formattedText}
-        `;
-        showAIResult();
-    } else {
-        showAIError('分析結果を表示できませんでした');
-    }
-}
-
-// 推薦結果を表示
-function displayRecommendations(data) {
-    const content = document.getElementById('ai-content');
-    
-    console.log('displayRecommendations data:', data);
-    console.log('data type:', typeof data);
-    console.log('is array:', Array.isArray(data));
-    
-    // recommendationsが配列の場合
-    if (Array.isArray(data) && data.length > 0) {
-        displayRecommendationsList(data);
-        return;
-    }
-    
-    // dataオブジェクトにrecommendationsフィールドがある場合
-    if (data && data.recommendations && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
-        displayRecommendationsList(data.recommendations);
-        return;
-    }
-    
-    // raw_textがある場合はMarkdownとして表示（ボタン付き）
-    if (data && data.raw_text) {
-        window.currentAIMode = 'recommend'; // モードを確実に設定
-        const formattedText = formatAnalysisText(data.raw_text);
-        content.innerHTML = `
-            <h3 class="text-xl font-bold mb-4 text-purple-900">AIが推薦する本</h3>
-            ${formattedText}
-        `;
-        showAIResult();
-        return;
-    }
-    
-    // どれにも該当しない場合
-    showAIError('推薦結果の表示に失敗しました。もう一度お試しください。');
-}
-
-// 推薦リストを表示
-function displayRecommendationsList(recommendations) {
-    const content = document.getElementById('ai-content');
-    let html = '<h3 class="text-xl font-bold mb-4 text-purple-900">AIが推薦する本</h3>';
-    html += '<div class="space-y-4">';
-    
-    recommendations.forEach((book, index) => {
-        html += createBookCard(book, index, 'purple', 'rec-book-');
-    });
-    
-    html += '</div>';
-    content.innerHTML = html;
-    showAIResult();
-}
-
-// 本のカードを作成（共通関数）
-function createBookCard(book, index, colorTheme = 'purple', idPrefix = 'book-') {
-    const bookId = idPrefix + index;
-    const title = book.title || 'タイトル不明';
-    const author = book.author || '著者不明';
-    
-    // 追加情報の処理
-    let additionalInfo = '';
-    if (book.reason) {
-        additionalInfo = `<div class="text-gray-700 dark:text-gray-300 mt-2">
-            <strong>推薦理由:</strong> ${escapeHtml(book.reason)}
-        </div>`;
-    }
-    if (book.challenge_reason) {
-        additionalInfo = `<div class="text-gray-700 dark:text-gray-300 mt-2 space-y-1">
-            <div><strong class="text-${colorTheme}-800">チャレンジ理由:</strong> ${escapeHtml(book.challenge_reason)}</div>
-            ${book.new_perspective ? `<div><strong class="text-${colorTheme}-800">新しい視点:</strong> ${escapeHtml(book.new_perspective)}</div>` : ''}
-        </div>`;
-    }
-    
-    const genre = book.genre || '';
-    
-    return `
-        <div class="bg-${colorTheme}-50 rounded-lg p-4" id="${bookId}">
-            <h4 class="font-semibold text-${colorTheme}-900">${index + 1}. ${escapeHtml(title)}</h4>
-            <p class="text-${colorTheme}-700 text-sm">${escapeHtml(author)}</p>
-            ${additionalInfo}
-            <div class="flex items-center justify-between mt-3">
-                ${genre ? `<span class="inline-block bg-${colorTheme}-200 text-${colorTheme}-800 text-xs px-2 py-1 rounded">${escapeHtml(genre)}</span>` : '<span></span>'}
-                <div class="space-x-2">
-                    <button type="button" 
-                            onclick="searchBookToAdd('${title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${author.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')"
-                            class="bg-${colorTheme}-600 text-white px-3 py-1 rounded text-sm hover:bg-${colorTheme}-700">
-                        <i class="fas fa-search mr-1"></i>検索して追加
-                    </button>
-                    <button type="button"
-                            onclick="addBookManually('${title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${author.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')"
-                            class="bg-gray-600 dark:bg-gray-700 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-600">
-                        <i class="fas fa-edit mr-1"></i>手動で追加
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// 分析結果を表示
-function displayAnalysis(analysis) {
-    const content = document.getElementById('ai-content');
-    
-    // 分析結果をグローバル変数に保存（共有用）
-    window.lastAnalysisResult = analysis;
-    
-    // シンプルなMarkdown形式で表示
-    const formattedAnalysis = formatAnalysisText(analysis);
-    
-    content.innerHTML = `
-        <h3 class="text-xl font-bold mb-4 text-indigo-900">読書傾向分析</h3>
-        <div class="bg-indigo-50 rounded-lg p-6 prose prose-sm max-w-none text-gray-800">
-            ${formattedAnalysis}
-        </div>
-        <div class="mt-4 flex justify-center gap-3">
-            <button onclick="saveAnalysisToProfile()" 
-                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium">
-                <i class="fas fa-save mr-2"></i>
-                プロフィールに保存
-            </button>
-            <button onclick="shareAnalysis('copy')" 
-                    class="inline-flex items-center px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded-md hover:bg-gray-700 dark:hover:bg-gray-600 text-sm font-medium">
-                <i class="fas fa-copy mr-2"></i>
-                コピー
-            </button>
-        </div>
-    `;
-    showAIResult();
-}
-
-// チャレンジを表示
-function displayChallenge(data) {
-    const content = document.getElementById('ai-content');
-    
-    console.log('displayChallenge data:', data);
-    console.log('data.recommendations:', data.recommendations);
-    console.log('data.suggestions:', data.suggestions);
-    
-    // 構造化された推薦データがある場合
-    if (data.recommendations && data.recommendations.length > 0) {
-        let html = '<h3 class="text-xl font-bold mb-4 text-pink-900">読書チャレンジの提案</h3>';
-        html += '<div class="space-y-4">';
-        
-        data.recommendations.forEach((book, index) => {
-            html += createBookCard(book, index, 'pink', 'challenge-book-');
-        });
-        
-        html += '</div>';
-        content.innerHTML = html;
-    } else {
-        // フォールバック: Markdownテキストを表示
-        const formattedSuggestions = formatAnalysisText(data.suggestions || data);
-        content.innerHTML = `
-            <h3 class="text-xl font-bold mb-4 text-pink-900">読書チャレンジの提案</h3>
-            <div class="bg-pink-50 rounded-lg p-6 prose prose-sm max-w-none">
-                ${formattedSuggestions}
-            </div>
-        `;
-    }
-    
-    showAIResult();
-}
-
-// ローディング表示
-function showAILoading() {
-    document.getElementById('ai-recommendation-result').classList.remove('hidden');
-    document.getElementById('ai-loading').classList.remove('hidden');
-    document.getElementById('ai-error').classList.add('hidden');
-    document.getElementById('ai-content').innerHTML = '';
-}
-
-// 結果表示
-function showAIResult() {
-    document.getElementById('ai-loading').classList.add('hidden');
-    document.getElementById('ai-recommendation-result').classList.remove('hidden');
-}
-
-// エラー表示
-function showAIError(message) {
-    document.getElementById('ai-recommendation-result').classList.remove('hidden');
-    document.getElementById('ai-loading').classList.add('hidden');
-    document.getElementById('ai-error').classList.remove('hidden');
-    document.getElementById('ai-error').querySelector('p').textContent = message;
-}
-
-// 分析テキストをフォーマット（Markdownサポート）
-function formatAnalysisText(analysis) {
-    let formatted = analysis;
-    
-    // HTMLエスケープ（基本的なタグは後で処理するため）
-    formatted = formatted.replace(/&/g, '&amp;')
-                       .replace(/</g, '&lt;')
-                       .replace(/>/g, '&gt;');
-    
-    // 見出しを強調（【】で囲まれた部分）
-    formatted = formatted.replace(/【([^】]+)】/g, '<h4 class="text-base font-bold text-indigo-800 mt-4 mb-2">$1</h4>');
-    
-    // 箇条書きを先に処理（行頭の -, *, +）
-    formatted = formatted.replace(/^[\-\*\+]\s+(.+)$/gm, function(match, content) {
-        return '<li class="ml-4 mb-1 list-item-marker">' + content + '</li>';
-    });
-    
-    // Markdownの太字（**text** または __text__）
-    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>');
-    formatted = formatted.replace(/__(.+?)__/g, '<strong class="font-semibold">$1</strong>');
-    
-    // Markdownの斜体（*text* または _text_）- list-item-markerクラスがない行のみ
-    formatted = formatted.replace(/(\s|^)\*([^*\n]+?)\*(\s|$)/g, '$1<em>$2</em>$3');
-    formatted = formatted.replace(/(\s|^)_([^_\n]+?)_(\s|$)/g, '$1<em>$2</em>$3');
-    
-    // 日本語の箇条書きも整形（・◆■）
-    formatted = formatted.replace(/^([・◆■])\s*(.+)$/gm, function(match, bullet, content) {
-        return '<li class="ml-4 mb-1">' + bullet + ' ' + content + '</li>';
-    });
-    
-    // 連続するliタグをulで囲む
-    formatted = formatted.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, function(match) {
-        return '<ul class="list-none space-y-1">' + match + '</ul>';
-    });
-    
-    // インラインコード（`code`）
-    formatted = formatted.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-1 py-0.5 rounded text-sm">$1</code>');
-    
-    // 改行を適切な間隔に
-    formatted = formatted.replace(/\n\n/g, '</p><p class="mb-3">');
-    formatted = formatted.replace(/\n/g, '<br>');
-    
-    // 最初と最後にpタグを追加
-    if (!formatted.startsWith('<h4')) {
-        formatted = '<p class="mb-3">' + formatted;
-    }
-    if (!formatted.endsWith('</ul>') && !formatted.endsWith('</h4>')) {
-        formatted = formatted + '</p>';
-    }
-    
-    return formatted;
-}
-
-// escapeHtml関数はcommon-utils.jsで定義済み
-
-// 本を検索して追加
-function searchBookToAdd(title, author) {
-    // 検索ページにタイトルと著者を渡して遷移（新しいタブで開く）
-    const searchQuery = title + (author ? ' ' + author : '');
-    window.open(`/add_book.php?keyword=${encodeURIComponent(searchQuery)}`, '_blank');
-}
-
-// 手動で本を追加
-function addBookManually(title, author) {
-    // 手動追加ページにタイトルと著者を渡して遷移（新しいタブで開く）
-    const params = new URLSearchParams({
-        title: title,
-        author: author
-    });
-    window.open(`/add_original_book.php?${params.toString()}`, '_blank');
-}
-
-// 読書傾向分析を共有
-function shareAnalysis(type) {
-    if (!window.lastAnalysisResult) {
-        alert('分析結果がありません');
-        return;
-    }
-    
-    const analysisText = window.lastAnalysisResult;
-    const shareUrl = window.location.origin + '/bookshelf.php?user_id=<?php echo html($user_id); ?>';
-    
-    if (type === 'copy') {
-        // 分析結果をクリップボードにコピー
-        const copyText = `【私の読書傾向分析】\n\n${analysisText}\n\n分析日：${new Date().toLocaleDateString('ja-JP')}\nReadNest: ${shareUrl}`;
-        navigator.clipboard.writeText(copyText).then(() => {
-            showShareSuccess('分析結果をコピーしました！');
-        }).catch(() => {
-            // フォールバック
-            const textArea = document.createElement('textarea');
-            textArea.value = copyText;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showShareSuccess('分析結果をコピーしました！');
-        });
-    }
-}
-
-// 分析結果をプロフィールに保存
-async function saveAnalysisToProfile() {
-    if (!currentAnalysisData || !currentAnalysisData.analysis) {
-        alert('保存する分析結果がありません');
-        return;
-    }
-    
-    try {
-        
-        const response = await fetch('/ajax/save_reading_analysis.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                analysis_content: currentAnalysisData.analysis
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const text = await response.text();
-        
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (parseError) {
-            alert('サーバーからの応答が正しくありません');
-            return;
-        }
-        
-        if (data.success) {
-            showShareSuccess(data.message || '読書傾向分析をプロフィールに保存しました！');
-            
-            // 保存ボタンを更新
-            const saveButton = document.querySelector('button[onclick="saveAnalysisToProfile()"]');
-            if (saveButton) {
-                saveButton.innerHTML = '<i class="fas fa-check mr-2"></i>保存済み';
-                saveButton.disabled = true;
-                saveButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-                saveButton.classList.add('bg-gray-400', 'dark:bg-gray-600', 'cursor-not-allowed');
-            }
-        } else {
-            alert(data.error || '保存に失敗しました。もう一度お試しください。');
-        }
-    } catch (error) {
-        alert('通信エラーが発生しました: ' + error.message);
-    }
-}
-
-// 共有成功の通知
-function showShareSuccess(message) {
-    // 一時的な通知を表示
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    notification.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
 
 // タグクラウドコンポーネント（現在未使用）
 <?php if (false): // 完全に無効化 ?>

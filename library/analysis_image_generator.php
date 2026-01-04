@@ -38,108 +38,102 @@ class AnalysisImageGenerator {
         }
         
         // 色を定義
-        $bgColor = imagecolorallocate($image, 255, 255, 255); // 白に変更
+        $bgColor = imagecolorallocate($image, 249, 250, 251); // gray-50（明るいグレー背景）
         $primaryColor = imagecolorallocate($image, 99, 102, 241); // indigo-500
+        $headerColor = imagecolorallocate($image, 79, 70, 229); // indigo-600
         $textColor = imagecolorallocate($image, 31, 41, 55); // gray-800
         $accentColor = imagecolorallocate($image, 79, 70, 229); // indigo-600
         $white = imagecolorallocate($image, 255, 255, 255);
-        
-        // 背景を白で塗りつぶし
+        $lightGray = imagecolorallocate($image, 229, 231, 235); // gray-200
+
+        // 背景を塗りつぶし
         imagefilledrectangle($image, 0, 0, $this->width, $this->height, $bgColor);
-        
-        // ヘッダー部分の背景は白のまま（全体が白なので描画不要）
-        
-        // ヘッダー下部に薄い線を追加
-        $lightGray = imagecolorallocate($image, 230, 230, 230);
-        imageline($image, 0, 150, $this->width, 150, $lightGray);
-        
-        // タイトル（左側）- 黒文字に変更
-        $this->drawText($image, "読書傾向分析", 46, $this->margin, 68, $textColor, true); // 51 * 0.9
-        $this->drawText($image, "@" . $userName . " さんの読書傾向", 30, $this->margin, 120, $textColor, true); // 33 * 0.9
-        
-        // ReadNestロゴを右側に配置
+
+        // ヘッダーバー（indigo色）
+        imagefilledrectangle($image, 0, 0, $this->width, 120, $headerColor);
+
+        // ヘッダーにタイトル（白文字）
+        $this->drawText($image, "読書傾向分析", 42, $this->margin, 50, $white, true);
+        $this->drawText($image, "@" . $userName . " さんの読書傾向", 26, $this->margin, 95, $white, false);
+
+        // ReadNestロゴをヘッダー右側に配置
         $iconPath = dirname(__DIR__) . '/apple-touch-icon.png';
         if (file_exists($iconPath)) {
             $icon = imagecreatefrompng($iconPath);
             if ($icon) {
-                // アイコンサイズを取得
                 $iconWidth = imagesx($icon);
                 $iconHeight = imagesy($icon);
-                
-                // 60pxの高さに収まるようにリサイズ (40 * 1.5)
-                $newHeight = 60;
+                $newHeight = 50;
                 $newWidth = intval($iconWidth * ($newHeight / $iconHeight));
-                
-                // ReadNestテキストの幅を概算（文字数 × フォントサイズ × 0.6）
-                $textWidth = intval(mb_strlen("ReadNest") * 30 * 0.6);
-                
-                // アイコンとテキストを右寄せで配置（間隔を狭める）
-                $spacing = 10; // 20から10に変更（アイコンとテキストの間隔）
-                $totalWidth = $newWidth + $spacing + $textWidth; // アイコン幅 + 間隔 + テキスト幅
-                $startX = $this->width - $this->margin - $totalWidth;
-                
-                // アイコンとテキストの垂直中心を揃える
-                $textY = 90; // ReadNestテキストのY座標
-                // テキストの中心とアイコンの中心を揃える
-                $iconY = $textY - 30 - intval($newHeight / 2) + 10; // テキスト中心 - アイコン半分の高さ
-                imagecopyresampled($image, $icon, intval($startX), intval($iconY), 0, 0, 
+
+                // 右上に配置
+                $iconX = $this->width - $this->margin - $newWidth - 150;
+                $iconY = 35;
+                imagecopyresampled($image, $icon, intval($iconX), intval($iconY), 0, 0,
                                    $newWidth, $newHeight, $iconWidth, $iconHeight);
-                
-                // ReadNestテキストを配置（黒文字で）
-                $this->drawText($image, "ReadNest", 30, intval($startX + $newWidth + $spacing), intval($textY), $textColor, true);
-                
+
+                // ReadNestテキスト（白文字）
+                $this->drawText($image, "ReadNest", 26, intval($iconX + $newWidth + 10), intval($iconY + 35), $white, true);
+
                 imagedestroy($icon);
             }
         }
+
+        // コンテンツエリアの白い背景
+        $contentTop = 140;
+        $contentPadding = 30;
+        imagefilledrectangle($image, $contentPadding, $contentTop, $this->width - $contentPadding, $this->height - $contentPadding, $white);
+
+        // コンテンツエリアの枠線
+        imagerectangle($image, $contentPadding, $contentTop, $this->width - $contentPadding, $this->height - $contentPadding, $lightGray);
         
         // 分析内容を処理
-        $y = 195 + 23; // (130 + 15) * 1.5
+        $y = 180; // コンテンツエリア内（140 + 40のパディング）
+        $contentMargin = $this->margin + $contentPadding; // コンテンツ内のマージン
         $lines = $this->processAnalysisContent($analysisContent);
         
+        $contentWidth = $this->width - ($contentPadding * 2) - ($this->margin * 2);
+
         foreach ($lines as $line) {
-            if ($y > $this->height - 30) break; // 下部の余白
-            
+            if ($y > $this->height - 60) break; // 下部の余白
+
             if (strpos($line, '【') === 0) {
                 // セクションヘッダー
-                // セクション前に余白を追加（最初のセクション以外）
-                if ($y > 195) { // 130 * 1.5
+                if ($y > 200) {
                     $y += $this->sectionSpacing;
                 }
-                // セクションタイトルも折り返し処理
-                $wrappedLines = $this->wrapText($line, 32, $this->width - ($this->margin * 2), true); // 36 * 0.9
+                $wrappedLines = $this->wrapText($line, 28, $contentWidth, true);
                 foreach ($wrappedLines as $wrappedLine) {
-                    if ($y > $this->height - 30) break;
-                    $this->drawText($image, $wrappedLine, 32, $this->margin, $y, $accentColor, true);
-                    $y += 65; // 72 * 0.9
+                    if ($y > $this->height - 60) break;
+                    $this->drawText($image, $wrappedLine, 28, $contentMargin, $y, $accentColor, true);
+                    $y += 55;
                 }
             } elseif (strpos($line, '◆') === 0) {
-                // サブセクション（太字）
-                $wrappedLines = $this->wrapText($line, 26, $this->width - ($this->margin * 2) - 30, true); // 29 * 0.9
+                // サブセクション
+                $wrappedLines = $this->wrapText($line, 24, $contentWidth - 30, true);
                 foreach ($wrappedLines as $wrappedLine) {
-                    if ($y > $this->height - 30) break;
-                    $this->drawText($image, $wrappedLine, 26, $this->margin + 30, $y, $accentColor, true);
-                    $y += 49; // 54 * 0.9
+                    if ($y > $this->height - 60) break;
+                    $this->drawText($image, $wrappedLine, 24, $contentMargin + 20, $y, $accentColor, true);
+                    $y += 45;
                 }
             } elseif (strpos($line, '-') === 0 || strpos($line, '・') === 0) {
-                // リスト項目（太字）
-                $wrappedLines = $this->wrapText($line, 23, $this->width - ($this->margin * 2) - 90, true); // 26 * 0.9
+                // リスト項目
+                $wrappedLines = $this->wrapText($line, 22, $contentWidth - 60, true);
                 foreach ($wrappedLines as $wrappedLine) {
-                    if ($y > $this->height - 30) break;
-                    $this->drawText($image, $wrappedLine, 23, $this->margin + 60, $y, $textColor, true);
-                    $y += 42; // 47 * 0.9
+                    if ($y > $this->height - 60) break;
+                    $this->drawText($image, $wrappedLine, 22, $contentMargin + 40, $y, $textColor, true);
+                    $y += 38;
                 }
             } else {
-                // 通常のテキスト（太字）
-                $wrappedLines = $this->wrapText($line, 23, $this->width - ($this->margin * 2) - 60, true); // 26 * 0.9
+                // 通常のテキスト
+                $wrappedLines = $this->wrapText($line, 22, $contentWidth - 40, true);
                 foreach ($wrappedLines as $wrappedLine) {
-                    if ($y > $this->height - 30) break;
-                    $this->drawText($image, $wrappedLine, 23, $this->margin + 30, $y, $textColor, true);
-                    $y += 42; // 47 * 0.9
+                    if ($y > $this->height - 60) break;
+                    $this->drawText($image, $wrappedLine, 22, $contentMargin + 20, $y, $textColor, true);
+                    $y += 38;
                 }
             }
         }
-        
-        // フッターは削除（アイコンとReadNestはヘッダーに移動済み）
         
         // 一時ファイルに保存
         $tempFile = tempnam(sys_get_temp_dir(), 'analysis_') . '.png';
@@ -235,30 +229,28 @@ class AnalysisImageGenerator {
      * 必要な高さを計算
      */
     private function calculateRequiredHeight(array $lines): int {
-        $height = 195 + 23; // (130 + 15) * 1.5 ヘッダー部分 + 0.5行分の余白
-        
+        $height = 180; // ヘッダー(120) + コンテンツ開始位置(40) + 余白(20)
+
         $isFirstSection = true;
         foreach ($lines as $line) {
             if (strpos($line, '【') === 0) {
-                // セクション間の余白を追加（最初のセクション以外）
                 if (!$isFirstSection) {
                     $height += $this->sectionSpacing;
                 }
                 $isFirstSection = false;
-                $height += 73; // 81 * 0.9
+                $height += 55;
             } elseif (strpos($line, '◆') === 0) {
-                $height += 57; // 63 * 0.9
+                $height += 45;
             } elseif (strpos($line, '-') === 0 || strpos($line, '・') === 0) {
-                $height += 49; // 54 * 0.9
+                $height += 38;
             } else {
-                // 通常テキストは折り返しを考慮
-                $estimatedLines = ceil(mb_strlen($line) / 45); // 概算（文字が小さくなったため調整）
-                $height += intval(49 * $estimatedLines); // 54 * 0.9
+                $estimatedLines = ceil(mb_strlen($line) / 50);
+                $height += intval(38 * $estimatedLines);
             }
         }
-        
-        $height += 30; // 下部の余白のみ
-        
+
+        $height += 60; // 下部の余白
+
         return intval($height);
     }
     

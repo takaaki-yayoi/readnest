@@ -386,7 +386,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'recommendations') !== false || strpos($_SERVER['REQUEST_URI'], 'reading_assistant') !== false || strpos($_SERVER['REQUEST_URI'], 'reading_insights') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center relative">
                             <i class="fas fa-robot mr-1"></i>AI機能
                             <i class="fas fa-chevron-down ml-1 text-xs"></i>
-                            <span class="absolute -top-1 -right-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">AI</span>
                         </button>
                         
                         <div x-show="open"
@@ -415,10 +414,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                     </div>
                                 </a>
                                 <a href="/reading_insights.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <i class="fas fa-brain mr-3 text-indigo-500 group-hover:scale-110 transition-transform"></i>
+                                    <i class="fas fa-chart-pie mr-3 text-indigo-500 group-hover:scale-110 transition-transform"></i>
                                     <div>
-                                        <div class="font-medium">読書インサイト</div>
-                                        <div class="text-xs text-gray-500">AI分析＆読書マップ</div>
+                                        <div class="font-medium">読書分析</div>
+                                        <div class="text-xs text-gray-500">統計・AI分析・マップ</div>
                                     </div>
                                 </a>
                             </div>
@@ -757,7 +756,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <i class="fas fa-calendar-check mr-3 w-4 text-emerald-500"></i> 読書カレンダー
                     </a>
                     <a href="/reading_insights.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
-                        <i class="fas fa-brain mr-3 w-4 text-purple-500"></i> 読書インサイト
+                        <i class="fas fa-chart-pie mr-3 w-4 text-purple-500"></i> 読書分析
                     </a>
                     <a href="/report/<?php echo date('Y'); ?>/<?php echo date('n'); ?>" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-calendar-alt mr-3 w-4 text-teal-500"></i> 月間レポート
