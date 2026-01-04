@@ -260,6 +260,24 @@ ob_start();
         </div>
     </div>
 
+    <!-- 月間レポートへのリンク -->
+    <?php if ($is_my_insights): ?>
+    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow p-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center text-white">
+                <i class="fas fa-calendar-check text-2xl mr-3"></i>
+                <div>
+                    <p class="font-semibold">月間読書レポート</p>
+                    <p class="text-sm text-purple-100">毎月の読書記録をレポート形式で振り返れます</p>
+                </div>
+            </div>
+            <a href="/monthly_report.php" class="inline-flex items-center px-4 py-2 bg-white text-purple-600 text-sm font-medium rounded-lg hover:bg-purple-50 transition-colors">
+                <i class="fas fa-arrow-right mr-2"></i>レポートを見る
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- 読書冊数グラフ -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
         <h2 class="text-xl font-bold mb-4">📚 読書冊数</h2>
