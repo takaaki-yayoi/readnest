@@ -435,7 +435,7 @@ async function shareAnalysisToX(analysisId) {
         // ツイートテキストを作成
         const tweetText = '私の読書傾向分析を公開しました！\n\n#ReadNest #読書記録';
         const currentUserId = '<?php echo html($target_user_id); ?>';
-        const profileUrl = window.location.origin + '/profile/' + currentUserId + '#current-analysis-section';
+        const profileUrl = window.location.origin + '/profile.php?user_id=' + currentUserId + '&share_analysis=' + analysisId;
 
         // X投稿画面を開く
         const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(profileUrl)}`;

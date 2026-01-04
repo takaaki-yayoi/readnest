@@ -38,7 +38,7 @@ if (!$user_info) {
 }
 
 // プライベート設定チェック
-if ($user_info['diary_policy'] != 1 && $target_user_id !== $mine_user_id) {
+if ($user_info['diary_policy'] != 1 && (int)$target_user_id !== (int)$mine_user_id) {
     $d_site_title = "プロフィール - ReadNest";
     $g_meta_description = "このユーザーのプロフィールは非公開に設定されています。";
     $g_meta_keyword = "プロフィール,ReadNest";
@@ -60,27 +60,50 @@ if ($user_info['diary_policy'] != 1 && $target_user_id !== $mine_user_id) {
 // SEOヘルパーを読み込み
 require_once('library/seo_helpers.php');
 
+// 分析共有用パラメータ確認
+$share_analysis_id = isset($_GET['share_analysis']) ? (int)$_GET['share_analysis'] : 0;
+$og_title_suffix = '';
+$og_description_override = '';
+
 // SEOデータの準備（プロフィールがアクセス可能な場合のみ）
 if ($profile_accessible) {
     $canonical_url = getBaseUrl() . '/user/' . $target_user_id;
     $og_image = (!empty($user_info['profile_photo_path']) && file_exists($_SERVER['DOCUMENT_ROOT'] . $user_info['profile_photo_path']))
         ? getBaseUrl() . $user_info['profile_photo_path']
         : getBaseUrl() . '/img/og-image.jpg';
+
+    // 分析共有の場合、OGP画像を分析画像に変更
+    if ($share_analysis_id > 0) {
+        global $g_db;
+        $analysis_check = $g_db->getOne(
+            "SELECT analysis_id FROM b_reading_analysis WHERE analysis_id = ? AND user_id = ? AND is_public = 1",
+            array($share_analysis_id, $target_user_id)
+        );
+        if ($analysis_check && !DB::isError($analysis_check)) {
+            $og_image = getBaseUrl() . '/og-image/analysis/' . $share_analysis_id . '.png';
+            $og_title_suffix = 'の読書傾向分析';
+            $og_description_override = "{$target_nickname}さんの読書傾向をAIが分析しました。";
+        }
+    }
     
+    $og_title = $og_title_suffix ? "{$target_nickname}さん{$og_title_suffix}" : "{$target_nickname}さんのプロフィール";
+    $og_desc = $og_description_override ?: $g_meta_description;
+
     $seo_data = [
         'title' => $d_site_title,
         'description' => $g_meta_description,
         'canonical_url' => $canonical_url,
         'og' => [
-            'title' => "{$target_nickname}さんのプロフィール",
-            'description' => $g_meta_description,
+            'title' => $og_title,
+            'description' => $og_desc,
             'url' => $canonical_url,
             'image' => $og_image,
             'type' => 'profile'
         ],
         'twitter' => [
-            'title' => "{$target_nickname}さんのプロフィール",
-            'description' => $g_meta_description,
+            'card' => 'summary_large_image',
+            'title' => $og_title,
+            'description' => $og_desc,
             'image' => $og_image
         ]
     ];
@@ -224,8 +247,8 @@ if ($profile_accessible) {
     
 }
 
-// 自分のプロフィールかどうか
-$is_own_profile = ($login_flag && $mine_user_id === $target_user_id);
+// 自分のプロフィールかどうか（型を揃えて比較）
+$is_own_profile = ($login_flag && (int)$mine_user_id === (int)$target_user_id);
 
 // お気に入り本を取得（公開されているもののみ）
 $favorite_books = [];
@@ -237,19 +260,25 @@ if ($profile_accessible) {
 }
 
 // 読書傾向分析を取得（公開されているものまたは自分のもの）
+$reading_analysis = null;
 if ($profile_accessible) {
-    $reading_analysis = null;
     if ($is_own_profile) {
         // 自分のプロフィールの場合は最新のものを取得
         $reading_analysis = getLatestReadingAnalysis($target_user_id, 'trend');
     } else {
         // 他人のプロフィールの場合は公開されているもののみ
-        $analysis_sql = "SELECT * FROM b_reading_analysis 
-                        WHERE user_id = ? AND analysis_type = 'trend' AND is_public = 1 
-                        ORDER BY created_at DESC 
+        $analysis_sql = "SELECT * FROM b_reading_analysis
+                        WHERE user_id = ? AND analysis_type = 'trend' AND is_public = 1
+                        ORDER BY created_at DESC
                         LIMIT 1";
         $reading_analysis = $g_db->getRow($analysis_sql, array($target_user_id), DB_FETCHMODE_ASSOC);
     }
+}
+
+// OGP画像（公開されている分析がある場合）
+$g_og_image = null;
+if (!empty($reading_analysis) && !empty($reading_analysis['is_public']) && $reading_analysis['is_public'] == 1) {
+    $g_og_image = "https://readnest.jp/og-image/analysis/{$reading_analysis['analysis_id']}.png";
 }
 
 // Analytics設定
