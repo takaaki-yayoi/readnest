@@ -1,6 +1,6 @@
 <?php
 /**
- * 読書インサイト - 統合分析ページ
+ * 読書分析 - 統合分析ページ
  * embeddingベースの分析と従来の読書マップを統合
  */
 
@@ -29,14 +29,14 @@ if (!$is_my_insights) {
         exit;
     }
     $display_nickname = getNickname($user_id);
-    $d_site_title = $display_nickname . 'さんの読書インサイト - ReadNest';
+    $d_site_title = $display_nickname . 'さんの読書分析 - ReadNest';
 } else {
     $display_nickname = getNickname($user_id);
-    $d_site_title = '読書インサイト - ReadNest';
+    $d_site_title = '読書分析 - ReadNest';
 }
 
 // 表示モードの切り替え
-$view_mode = $_GET['mode'] ?? 'overview'; // overview, map, pace, clusters
+$view_mode = $_GET['mode'] ?? 'overview'; // overview, map, pace, clusters, trend
 
 // 分析器のインスタンス作成
 $trend_analyzer = new ReadingTrendAnalyzer();
@@ -297,9 +297,28 @@ if ($is_my_insights) {
     $similar_readers = $trend_analyzer->findSimilarReaders($user_id, 5);
 }
 
+// AI傾向診断データを取得
+$latest_analysis = null;
+$analysis_history = [];
+if ($view_mode === 'trend' && $is_my_insights) {
+    // 最新の分析を取得
+    $latest_analysis = getLatestReadingAnalysis($user_id, 'trend');
+
+    // 分析履歴を取得（最新10件）
+    $history_sql = "SELECT analysis_id, analysis_content, is_public, created_at
+                    FROM b_reading_analysis
+                    WHERE user_id = ? AND analysis_type = 'trend'
+                    ORDER BY created_at DESC
+                    LIMIT 10";
+    $analysis_history = $g_db->getAll($history_sql, [$user_id], DB_FETCHMODE_ASSOC);
+    if (DB::isError($analysis_history)) {
+        $analysis_history = [];
+    }
+}
+
 // ページメタ情報
-$g_meta_description = 'AI分析による読書インサイト。レビューの内容から読書傾向を自動分類し、新たな発見をサポートします。';
-$g_meta_keyword = '読書インサイト,AI分析,読書傾向,レビュー分析,ReadNest';
+$g_meta_description = 'AI分析による読書分析。レビューの内容から読書傾向を自動分類し、新たな発見をサポートします。';
+$g_meta_keyword = '読書分析,AI分析,読書傾向,レビュー分析,ReadNest';
 
 // テンプレートを読み込み
 include(getTemplatePath('t_reading_insights.php'));

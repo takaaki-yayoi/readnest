@@ -157,7 +157,7 @@ function getEmbeddingSimilarBooks($targetEmbedding, $excludeAsins = [], $limit =
     }, $excludeAsins)) . "')" : "";
     
     $sql = "
-        SELECT 
+        SELECT
             br.asin as amazon_id,
             br.title,
             br.author,
@@ -169,8 +169,7 @@ function getEmbeddingSimilarBooks($targetEmbedding, $excludeAsins = [], $limit =
         FROM b_book_repository br
         WHERE br.combined_embedding IS NOT NULL
         $exclude_list
-        ORDER BY RAND()
-        LIMIT 200
+        LIMIT 500
     ";
     
     $candidates = $g_db->getAll($sql, [], DB_FETCHMODE_ASSOC);
@@ -185,7 +184,7 @@ function getEmbeddingSimilarBooks($targetEmbedding, $excludeAsins = [], $limit =
     foreach ($candidates as $book) {
         $similarity = VectorSimilarity::cosineSimilarity($targetEmbedding, $book['combined_embedding']);
         
-        if ($similarity > 0.65) { // 閾値以上のものだけを含める
+        if ($similarity > 0.50) { // 閾値以上のものだけを含める
             $book['similarity'] = round($similarity * 100, 1);
             unset($book['combined_embedding']); // embeddingデータは返さない
             $results[] = $book;

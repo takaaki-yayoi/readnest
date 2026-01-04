@@ -174,7 +174,7 @@ ob_start();
                         <?php endif; ?>
                     </h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        類似度70%以上の本のみを表示しています。<br>
+                        類似度50%以上の本のみを表示しています。<br>
                         より多くの本を評価すると、精度の高い推薦が可能になります。
                     </p>
                 </div>

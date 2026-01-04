@@ -172,6 +172,7 @@ RewriteRule ^report/([0-9]{4})/([0-9]{1,2})/([0-9]+)/?$ monthly_report.php?year=
 
 # OGP画像動的生成
 RewriteRule ^og-image/report/([0-9]{4})/([0-9]{1,2})/([0-9]+)\.png$ og-image.php?type=report&year=$1&month=$2&user=$3 [L,QSA]
+RewriteRule ^og-image/analysis/([0-9]+)\.png$ og-image.php?type=analysis&id=$1 [L,QSA]
 
 # その他のクリーンURL
 RewriteRule ^bookshelf/?$ bookshelf.php [L,QSA]

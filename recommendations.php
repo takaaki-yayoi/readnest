@@ -117,32 +117,7 @@ switch ($rec_type) {
             $base_book_info = $g_db->getRow($base_book_sql, [$base_book_id, $user_id], DB_FETCHMODE_ASSOC);
             
             if (!DB::isError($base_book_info) && $base_book_info) {
-                // embeddingがない場合は動的生成を試みる
-                if (empty($base_book_info['combined_embedding']) && class_exists('DynamicEmbeddingGenerator')) {
-                    try {
-                        $generator = new DynamicEmbeddingGenerator();
-                        $book_data = [
-                            'asin' => $base_book_info['amazon_id'],
-                            'title' => $base_book_info['title'],
-                            'author' => $base_book_info['author'],
-                            'description' => $base_book_info['description'] ?? '',
-                            'google_categories' => $base_book_info['google_categories'] ?? ''
-                        ];
-                        
-                        $generated_embedding = $generator->generateBookEmbedding($book_data);
-                        if ($generated_embedding) {
-                            $base_book_info['combined_embedding'] = $generated_embedding;
-                            
-                            // 生成したembeddingをDBに保存
-                            $update_sql = "UPDATE b_book_repository SET combined_embedding = ? WHERE asin = ?";
-                            $g_db->query($update_sql, [$generated_embedding, $base_book_info['amazon_id']]);
-                        }
-                    } catch (Exception $e) {
-                        error_log("Embedding generation failed: " . $e->getMessage());
-                    }
-                }
-                
-                // 類似本を検索
+                // 類似本を検索（embeddingがある場合のみ）
                 if (!empty($base_book_info['combined_embedding'])) {
                     $recommendations = getEmbeddingSimilarBooks(
                         $base_book_info['combined_embedding'],
@@ -301,38 +276,8 @@ switch ($rec_type) {
                 }
             }
             
-            // 動的にembeddingを生成（最大3冊まで）
-            if (!empty($books_without_embedding) && class_exists('DynamicEmbeddingGenerator')) {
-                $generator = new DynamicEmbeddingGenerator();
-                $generated_count = 0;
-                
-                foreach ($books_without_embedding as $book) {
-                    if ($generated_count >= 3) break;
-                    
-                    try {
-                        $book_data = [
-                            'asin' => $book['amazon_id'],
-                            'title' => $book['title'],
-                            'author' => $book['author'],
-                            'description' => $book['description'] ?? '',
-                            'google_categories' => $book['google_categories'] ?? ''
-                        ];
-                        
-                        $generated_embedding = $generator->generateBookEmbedding($book_data);
-                        if ($generated_embedding) {
-                            $book['combined_embedding'] = $generated_embedding;
-                            $books_with_embedding[] = $book;
-                            $generated_count++;
-                            
-                            // DBに保存
-                            $update_sql = "UPDATE b_book_repository SET combined_embedding = ? WHERE asin = ?";
-                            $g_db->query($update_sql, [$generated_embedding, $book['amazon_id']]);
-                        }
-                    } catch (Exception $e) {
-                        error_log("Embedding generation failed: " . $e->getMessage());
-                    }
-                }
-            }
+            // 注: 動的embedding生成はページ表示速度のため無効化
+            // embeddingがない本は類似検索対象外とする
             
             // 各本に基づいて類似本を検索
             $all_similar_books = [];
@@ -421,11 +366,10 @@ $breadcrumbs = [
     ['url' => '', 'label' => 'AI推薦']
 ];
 
-// 高評価本を取得（表示用）
-$highly_rated_books = [];
-if ($rec_type === 'recommended') {
+// 高評価本が未取得の場合のみ取得（recommended以外のタイプ用）
+if (empty($highly_rated_books) && $rec_type !== 'recommended') {
     $highly_rated_sql = "
-        SELECT 
+        SELECT
             bl.book_id,
             bl.amazon_id,
             bl.name as title,
