@@ -58,7 +58,7 @@ if(!defined('CONFIG')) {
     <meta property="og:url" content="https://readnest.jp<?php echo html($_SERVER['REQUEST_URI']); ?>">
     <meta property="og:title" content="<?php echo html(isset($d_site_title) ? $d_site_title : 'ReadNest'); ?>">
     <meta property="og:description" content="<?php echo html(isset($g_meta_description) ? $g_meta_description : 'ReadNest - あなたの読書の巣。読書進捉の記録、レビュー、本棚整理ができます。'); ?>">
-    <meta property="og:image" content="https://readnest.jp/img/og-image.jpg?v=20250119">
+    <meta property="og:image" content="<?php echo html(isset($g_og_image) ? $g_og_image : 'https://readnest.jp/img/og-image.jpg?v=20250119'); ?>">
     <meta property="og:site_name" content="ReadNest">
     
     <!-- Twitter Card / X -->
@@ -66,7 +66,7 @@ if(!defined('CONFIG')) {
     <meta name="twitter:site" content="@dokusho">
     <meta name="twitter:title" content="<?php echo html(isset($d_site_title) ? $d_site_title : 'ReadNest'); ?>">
     <meta name="twitter:description" content="<?php echo html(isset($g_meta_description) ? $g_meta_description : 'ReadNest - あなたの読書の巣。読書進捉の記録、レビュー、本棚整理ができます。'); ?>">
-    <meta name="twitter:image" content="https://readnest.jp/img/og-image.jpg?v=20250119">
+    <meta name="twitter:image" content="<?php echo html(isset($g_og_image) ? $g_og_image : 'https://readnest.jp/img/og-image.jpg?v=20250119'); ?>">
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=<?php echo date('Ymd'); ?>">
@@ -596,6 +596,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <a href="/reading_calendar.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-calendar-check mr-2 text-emerald-500"></i> 読書カレンダー
                                 </a>
+                                <a href="/report/<?php echo date('Y'); ?>/<?php echo date('n'); ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-chart-bar mr-2 text-teal-500"></i> 月間レポート
+                                </a>
                                 <?php if (function_exists('isAdmin') && isAdmin()): ?>
                                 <hr class="my-1">
                                 <a href="/admin/" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -737,6 +740,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </a>
                     <a href="/reading_insights.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-brain mr-3 w-4 text-purple-500"></i> 読書インサイト
+                    </a>
+                    <a href="/report/<?php echo date('Y'); ?>/<?php echo date('n'); ?>" class="block py-2 text-gray-700 hover:text-book-primary-600">
+                        <i class="fas fa-calendar-alt mr-3 w-4 text-teal-500"></i> 月間レポート
                     </a>
                     <a href="/my_reviews.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-pen-to-square mr-3 w-4 text-indigo-500"></i> マイレビュー

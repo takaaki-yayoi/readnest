@@ -166,6 +166,13 @@ RewriteRule ^tag/([^/]+)/?$ search_book_by_tag.php?tag=$1 [L,QSA]
 # 著者ページ
 RewriteRule ^author/([^/]+)/?$ search_book_by_author.php?author=$1 [L,QSA]
 
+# 月間レポート
+RewriteRule ^report/([0-9]{4})/([0-9]{1,2})/?$ monthly_report.php?year=$1&month=$2 [L,QSA]
+RewriteRule ^report/([0-9]{4})/([0-9]{1,2})/([0-9]+)/?$ monthly_report.php?year=$1&month=$2&user=$3 [L,QSA]
+
+# OGP画像動的生成
+RewriteRule ^og-image/report/([0-9]{4})/([0-9]{1,2})/([0-9]+)\.png$ og-image.php?type=report&year=$1&month=$2&user=$3 [L,QSA]
+
 # その他のクリーンURL
 RewriteRule ^bookshelf/?$ bookshelf.php [L,QSA]
 RewriteRule ^add-book/?$ add_book.php [L,QSA]

@@ -487,8 +487,14 @@ ob_start();
                     今月
                 </a>
                 <?php endif; ?>
+
+                <a href="/report/<?php echo $year; ?>/<?php echo $month; ?>"
+                   class="btn bg-teal-500 text-white hover:bg-teal-600 px-3 sm:px-4 py-1 sm:py-2 text-sm"
+                   title="この月のレポートを見る">
+                    <i class="fas fa-chart-bar mr-1"></i>レポート
+                </a>
             </div>
-            
+
             <!-- モバイル用の今月ボタンとセレクター -->
             <div class="sm:hidden flex items-center gap-2 w-full">
                 <?php if (!($year == date('Y') && $month == date('n'))): ?>
@@ -496,6 +502,10 @@ ob_start();
                     今月へ
                 </a>
                 <?php endif; ?>
+                <a href="/report/<?php echo $year; ?>/<?php echo $month; ?>"
+                   class="btn bg-teal-500 text-white hover:bg-teal-600 px-3 py-2 text-sm flex-1 text-center">
+                    <i class="fas fa-chart-bar mr-1"></i>レポート
+                </a>
                 
                 <!-- モバイル用のセレクター（アコーディオン的な表示） -->
                 <details class="flex-1">
