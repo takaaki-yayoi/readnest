@@ -286,7 +286,7 @@ class AIBookRecommender {
             ];
         }
 
-        $stats = $reportData['statistics'] ?? [];
+        $stats = $reportData['stats'] ?? [];
         $books = $reportData['books'] ?? [];
 
         if (empty($books) && ($stats['books_finished'] ?? 0) == 0) {
@@ -302,7 +302,7 @@ class AIBookRecommender {
             // 読了本リストをフォーマット
             $booksText = "";
             foreach (array_slice($books, 0, 10) as $i => $book) {
-                $title = mb_substr($book['name'] ?? '', 0, 30);
+                $title = mb_substr($book['title'] ?? '', 0, 30);
                 $author = mb_substr($book['author'] ?? '', 0, 20);
                 $rating = isset($book['rating']) && $book['rating'] > 0 ? "★{$book['rating']}" : '';
                 $booksText .= ($i + 1) . ". 「{$title}」{$author} {$rating}\n";
