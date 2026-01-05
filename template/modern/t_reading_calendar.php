@@ -460,7 +460,7 @@ ob_start();
                     <select name="year" class="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-readnest-primary">
                         <?php 
                         $current_year = date('Y');
-                        $start_year = 2020; // ReadNestの開始年
+                        $start_year = 2000; // サービス開始以前のデータも対応
                         for ($y = $current_year; $y >= $start_year; $y--): 
                         ?>
                         <option value="<?php echo $y; ?>" <?php echo $y == $year ? 'selected' : ''; ?>>
