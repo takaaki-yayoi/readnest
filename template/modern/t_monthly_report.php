@@ -506,11 +506,12 @@ document.addEventListener('DOMContentLoaded', function() {
             stats: <?php echo json_encode($stats, JSON_UNESCAPED_UNICODE); ?>,
             books: <?php echo json_encode(array_map(function($b) {
                 return [
-                    'title' => mb_substr($b['title'] ?? '', 0, 50),
+                    'title' => mb_substr($b['name'] ?? $b['title'] ?? '', 0, 50),
                     'author' => mb_substr($b['author'] ?? '', 0, 30),
-                    'rating' => $b['rating'] ?? 0
+                    'rating' => $b['rating'] ?? 0,
+                    'review' => mb_substr($b['memo'] ?? '', 0, 200)
                 ];
-            }, array_slice($books, 0, 20)), JSON_UNESCAPED_UNICODE); ?>
+            }, array_slice($books, 0, 15)), JSON_UNESCAPED_UNICODE); ?>
         }
     };
     <?php endif; ?>

@@ -297,15 +297,20 @@ class AIBookRecommender {
         }
 
         try {
-            $systemPrompt = "あなたは優しく温かみのある読書アドバイザーです。ユーザーの月間読書レポートを見て、励ましや褒め言葉を含めた要約コメントを生成してください。日本語で300-400文字程度で書いてください。";
+            $systemPrompt = "あなたは優しく温かみのある読書アドバイザーです。ユーザーの月間読書レポートとレビューを見て、その人の読書体験に寄り添った要約コメントを生成してください。ユーザーのレビューから読み取れる感想や気づきを反映させてください。日本語で350-450文字程度で書いてください。";
 
-            // 読了本リストをフォーマット
+            // 読了本リストをフォーマット（レビュー付き）
             $booksText = "";
             foreach (array_slice($books, 0, 10) as $i => $book) {
-                $title = mb_substr($book['title'] ?? '', 0, 30);
+                $title = mb_substr($book['title'] ?? '', 0, 40);
                 $author = mb_substr($book['author'] ?? '', 0, 20);
                 $rating = isset($book['rating']) && $book['rating'] > 0 ? "★{$book['rating']}" : '';
+                $review = isset($book['review']) && !empty($book['review']) ? mb_substr($book['review'], 0, 150) : '';
+
                 $booksText .= ($i + 1) . ". 「{$title}」{$author} {$rating}\n";
+                if (!empty($review)) {
+                    $booksText .= "   レビュー: {$review}\n";
+                }
             }
             if (count($books) > 10) {
                 $booksText .= "...他" . (count($books) - 10) . "冊\n";
@@ -313,17 +318,17 @@ class AIBookRecommender {
 
             $userPrompt = "{$year}年{$month}月の読書レポート:\n\n";
             $userPrompt .= "【統計】\n";
-            $userPrompt .= "- 読了冊数: {$stats['books_finished']}冊\n";
+            $userPrompt .= "- 読了冊数: " . ($stats['books_finished'] ?? count($books)) . "冊\n";
             $userPrompt .= "- 読んだページ: " . number_format($stats['pages_read'] ?? 0) . "ページ\n";
-            $userPrompt .= "- 日平均: {$stats['daily_average']}ページ\n";
+            $userPrompt .= "- 日平均: " . ($stats['daily_average'] ?? 0) . "ページ\n";
 
             if (($stats['goal'] ?? 0) > 0) {
-                $goalStatus = $stats['goal_achieved'] ? '達成！' : '未達成';
-                $userPrompt .= "- 目標: {$stats['goal']}冊 → {$goalStatus}（{$stats['goal_progress']}%）\n";
+                $goalStatus = ($stats['goal_achieved'] ?? false) ? '達成！' : '未達成';
+                $userPrompt .= "- 目標: {$stats['goal']}冊 → {$goalStatus}（" . ($stats['goal_progress'] ?? 0) . "%）\n";
             }
 
-            $userPrompt .= "\n【読了した本】\n{$booksText}\n";
-            $userPrompt .= "この月の読書を振り返る温かいコメントを書いてください。具体的な本のタイトルや著者名に触れながら、読者の頑張りを褒め、次の月への励ましも添えてください。";
+            $userPrompt .= "\n【読了した本とレビュー】\n{$booksText}\n";
+            $userPrompt .= "この月の読書を振り返る温かいコメントを書いてください。ユーザーのレビューから読み取れる感想や発見に触れながら、具体的な本のタイトルを挙げて、読者の頑張りを褒め、次の月への励ましも添えてください。";
 
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
