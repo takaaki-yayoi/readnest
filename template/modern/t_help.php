@@ -1905,7 +1905,7 @@ ob_start();
                                     <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">2</div>
                                     <div class="flex-1">
                                         <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">月を切り替える</p>
-                                        <p class="text-gray-700 dark:text-gray-300">左右の矢印ボタンで過去の月のレポートを確認できます。「今月のレポートを見る」ボタンで現在月に戻れます</p>
+                                        <p class="text-gray-700 dark:text-gray-300">左右の矢印ボタン、または年月ドロップダウンで過去の月のレポートを確認できます。ドロップダウンには各月の読了冊数も表示されます</p>
                                     </div>
                                 </div>
                             </div>
@@ -1925,6 +1925,15 @@ ob_start();
                     <div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">💡 便利な機能</h3>
                         <div class="space-y-4">
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-magic text-purple-500 mr-2"></i>
+                                    AI要約
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    AIがその月の読書を振り返り、温かいコメントを生成します。読んだ本のタイトルや統計データをもとに、励ましや感想を含めた要約が作成されます。生成した要約は保存でき、公開設定も可能です。
+                                </p>
+                            </div>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                     <i class="fas fa-chart-bar text-teal-500 mr-2"></i>
