@@ -48,7 +48,7 @@ $month = isset($_GET['month']) ? (int)$_GET['month'] : $current_month;
 if ($month < 1 || $month > 12) {
     $month = $current_month;
 }
-if ($year < 2015 || $year > $current_year + 1) {
+if ($year < 2000 || $year > $current_year + 1) {
     $year = $current_year;
 }
 
