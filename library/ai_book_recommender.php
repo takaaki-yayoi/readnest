@@ -269,7 +269,106 @@ class AIBookRecommender {
         
         return $prompt;
     }
-    
+
+    /**
+     * 月間レポートの要約を生成
+     *
+     * @param int $year 年
+     * @param int $month 月
+     * @param array $reportData レポートデータ（statistics, books）
+     * @return array 生成結果
+     */
+    public function generateMonthlySummary(int $year, int $month, array $reportData): array {
+        if (!$this->client) {
+            return [
+                'success' => false,
+                'error' => 'OpenAI client is not available'
+            ];
+        }
+
+        $stats = $reportData['statistics'] ?? [];
+        $books = $reportData['books'] ?? [];
+
+        if (empty($books) && ($stats['books_finished'] ?? 0) == 0) {
+            return [
+                'success' => false,
+                'error' => 'この月の読書データがありません'
+            ];
+        }
+
+        try {
+            $systemPrompt = "あなたは優しく温かみのある読書アドバイザーです。ユーザーの月間読書レポートを見て、励ましや褒め言葉を含めた要約コメントを生成してください。日本語で300-400文字程度で書いてください。";
+
+            // 読了本リストをフォーマット
+            $booksText = "";
+            foreach (array_slice($books, 0, 10) as $i => $book) {
+                $title = mb_substr($book['name'] ?? '', 0, 30);
+                $author = mb_substr($book['author'] ?? '', 0, 20);
+                $rating = isset($book['rating']) && $book['rating'] > 0 ? "★{$book['rating']}" : '';
+                $booksText .= ($i + 1) . ". 「{$title}」{$author} {$rating}\n";
+            }
+            if (count($books) > 10) {
+                $booksText .= "...他" . (count($books) - 10) . "冊\n";
+            }
+
+            $userPrompt = "{$year}年{$month}月の読書レポート:\n\n";
+            $userPrompt .= "【統計】\n";
+            $userPrompt .= "- 読了冊数: {$stats['books_finished']}冊\n";
+            $userPrompt .= "- 読んだページ: " . number_format($stats['pages_read'] ?? 0) . "ページ\n";
+            $userPrompt .= "- 日平均: {$stats['daily_average']}ページ\n";
+
+            if (($stats['goal'] ?? 0) > 0) {
+                $goalStatus = $stats['goal_achieved'] ? '達成！' : '未達成';
+                $userPrompt .= "- 目標: {$stats['goal']}冊 → {$goalStatus}（{$stats['goal_progress']}%）\n";
+            }
+
+            $userPrompt .= "\n【読了した本】\n{$booksText}\n";
+            $userPrompt .= "この月の読書を振り返る温かいコメントを書いてください。具体的な本のタイトルや著者名に触れながら、読者の頑張りを褒め、次の月への励ましも添えてください。";
+
+            $response = $this->client->chatWithSystem(
+                $systemPrompt,
+                $userPrompt,
+                'gpt-4o-mini',
+                0.7,
+                600
+            );
+
+            if (!$response || !is_array($response)) {
+                return [
+                    'success' => false,
+                    'error' => 'AIからの応答が不正です'
+                ];
+            }
+
+            $summary = OpenAIClient::extractText($response);
+
+            if (empty($summary)) {
+                return [
+                    'success' => false,
+                    'error' => '要約の生成に失敗しました'
+                ];
+            }
+
+            // 著者名を修正
+            $summary = AuthorCorrections::correctInText($summary);
+
+            return [
+                'success' => true,
+                'summary' => $summary,
+                'year' => $year,
+                'month' => $month,
+                'tokens_used' => OpenAIClient::getUsedTokens($response)
+            ];
+
+        } catch (Exception $e) {
+            error_log('Monthly Summary Generation Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => '要約生成中にエラーが発生しました'
+            ];
+        }
+    }
+
     /**
      * 読書履歴をフォーマット
      */

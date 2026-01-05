@@ -3536,6 +3536,53 @@ function updateReadingAnalysisVisibility($analysis_id, $user_id, $is_public) {
     return $g_db->affectedRows() > 0;
 }
 
+/**
+ * 月間レポートの保存済み要約を取得
+ *
+ * @param string $user_id ユーザーID
+ * @param int $year 年
+ * @param int $month 月
+ * @param bool $public_only 公開分析のみ取得する場合true
+ * @return array|null 要約データ、見つからない場合はnull
+ */
+function getMonthlyReportSummary($user_id, $year, $month, $public_only = false) {
+    global $g_db;
+
+    $sql = "SELECT * FROM b_reading_analysis
+            WHERE user_id = ? AND analysis_type = 'monthly_report'";
+
+    if ($public_only) {
+        $sql .= " AND is_public = 1";
+    }
+
+    $sql .= " ORDER BY created_at DESC";
+
+    $results = $g_db->getAll($sql, array($user_id), DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results) || empty($results)) {
+        return null;
+    }
+
+    // analysis_content内のJSONから該当の年月を検索
+    foreach ($results as $row) {
+        $content = json_decode($row['analysis_content'], true);
+        if ($content && isset($content['year']) && isset($content['month'])) {
+            if ((int)$content['year'] === (int)$year && (int)$content['month'] === (int)$month) {
+                return [
+                    'analysis_id' => $row['analysis_id'],
+                    'summary' => $content['summary'] ?? '',
+                    'year' => $content['year'],
+                    'month' => $content['month'],
+                    'is_public' => $row['is_public'],
+                    'created_at' => $row['created_at']
+                ];
+            }
+        }
+    }
+
+    return null;
+}
+
 function getBooksUserReadInThisMonth($user_id) {
   global $g_db;
   // $g_db is already a DB_PDO instance

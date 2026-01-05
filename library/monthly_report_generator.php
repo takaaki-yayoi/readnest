@@ -225,6 +225,46 @@ class MonthlyReportGenerator {
     }
 
     /**
+     * 読書データがある年月リストを取得
+     * @param string|int $user_id ユーザーID
+     * @return array [['year' => 2024, 'month' => 12, 'book_count' => 5], ...]
+     */
+    public function getAvailableMonths($user_id): array {
+        global $g_db;
+
+        $user_id = (string)$user_id;
+
+        // finished_date または update_date から年月を抽出し、冊数をカウント
+        $sql = "SELECT
+                    YEAR(COALESCE(finished_date, update_date)) as year,
+                    MONTH(COALESCE(finished_date, update_date)) as month,
+                    COUNT(*) as book_count
+                FROM b_book_list
+                WHERE user_id = ?
+                AND status IN (?, ?)
+                AND (finished_date IS NOT NULL OR update_date IS NOT NULL)
+                GROUP BY year, month
+                ORDER BY year DESC, month DESC";
+
+        $results = $g_db->getAll($sql, [
+            $user_id,
+            READING_FINISH, READ_BEFORE
+        ], DB_FETCHMODE_ASSOC);
+
+        if (DB::isError($results)) {
+            return [];
+        }
+
+        return array_map(function($row) {
+            return [
+                'year' => (int)$row['year'],
+                'month' => (int)$row['month'],
+                'book_count' => (int)$row['book_count']
+            ];
+        }, $results);
+    }
+
+    /**
      * 読了本リストを取得
      */
     private function getFinishedBooks($user_id, string $start_date, string $end_datetime): array {

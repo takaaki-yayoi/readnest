@@ -67,6 +67,14 @@ try {
         exit;
     }
     
+    // 分析タイプ（デフォルトはtrend）
+    $analysis_type = isset($input['analysis_type']) ? $input['analysis_type'] : 'trend';
+
+    // 許可されたタイプのみ
+    if (!in_array($analysis_type, ['trend', 'monthly_report'])) {
+        $analysis_type = 'trend';
+    }
+
     // 分析内容の著者名を修正してから保存
     $corrected_content = AuthorCorrections::correctInText($input['analysis_content']);
 
@@ -76,7 +84,7 @@ try {
     // Save the analysis
     $analysis_id = saveReadingAnalysis(
         $user_id,
-        'trend',
+        $analysis_type,
         $corrected_content,
         $is_public
     );

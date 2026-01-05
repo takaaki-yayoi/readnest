@@ -63,6 +63,15 @@ if ($year > $current_year || ($year == $current_year && $month > $current_month)
 $generator = new MonthlyReportGenerator();
 $report_data = $generator->getReportData($target_user_id, $year, $month);
 
+// 利用可能な年月リストを取得（ドロップダウン用）
+$available_months = $generator->getAvailableMonths($target_user_id);
+
+// 保存済み要約を取得（自分のレポートまたは公開要約）
+$saved_summary = null;
+if (function_exists('getMonthlyReportSummary')) {
+    $saved_summary = getMonthlyReportSummary($target_user_id, $year, $month, !$is_my_report);
+}
+
 // ユーザー情報
 $user_info = getUserInformation($target_user_id);
 $user_nickname = getNickname($target_user_id);

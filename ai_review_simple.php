@@ -217,12 +217,38 @@ try {
             }
             
             $result = $recommender->analyzeReadingTrends($compressedHistory);
-            
+
             // 保存オプションは別のエンドポイントで処理するため、ここでは無視
-            
+
             echo json_encode($result);
             break;
-            
+
+        case 'generate_monthly_summary':
+            // 月間レポート要約生成
+            $year = isset($input['year']) ? (int)$input['year'] : 0;
+            $month = isset($input['month']) ? (int)$input['month'] : 0;
+            $reportData = $input['report_data'] ?? [];
+
+            if ($year < 2015 || $month < 1 || $month > 12) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => '無効な年月です'
+                ]);
+                exit;
+            }
+
+            if (empty($reportData)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'レポートデータがありません'
+                ]);
+                exit;
+            }
+
+            $result = $recommender->generateMonthlySummary($year, $month, $reportData);
+            echo json_encode($result);
+            break;
+
         case 'suggest_challenge':
             // 読書チャレンジ提案
             $readingHistory = $input['reading_history'] ?? [];

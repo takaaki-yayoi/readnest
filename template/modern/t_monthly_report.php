@@ -102,11 +102,28 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
             </a>
 
             <div class="text-center">
+                <!-- 年月ドロップダウン -->
+                <?php if (!empty($available_months)): ?>
+                <div class="relative inline-block">
+                    <select id="month-selector"
+                            onchange="if(this.value) location.href='/report/' + this.value + '<?php echo $url_user_path; ?>'"
+                            class="appearance-none bg-transparent text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 pr-8 cursor-pointer focus:outline-none border-b-2 border-transparent hover:border-readnest-accent focus:border-readnest-accent transition-colors">
+                        <?php foreach ($available_months as $m): ?>
+                        <option value="<?php echo $m['year']; ?>/<?php echo $m['month']; ?>"
+                                <?php echo ($m['year'] == $year && $m['month'] == $month) ? 'selected' : ''; ?>>
+                            <?php echo $m['year']; ?>年<?php echo $m['month']; ?>月 (<?php echo $m['book_count']; ?>冊)
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+                <?php else: ?>
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">
                     <?php echo $year; ?>年<?php echo $month; ?>月
                 </h2>
+                <?php endif; ?>
                 <?php if ($year == $current_year && $month == $current_month): ?>
-                <span class="text-xs text-readnest-accent font-medium">今月</span>
+                <span class="text-xs text-readnest-accent font-medium block mt-1">今月</span>
                 <?php endif; ?>
             </div>
 
@@ -216,6 +233,74 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
             </div>
         </div>
     </div>
+
+    <!-- AI要約セクション -->
+    <?php if ($is_my_report || ($saved_summary && $saved_summary['is_public'])): ?>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
+            <i class="fas fa-magic mr-2 text-purple-500"></i>AI要約
+        </h3>
+
+        <?php if ($saved_summary): ?>
+        <!-- 保存済み要約 -->
+        <div id="saved-summary-section">
+            <div class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed">
+                <?php echo nl2br(html($saved_summary['summary'])); ?>
+            </div>
+            <?php if ($is_my_report): ?>
+            <div class="mt-4 flex items-center justify-between border-t dark:border-gray-700 pt-4">
+                <div class="flex items-center gap-4">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="summary-public-toggle"
+                               <?php echo $saved_summary['is_public'] ? 'checked' : ''; ?>
+                               onchange="updateSummaryVisibility(<?php echo $saved_summary['analysis_id']; ?>, this.checked)"
+                               class="sr-only peer">
+                        <div class="relative w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                        <span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">公開する</span>
+                    </label>
+                </div>
+                <button onclick="regenerateSummary()"
+                        class="text-sm text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300">
+                    <i class="fas fa-sync-alt mr-1"></i>再生成
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($is_my_report): ?>
+        <!-- 生成セクション（未生成時または再生成時に表示） -->
+        <div id="generate-section" class="<?php echo $saved_summary ? 'hidden' : ''; ?>">
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+                <i class="fas fa-info-circle mr-1"></i>
+                AIがこの月の読書を振り返り、温かいコメントを生成します。
+            </p>
+            <button onclick="generateMonthlySummary()"
+                    id="generate-btn"
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                <i class="fas fa-magic mr-2"></i>要約を生成
+            </button>
+        </div>
+
+        <!-- 生成結果表示エリア -->
+        <div id="summary-result" class="hidden">
+            <div id="summary-text" class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"></div>
+            <div class="mt-4 flex items-center justify-between border-t dark:border-gray-700 pt-4">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="new-summary-public" class="sr-only peer">
+                    <div class="relative w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                    <span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300">公開する</span>
+                </label>
+                <button onclick="saveSummary()"
+                        id="save-btn"
+                        class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>保存
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <!-- 日別読書グラフ -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
@@ -412,6 +497,161 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     <?php endif; ?>
 
+    // AI要約機能
+    <?php if ($is_my_report && $report_data['has_data']): ?>
+    window.monthlySummaryData = {
+        year: <?php echo $year; ?>,
+        month: <?php echo $month; ?>,
+        reportData: {
+            stats: <?php echo json_encode($stats, JSON_UNESCAPED_UNICODE); ?>,
+            books: <?php echo json_encode(array_map(function($b) {
+                return [
+                    'title' => mb_substr($b['title'] ?? '', 0, 50),
+                    'author' => mb_substr($b['author'] ?? '', 0, 30),
+                    'rating' => $b['rating'] ?? 0
+                ];
+            }, array_slice($books, 0, 20)), JSON_UNESCAPED_UNICODE); ?>
+        }
+    };
+    <?php endif; ?>
+});
+
+// AI要約を生成
+async function generateMonthlySummary() {
+    const btn = document.getElementById('generate-btn');
+    const generateSection = document.getElementById('generate-section');
+    const resultSection = document.getElementById('summary-result');
+    const summaryText = document.getElementById('summary-text');
+
+    if (!btn || !window.monthlySummaryData) return;
+
+    // ボタンを無効化
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
+
+    try {
+        const response = await fetch('/ai_review_simple.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'generate_monthly_summary',
+                year: window.monthlySummaryData.year,
+                month: window.monthlySummaryData.month,
+                report_data: window.monthlySummaryData.reportData
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.summary) {
+            // 生成された要約を表示
+            summaryText.innerHTML = data.summary.replace(/\n/g, '<br>');
+            window.generatedSummary = data.summary;
+            generateSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+        } else {
+            alert(data.error || '要約の生成に失敗しました');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic mr-2"></i>要約を生成';
+        }
+    } catch (error) {
+        console.error('Generate summary error:', error);
+        alert('通信エラーが発生しました');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>要約を生成';
+    }
+}
+
+// 要約を保存
+async function saveSummary() {
+    const btn = document.getElementById('save-btn');
+    const isPublic = document.getElementById('new-summary-public')?.checked || false;
+
+    if (!btn || !window.generatedSummary || !window.monthlySummaryData) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+
+    try {
+        // 保存するコンテンツ（JSON形式）
+        const content = JSON.stringify({
+            year: window.monthlySummaryData.year,
+            month: window.monthlySummaryData.month,
+            summary: window.generatedSummary
+        });
+
+        const response = await fetch('/ajax/save_reading_analysis.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                analysis_type: 'monthly_report',
+                analysis_content: content,
+                is_public: isPublic ? 1 : 0
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // ページをリロードして保存済み状態を表示
+            location.reload();
+        } else {
+            alert(data.error || '保存に失敗しました');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save mr-2"></i>保存';
+        }
+    } catch (error) {
+        console.error('Save summary error:', error);
+        alert('通信エラーが発生しました');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save mr-2"></i>保存';
+    }
+}
+
+// 公開設定を更新
+async function updateSummaryVisibility(analysisId, isPublic) {
+    try {
+        const response = await fetch('/ajax/update_analysis_visibility.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                analysis_id: analysisId,
+                is_public: isPublic
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.error || '更新に失敗しました');
+            // トグルを元に戻す
+            document.getElementById('summary-public-toggle').checked = !isPublic;
+        }
+    } catch (error) {
+        console.error('Update visibility error:', error);
+        alert('通信エラーが発生しました');
+        document.getElementById('summary-public-toggle').checked = !isPublic;
+    }
+}
+
+// 要約を再生成
+function regenerateSummary() {
+    if (!confirm('現在の要約を破棄して、新しい要約を生成しますか？')) return;
+
+    // 保存済みセクションを隠して生成セクションを表示
+    const savedSection = document.getElementById('saved-summary-section');
+    const generateSection = document.getElementById('generate-section');
+    const resultSection = document.getElementById('summary-result');
+
+    if (savedSection) savedSection.classList.add('hidden');
+    if (generateSection) generateSection.classList.remove('hidden');
+    if (resultSection) resultSection.classList.add('hidden');
+
+    // 生成を開始
+    generateMonthlySummary();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
     // Xシェアボタン処理
     const xShareBtn = document.getElementById('xShareBtn');
     if (xShareBtn) {
