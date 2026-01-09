@@ -70,41 +70,8 @@ class MonthlyReportGenerator {
         // 読了冊数（既存関数を利用）
         $books_finished = getMonthlyAchievement($user_id, $year, $month);
 
-        // ページ数を取得（b_book_eventから）
-        $pages_sql = "SELECT COALESCE(SUM(page), 0) as total_pages
-                      FROM b_book_event
-                      WHERE user_id = ?
-                      AND event_date >= ?
-                      AND event_date <= ?
-                      AND event IN (?, ?)";
-
-        $pages_result = $g_db->getOne($pages_sql, [
-            $user_id, $start_date, $end_datetime,
-            READING_NOW, READING_FINISH
-        ]);
-        $total_pages = DB::isError($pages_result) ? 0 : (int)$pages_result;
-
-        // 読了本のページ数合計も取得
-        $finished_pages_sql = "SELECT COALESCE(SUM(bl.total_page), 0) as finished_pages
-                               FROM b_book_list bl
-                               WHERE bl.user_id = ?
-                               AND bl.status IN (?, ?)
-                               AND (
-                                   (bl.finished_date IS NOT NULL AND bl.finished_date >= ? AND bl.finished_date <= ?)
-                                   OR
-                                   (bl.finished_date IS NULL AND bl.update_date >= ? AND bl.update_date <= ?)
-                               )";
-
-        $finished_pages_result = $g_db->getOne($finished_pages_sql, [
-            $user_id,
-            READING_FINISH, READ_BEFORE,
-            $start_date, $end_datetime,
-            $start_date, $end_datetime
-        ]);
-        $finished_pages = DB::isError($finished_pages_result) ? 0 : (int)$finished_pages_result;
-
-        // ページ数は読了本のページ数を優先（より正確）
-        $pages_read = max($total_pages, $finished_pages);
+        // ページ数を正しく計算（累積値の差分）
+        $pages_read = $this->calculatePagesRead($user_id, $start_date, $end_datetime);
 
         // 読書日数を取得
         $reading_days_sql = "SELECT COUNT(DISTINCT DATE(event_date)) as reading_days
@@ -171,38 +138,17 @@ class MonthlyReportGenerator {
 
     /**
      * 日別アクティビティを取得
+     * ページ数は累積値ではなく、前回からの差分（実際に読んだページ数）を計算
      */
     private function getDailyActivity($user_id, string $start_date, string $end_date): array {
         global $g_db;
 
-        $sql = "SELECT
-                    DATE(event_date) as date,
-                    SUM(page) as pages,
-                    COUNT(DISTINCT CASE WHEN event = ? THEN book_id END) as books_finished
-                FROM b_book_event
-                WHERE user_id = ?
-                AND event_date >= ?
-                AND event_date <= ?
-                AND event IN (?, ?, ?)
-                GROUP BY DATE(event_date)
-                ORDER BY date";
-
-        $results = $g_db->getAll($sql, [
-            READING_FINISH,
-            $user_id, $start_date, $end_date . ' 23:59:59',
-            READING_NOW, READING_FINISH, READ_BEFORE
-        ], DB_FETCHMODE_ASSOC);
-
-        if (DB::isError($results)) {
-            return [];
-        }
-
         // 月の全日を含む配列を作成
         $activity = [];
         $current = new DateTime($start_date);
-        $end = new DateTime($end_date);
+        $endDt = new DateTime($end_date);
 
-        while ($current <= $end) {
+        while ($current <= $endDt) {
             $dateStr = $current->format('Y-m-d');
             $activity[$dateStr] = [
                 'date' => $dateStr,
@@ -213,15 +159,156 @@ class MonthlyReportGenerator {
             $current->modify('+1 day');
         }
 
-        // 取得したデータをマージ
+        // 対象期間のイベントを本ごとに取得（時系列順）
+        $sql = "SELECT
+                    book_id,
+                    DATE(event_date) as date,
+                    page,
+                    event
+                FROM b_book_event
+                WHERE user_id = ?
+                AND event_date >= ?
+                AND event_date <= ?
+                AND event IN (?, ?, ?)
+                ORDER BY book_id, event_date ASC";
+
+        $results = $g_db->getAll($sql, [
+            $user_id, $start_date, $end_date . ' 23:59:59',
+            READING_NOW, READING_FINISH, READ_BEFORE
+        ], DB_FETCHMODE_ASSOC);
+
+        if (DB::isError($results) || empty($results)) {
+            return array_values($activity);
+        }
+
+        // 各本の期間開始前の最終ページ位置を取得
+        $book_ids = array_unique(array_column($results, 'book_id'));
+        $prev_pages = [];
+
+        if (!empty($book_ids)) {
+            $placeholders = implode(',', array_fill(0, count($book_ids), '?'));
+            $prev_sql = "SELECT book_id, MAX(page) as last_page
+                         FROM b_book_event
+                         WHERE user_id = ?
+                         AND event_date < ?
+                         AND book_id IN ({$placeholders})
+                         GROUP BY book_id";
+
+            $params = array_merge([$user_id, $start_date], $book_ids);
+            $prev_results = $g_db->getAll($prev_sql, $params, DB_FETCHMODE_ASSOC);
+
+            if (!DB::isError($prev_results)) {
+                foreach ($prev_results as $row) {
+                    $prev_pages[$row['book_id']] = (int)$row['last_page'];
+                }
+            }
+        }
+
+        // 本ごとの日別最大ページ数を集計
+        $book_daily_max = [];
         foreach ($results as $row) {
-            if (isset($activity[$row['date']])) {
-                $activity[$row['date']]['pages'] = (int)$row['pages'];
-                $activity[$row['date']]['books_finished'] = (int)$row['books_finished'];
+            $book_id = $row['book_id'];
+            $date = $row['date'];
+            $page = (int)$row['page'];
+
+            if (!isset($book_daily_max[$book_id])) {
+                $book_daily_max[$book_id] = [];
+            }
+            // その日の最大ページ数を記録
+            if (!isset($book_daily_max[$book_id][$date]) || $page > $book_daily_max[$book_id][$date]) {
+                $book_daily_max[$book_id][$date] = $page;
+            }
+
+            // 読了イベントをカウント
+            if ($row['event'] == READING_FINISH && isset($activity[$date])) {
+                $activity[$date]['books_finished']++;
+            }
+        }
+
+        // 差分を計算して日別ページ数を算出
+        foreach ($book_daily_max as $book_id => $daily_pages) {
+            $prev_page = $prev_pages[$book_id] ?? 0;
+            ksort($daily_pages); // 日付順にソート
+
+            foreach ($daily_pages as $date => $max_page) {
+                if (isset($activity[$date])) {
+                    $pages_read = max(0, $max_page - $prev_page);
+                    $activity[$date]['pages'] += $pages_read;
+                }
+                $prev_page = $max_page;
             }
         }
 
         return array_values($activity);
+    }
+
+    /**
+     * 期間内の読んだページ数を計算（累積値の差分）
+     */
+    private function calculatePagesRead($user_id, string $start_date, string $end_datetime): int {
+        global $g_db;
+
+        // 対象期間のイベントを取得
+        $sql = "SELECT book_id, page
+                FROM b_book_event
+                WHERE user_id = ?
+                AND event_date >= ?
+                AND event_date <= ?
+                AND event IN (?, ?, ?)
+                ORDER BY book_id, event_date ASC";
+
+        $results = $g_db->getAll($sql, [
+            $user_id, $start_date, $end_datetime,
+            READING_NOW, READING_FINISH, READ_BEFORE
+        ], DB_FETCHMODE_ASSOC);
+
+        if (DB::isError($results) || empty($results)) {
+            return 0;
+        }
+
+        // 各本の期間開始前の最終ページ位置を取得
+        $book_ids = array_unique(array_column($results, 'book_id'));
+        $prev_pages = [];
+
+        if (!empty($book_ids)) {
+            $placeholders = implode(',', array_fill(0, count($book_ids), '?'));
+            $prev_sql = "SELECT book_id, MAX(page) as last_page
+                         FROM b_book_event
+                         WHERE user_id = ?
+                         AND event_date < ?
+                         AND book_id IN ({$placeholders})
+                         GROUP BY book_id";
+
+            $params = array_merge([$user_id, $start_date], $book_ids);
+            $prev_results = $g_db->getAll($prev_sql, $params, DB_FETCHMODE_ASSOC);
+
+            if (!DB::isError($prev_results)) {
+                foreach ($prev_results as $row) {
+                    $prev_pages[$row['book_id']] = (int)$row['last_page'];
+                }
+            }
+        }
+
+        // 本ごとの最大ページ数を集計
+        $book_max_pages = [];
+        foreach ($results as $row) {
+            $book_id = $row['book_id'];
+            $page = (int)$row['page'];
+
+            if (!isset($book_max_pages[$book_id]) || $page > $book_max_pages[$book_id]) {
+                $book_max_pages[$book_id] = $page;
+            }
+        }
+
+        // 差分を計算
+        $total_pages = 0;
+        foreach ($book_max_pages as $book_id => $max_page) {
+            $prev_page = $prev_pages[$book_id] ?? 0;
+            $pages_read = max(0, $max_page - $prev_page);
+            $total_pages += $pages_read;
+        }
+
+        return $total_pages;
     }
 
     /**
