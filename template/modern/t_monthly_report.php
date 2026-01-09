@@ -103,11 +103,26 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
 
             <div class="text-center">
                 <!-- 年月ドロップダウン -->
-                <?php if (!empty($available_months)): ?>
+                <?php
+                // 現在表示中の年月がリストに含まれているか確認
+                $current_in_list = false;
+                foreach ($available_months as $m) {
+                    if ($m['year'] == $year && $m['month'] == $month) {
+                        $current_in_list = true;
+                        break;
+                    }
+                }
+                ?>
+                <?php if (!empty($available_months) || true): ?>
                 <div class="relative inline-block">
                     <select id="month-selector"
                             onchange="if(this.value) location.href='/report/' + this.value + '<?php echo $url_user_path; ?>'"
                             class="appearance-none bg-transparent text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 pr-8 cursor-pointer focus:outline-none border-b-2 border-transparent hover:border-readnest-accent focus:border-readnest-accent transition-colors">
+                        <?php if (!$current_in_list): ?>
+                        <option value="<?php echo $year; ?>/<?php echo $month; ?>" selected>
+                            <?php echo $year; ?>年<?php echo $month; ?>月 (0冊)
+                        </option>
+                        <?php endif; ?>
                         <?php foreach ($available_months as $m): ?>
                         <option value="<?php echo $m['year']; ?>/<?php echo $m['month']; ?>"
                                 <?php echo ($m['year'] == $year && $m['month'] == $month) ? 'selected' : ''; ?>>
