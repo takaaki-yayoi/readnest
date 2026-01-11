@@ -621,7 +621,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                     <span class="xs:hidden">今年</span>
                 </div>
             </a>
-            <a href="/bookshelf.php?status=<?php echo READING_FINISH; ?>&filter_month=<?php echo date('Y-m'); ?>" 
+            <a href="/report/<?php echo date('Y'); ?>/<?php echo date('n'); ?>"
                class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-2.5 sm:p-3 md:p-4 hover:shadow-lg transition-all block group cursor-pointer relative overflow-hidden">
                 <div class="absolute top-1 right-1 text-purple-400 opacity-50 group-hover:opacity-100 transition-opacity">
                     <i class="fas fa-arrow-right text-xs"></i>
