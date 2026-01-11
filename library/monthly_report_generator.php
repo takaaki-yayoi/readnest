@@ -376,7 +376,7 @@ class MonthlyReportGenerator {
                     OR
                     (bl.finished_date IS NULL AND bl.update_date >= ? AND bl.update_date <= ?)
                 )
-                ORDER BY COALESCE(bl.finished_date, bl.update_date) DESC";
+                ORDER BY COALESCE(bl.finished_date, bl.update_date) ASC";
 
         $results = $g_db->getAll($sql, [
             $user_id,
