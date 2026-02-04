@@ -71,7 +71,7 @@ try {
     $analysis_type = isset($input['analysis_type']) ? $input['analysis_type'] : 'trend';
 
     // 許可されたタイプのみ
-    if (!in_array($analysis_type, ['trend', 'monthly_report'])) {
+    if (!in_array($analysis_type, ['trend', 'monthly_report', 'yearly_report'])) {
         $analysis_type = 'trend';
     }
 

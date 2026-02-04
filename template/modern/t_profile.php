@@ -302,7 +302,70 @@ ob_start();
                     </div>
                 </div>
                 <?php endif; ?>
-                
+
+                <!-- 公開アセット管理セクション（自分のプロフィールのみ） -->
+                <?php if ($is_own_profile && !empty($user_assets)): ?>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-600 p-4 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center text-gray-900 dark:text-gray-100">
+                        <i class="fas fa-folder-open text-amber-600 mr-2"></i>
+                        AI分析アセット管理
+                    </h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        AIが生成した分析・振り返りの公開設定を管理できます。
+                    </p>
+
+                    <div class="space-y-3">
+                        <?php foreach ($user_assets as $asset): ?>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-650 transition-colors" data-asset-id="<?php echo $asset['analysis_id']; ?>">
+                            <div class="flex items-center min-w-0 flex-1">
+                                <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-<?php echo $asset['color']; ?>-100 dark:bg-<?php echo $asset['color']; ?>-900/30 mr-3">
+                                    <i class="fas <?php echo $asset['icon']; ?> text-<?php echo $asset['color']; ?>-600 dark:text-<?php echo $asset['color']; ?>-400"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <a href="<?php echo html($asset['link']); ?>" class="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 hover:text-readnest-primary dark:hover:text-readnest-accent line-clamp-1">
+                                        <?php echo html($asset['title']); ?>
+                                    </a>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        <?php echo date('Y/m/d H:i', strtotime($asset['created_at'])); ?>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 sm:gap-3 ml-2 flex-shrink-0">
+                                <!-- 公開状態表示 -->
+                                <span class="asset-status-badge text-xs px-2 py-1 rounded-full <?php echo $asset['is_public'] ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'; ?>">
+                                    <i class="fas <?php echo $asset['is_public'] ? 'fa-globe' : 'fa-lock'; ?> mr-1"></i>
+                                    <span class="hidden sm:inline"><?php echo $asset['is_public'] ? '公開' : '非公開'; ?></span>
+                                </span>
+
+                                <!-- 公開トグル -->
+                                <label class="relative inline-flex items-center cursor-pointer" title="公開設定を切り替え">
+                                    <input type="checkbox"
+                                           class="sr-only peer asset-public-toggle"
+                                           data-asset-id="<?php echo $asset['analysis_id']; ?>"
+                                           <?php echo $asset['is_public'] ? 'checked' : ''; ?>
+                                           onchange="toggleAssetVisibility(<?php echo $asset['analysis_id']; ?>, this)">
+                                    <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                                </label>
+
+                                <!-- リンクボタン -->
+                                <a href="<?php echo html($asset['link']); ?>"
+                                   class="text-gray-400 hover:text-readnest-primary dark:hover:text-readnest-accent"
+                                   title="詳細を見る">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        公開にすると、他のユーザーがあなたのプロフィールで閲覧できるようになります。
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- 分析履歴モーダル -->
                 <div id="analysis-history-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" style="background-color: rgba(0, 0, 0, 0.5);">
                     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -395,6 +458,59 @@ function updatePublicUI(isPublic) {
             icon.className = 'fas fa-lock mr-1';
             text.textContent = '非公開';
         }
+    }
+}
+
+// アセットの公開設定を切り替え（アセット管理セクション用）
+async function toggleAssetVisibility(analysisId, checkbox) {
+    const isPublic = checkbox.checked ? 1 : 0;
+    const assetRow = checkbox.closest('[data-asset-id]');
+    const statusBadge = assetRow ? assetRow.querySelector('.asset-status-badge') : null;
+
+    try {
+        const response = await fetch('/ajax/update_analysis_visibility.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                analysis_id: analysisId,
+                is_public: isPublic
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // UIを更新
+            if (statusBadge) {
+                if (isPublic) {
+                    statusBadge.className = 'asset-status-badge text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                    statusBadge.innerHTML = '<i class="fas fa-globe mr-1"></i><span class="hidden sm:inline">公開</span>';
+                } else {
+                    statusBadge.className = 'asset-status-badge text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300';
+                    statusBadge.innerHTML = '<i class="fas fa-lock mr-1"></i><span class="hidden sm:inline">非公開</span>';
+                }
+            }
+
+            // 読書傾向分析セクションの公開トグルも同期（同じ分析の場合）
+            const mainToggle = document.getElementById('analysis-public-toggle');
+            if (mainToggle && mainToggle.closest('[data-analysis-id]')) {
+                const mainAnalysisId = mainToggle.closest('[data-analysis-id]').dataset.analysisId;
+                if (mainAnalysisId == analysisId) {
+                    mainToggle.checked = isPublic === 1;
+                    updatePublicUI(isPublic);
+                }
+            }
+        } else {
+            // エラーの場合は元に戻す
+            checkbox.checked = !checkbox.checked;
+            alert('設定の更新に失敗しました');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        checkbox.checked = !checkbox.checked;
+        alert('通信エラーが発生しました');
     }
 }
 
@@ -717,6 +833,60 @@ document.addEventListener('DOMContentLoaded', function() {
 $d_additional_scripts = ob_get_clean();
 ?>
 <?php endif; ?>
+
+<?php
+// アセット管理用のスクリプト（reading_progressがない場合でも必要）
+if ($is_own_profile && !empty($user_assets) && empty($reading_progress)):
+ob_start();
+?>
+<script>
+// アセットの公開設定を切り替え（アセット管理セクション用）
+async function toggleAssetVisibility(analysisId, checkbox) {
+    const isPublic = checkbox.checked ? 1 : 0;
+    const assetRow = checkbox.closest('[data-asset-id]');
+    const statusBadge = assetRow ? assetRow.querySelector('.asset-status-badge') : null;
+
+    try {
+        const response = await fetch('/ajax/update_analysis_visibility.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                analysis_id: analysisId,
+                is_public: isPublic
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // UIを更新
+            if (statusBadge) {
+                if (isPublic) {
+                    statusBadge.className = 'asset-status-badge text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                    statusBadge.innerHTML = '<i class="fas fa-globe mr-1"></i><span class="hidden sm:inline">公開</span>';
+                } else {
+                    statusBadge.className = 'asset-status-badge text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300';
+                    statusBadge.innerHTML = '<i class="fas fa-lock mr-1"></i><span class="hidden sm:inline">非公開</span>';
+                }
+            }
+        } else {
+            // エラーの場合は元に戻す
+            checkbox.checked = !checkbox.checked;
+            alert('設定の更新に失敗しました');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        checkbox.checked = !checkbox.checked;
+        alert('通信エラーが発生しました');
+    }
+}
+</script>
+<?php
+$d_additional_scripts = ob_get_clean();
+endif;
+?>
 
 <?php
 $d_content = ob_get_clean();

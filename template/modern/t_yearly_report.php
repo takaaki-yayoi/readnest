@@ -11,21 +11,37 @@ require_once(dirname(dirname(__DIR__)) . '/library/form_helpers.php');
 ob_start();
 
 // Chart.js用のデータ準備
-$daily_labels = [];
-$daily_pages = [];
-$daily_books = [];
-foreach ($report_data['daily_activity'] as $day) {
-    $daily_labels[] = $day['day'] . '日';
-    $daily_pages[] = $day['pages'];
-    $daily_books[] = $day['books_finished'];
+$monthly_labels = [];
+$monthly_books = [];
+$monthly_pages = [];
+$cumulative_books = [];
+$cumulative = 0;
+foreach ($report_data['monthly_data'] as $m) {
+    $monthly_labels[] = $m['month'] . '月';
+    $monthly_books[] = $m['books'];
+    $monthly_pages[] = $m['pages'];
+    $cumulative += $m['books'];
+    $cumulative_books[] = $cumulative;
 }
 
 $stats = $report_data['statistics'];
 $books = $report_data['books'];
+
+// URLパス用
+$url_user_path = !$is_my_report ? "/user/{$target_user_id}" : "";
+
+// 表示中の年がリストに含まれているか確認
+$current_in_list = false;
+foreach ($available_years as $y) {
+    if ($y['year'] == $year) {
+        $current_in_list = true;
+        break;
+    }
+}
 ?>
 
 <style>
-/* 月間レポート用カスタムスタイル */
+/* 年間レポート用カスタムスタイル */
 .book-cover-wrapper {
     position: relative;
     width: 100%;
@@ -64,12 +80,15 @@ $books = $report_data['books'];
 .book-item:hover {
     transform: translateY(-4px);
 }
-</style>
 
-<?php
-// URLパス用
-$url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
-?>
+.highlight-card {
+    transition: transform 0.2s ease;
+}
+
+.highlight-card:hover {
+    transform: scale(1.02);
+}
+</style>
 
 <div class="container mx-auto px-4 py-8 max-w-6xl">
     <!-- ヘッダー -->
@@ -77,107 +96,87 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
         <h1 class="text-2xl md:text-3xl font-bold mb-2 text-gray-800 dark:text-gray-100">
             <i class="fas fa-calendar-alt mr-2 text-readnest-accent"></i>
             <?php if (!$is_my_report): ?>
-            <?php echo html($display_nickname); ?>さんの月間読書レポート
+            <?php echo html($display_nickname); ?>さんの年間読書レポート
             <?php else: ?>
-            月間読書レポート
+            年間読書レポート
             <?php endif; ?>
         </h1>
         <p class="text-gray-600 dark:text-gray-300">
             <?php if (!$is_my_report): ?>
-            <?php echo html($display_nickname); ?>さんの読書記録
+            <?php echo html($display_nickname); ?>さんの1年間の読書記録
             <?php else: ?>
-            あなたの読書記録を月別に振り返り
+            あなたの1年間の読書を振り返り
             <?php endif; ?>
         </p>
     </div>
 
-    <!-- 月ナビゲーション -->
+    <!-- 年ナビゲーション -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <div class="flex items-center justify-between">
-            <a href="/report/<?php echo $prev_year; ?>/<?php echo $prev_month; ?><?php echo $url_user_path; ?>"
+            <a href="/report/<?php echo $prev_year; ?><?php echo $url_user_path; ?>"
                class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
                 <i class="fas fa-chevron-left mr-2"></i>
-                <span class="hidden sm:inline"><?php echo $prev_year; ?>年<?php echo $prev_month; ?>月</span>
-                <span class="sm:hidden">前月</span>
+                <span class="hidden sm:inline"><?php echo $prev_year; ?>年</span>
+                <span class="sm:hidden">前年</span>
             </a>
 
             <div class="text-center">
-                <!-- 年月ドロップダウン -->
-                <?php
-                // 現在表示中の年月がリストに含まれているか確認
-                $current_in_list = false;
-                foreach ($available_months as $m) {
-                    if ($m['year'] == $year && $m['month'] == $month) {
-                        $current_in_list = true;
-                        break;
-                    }
-                }
-                ?>
-                <?php if (!empty($available_months) || true): ?>
+                <!-- 年ドロップダウン -->
                 <div class="relative inline-block">
-                    <select id="month-selector"
+                    <select id="year-selector"
                             onchange="if(this.value) location.href='/report/' + this.value + '<?php echo $url_user_path; ?>'"
                             class="appearance-none bg-transparent text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 pr-8 cursor-pointer focus:outline-none border-b-2 border-transparent hover:border-readnest-accent focus:border-readnest-accent transition-colors">
                         <?php if (!$current_in_list): ?>
-                        <option value="<?php echo $year; ?>/<?php echo $month; ?>" selected>
-                            <?php echo $year; ?>年<?php echo $month; ?>月 (0冊)
+                        <option value="<?php echo $year; ?>" selected>
+                            <?php echo $year; ?>年 (0冊)
                         </option>
                         <?php endif; ?>
-                        <?php foreach ($available_months as $m): ?>
-                        <option value="<?php echo $m['year']; ?>/<?php echo $m['month']; ?>"
-                                <?php echo ($m['year'] == $year && $m['month'] == $month) ? 'selected' : ''; ?>>
-                            <?php echo $m['year']; ?>年<?php echo $m['month']; ?>月 (<?php echo $m['book_count']; ?>冊)
+                        <?php foreach ($available_years as $y): ?>
+                        <option value="<?php echo $y['year']; ?>"
+                                <?php echo ($y['year'] == $year) ? 'selected' : ''; ?>>
+                            <?php echo $y['year']; ?>年 (<?php echo $y['book_count']; ?>冊)
                         </option>
                         <?php endforeach; ?>
                     </select>
                     <i class="fas fa-chevron-down absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                 </div>
-                <?php else: ?>
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">
-                    <?php echo $year; ?>年<?php echo $month; ?>月
-                </h2>
-                <?php endif; ?>
-                <?php if ($year == $current_year && $month == $current_month): ?>
-                <span class="text-xs text-readnest-accent font-medium block mt-1">今月</span>
+                <?php if ($year == $current_year): ?>
+                <span class="text-xs text-readnest-accent font-medium block mt-1">今年</span>
                 <?php endif; ?>
             </div>
 
             <?php if (!$is_next_future): ?>
-            <a href="/report/<?php echo $next_year; ?>/<?php echo $next_month; ?><?php echo $url_user_path; ?>"
+            <a href="/report/<?php echo $next_year; ?><?php echo $url_user_path; ?>"
                class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
-                <span class="hidden sm:inline"><?php echo $next_year; ?>年<?php echo $next_month; ?>月</span>
-                <span class="sm:hidden">次月</span>
+                <span class="hidden sm:inline"><?php echo $next_year; ?>年</span>
+                <span class="sm:hidden">次年</span>
                 <i class="fas fa-chevron-right ml-2"></i>
             </a>
             <?php else: ?>
             <div class="px-4 py-2 bg-gray-50 dark:bg-gray-900 text-gray-400 rounded-lg cursor-not-allowed">
-                <span class="hidden sm:inline">次月</span>
-                <span class="sm:hidden">次月</span>
+                <span class="hidden sm:inline">次年</span>
+                <span class="sm:hidden">次年</span>
                 <i class="fas fa-chevron-right ml-2"></i>
             </div>
             <?php endif; ?>
         </div>
 
-        <!-- 今月へのリンク（今月以外を表示中の場合） -->
-        <?php if ($year != $current_year || $month != $current_month): ?>
+        <!-- 今年へのリンク（今年以外を表示中の場合） -->
+        <?php if ($year != $current_year): ?>
         <div class="mt-3 text-center">
-            <a href="/report/<?php echo $current_year; ?>/<?php echo $current_month; ?><?php echo $url_user_path; ?>"
+            <a href="/report/<?php echo $current_year; ?><?php echo $url_user_path; ?>"
                class="inline-flex items-center px-4 py-2 bg-readnest-primary hover:bg-readnest-accent text-white text-sm rounded-lg transition-colors">
-                <i class="fas fa-calendar-day mr-2"></i>今月のレポートを見る
+                <i class="fas fa-calendar-day mr-2"></i>今年のレポートを見る
             </a>
         </div>
         <?php endif; ?>
 
-        <!-- カレンダーへのリンク（自分のレポートのみ表示） -->
+        <!-- 月間レポートへのリンク -->
         <?php if ($is_my_report): ?>
-        <div class="mt-3 text-center flex flex-wrap justify-center gap-4">
-            <a href="/reading_calendar.php?year=<?php echo $year; ?>&month=<?php echo $month; ?>"
+        <div class="mt-3 text-center">
+            <a href="/report/<?php echo $year; ?>/<?php echo ($year == $current_year) ? date('n') : 12; ?>"
                class="inline-flex items-center text-sm text-readnest-accent hover:text-readnest-primary transition-colors">
-                <i class="fas fa-calendar-check mr-1"></i>この月のカレンダーを見る
-            </a>
-            <a href="/report/<?php echo $year; ?><?php echo $url_user_path; ?>"
-               class="inline-flex items-center text-sm text-orange-500 hover:text-orange-600 transition-colors">
-                <i class="fas fa-calendar-alt mr-1"></i><?php echo $year; ?>年の年間レポートを見る
+                <i class="fas fa-calendar mr-1"></i><?php echo $year; ?>年の月間レポートを見る
             </a>
         </div>
         <?php endif; ?>
@@ -194,7 +193,7 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
                     <i class="fas fa-book-reader text-2xl text-readnest-accent"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">読了冊数</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">年間読了</p>
                     <p class="text-2xl font-bold text-gray-800 dark:text-gray-100"><?php echo $stats['books_finished']; ?><span class="text-sm font-normal ml-1">冊</span></p>
                 </div>
             </div>
@@ -213,42 +212,100 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
             </div>
         </div>
 
-        <!-- 日平均 -->
+        <!-- 読書日数 -->
         <div class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-purple-500">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <i class="fas fa-chart-line text-2xl text-purple-500"></i>
+                    <i class="fas fa-calendar-check text-2xl text-purple-500"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">日平均</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100"><?php echo $stats['daily_average']; ?><span class="text-sm font-normal ml-1">p/日</span></p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">読書日数</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100"><?php echo $stats['reading_days']; ?><span class="text-sm font-normal ml-1">日</span></p>
                 </div>
             </div>
         </div>
 
-        <!-- 目標達成 -->
-        <div class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 <?php echo $stats['goal_achieved'] ? 'border-green-500' : 'border-yellow-500'; ?>">
+        <!-- 月平均 -->
+        <div class="stat-card bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-yellow-500">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
-                    <?php if ($stats['goal_achieved']): ?>
-                    <i class="fas fa-trophy text-2xl text-green-500"></i>
-                    <?php elseif ($stats['goal'] > 0): ?>
-                    <i class="fas fa-bullseye text-2xl text-yellow-500"></i>
-                    <?php else: ?>
-                    <i class="fas fa-flag text-2xl text-gray-400"></i>
-                    <?php endif; ?>
+                    <i class="fas fa-chart-line text-2xl text-yellow-500"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">目標達成</p>
-                    <?php if ($stats['goal'] > 0): ?>
-                    <p class="text-2xl font-bold <?php echo $stats['goal_achieved'] ? 'text-green-600' : 'text-gray-800 dark:text-gray-100'; ?>">
-                        <?php echo round($stats['goal_progress']); ?><span class="text-sm font-normal ml-1">%</span>
-                    </p>
-                    <p class="text-xs text-gray-400"><?php echo $stats['books_finished']; ?>/<?php echo $stats['goal']; ?>冊</p>
-                    <?php else: ?>
-                    <p class="text-lg text-gray-400">未設定</p>
-                    <?php endif; ?>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">月平均</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100"><?php echo $stats['monthly_average']; ?><span class="text-sm font-normal ml-1">冊</span></p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 年間ハイライト -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
+            <i class="fas fa-star mr-2 text-yellow-500"></i>年間ハイライト
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- ベスト月 -->
+            <div class="highlight-card bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg p-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-trophy text-green-600 dark:text-green-400 mr-2"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">ベスト月</span>
+                </div>
+                <?php if ($stats['best_month']['count'] > 0): ?>
+                <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    <?php echo $stats['best_month']['month']; ?>月
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <?php echo $stats['best_month']['count']; ?>冊読了
+                </p>
+                <a href="/report/<?php echo $year; ?>/<?php echo $stats['best_month']['month']; ?><?php echo $url_user_path; ?>"
+                   class="inline-block mt-2 text-xs text-green-600 dark:text-green-400 hover:underline">
+                    この月を見る <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+                <?php else: ?>
+                <p class="text-gray-400">データなし</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- 最長連続日数 -->
+            <div class="highlight-card bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-lg p-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-fire text-orange-600 dark:text-orange-400 mr-2"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">最長連続記録</span>
+                </div>
+                <?php if ($stats['longest_streak'] > 0): ?>
+                <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    <?php echo $stats['longest_streak']; ?>日間
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    連続読書
+                </p>
+                <?php else: ?>
+                <p class="text-gray-400">データなし</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- 最高評価の本 -->
+            <div class="highlight-card bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg p-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-star text-purple-600 dark:text-purple-400 mr-2"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">最高評価</span>
+                </div>
+                <?php if ($stats['best_rated_book']): ?>
+                <p class="text-sm font-bold text-gray-800 dark:text-gray-100 line-clamp-2">
+                    <?php echo html($stats['best_rated_book']['name']); ?>
+                </p>
+                <div class="text-yellow-500 text-sm mt-1">
+                    <?php echo str_repeat('★', (int)$stats['best_rated_book']['rating']); ?>
+                </div>
+                <a href="/book/<?php echo $stats['best_rated_book']['book_id']; ?>"
+                   class="inline-block mt-2 text-xs text-purple-600 dark:text-purple-400 hover:underline">
+                    詳細を見る <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+                <?php else: ?>
+                <p class="text-gray-400">評価なし</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -257,7 +314,7 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
     <?php if ($is_my_report || ($saved_summary && $saved_summary['is_public'])): ?>
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
-            <i class="fas fa-magic mr-2 text-purple-500"></i>AI要約
+            <i class="fas fa-magic mr-2 text-purple-500"></i>AI年間振り返り
         </h3>
 
         <?php if ($saved_summary): ?>
@@ -292,12 +349,12 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
         <div id="generate-section" class="<?php echo $saved_summary ? 'hidden' : ''; ?>">
             <p class="text-gray-600 dark:text-gray-400 mb-4">
                 <i class="fas fa-info-circle mr-1"></i>
-                AIがこの月の読書を振り返り、温かいコメントを生成します。
+                AIがあなたの1年間の読書を振り返り、温かいコメントを生成します。
             </p>
-            <button onclick="generateMonthlySummary()"
+            <button onclick="generateYearlySummary()"
                     id="generate-btn"
                     class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
-                <i class="fas fa-magic mr-2"></i>要約を生成
+                <i class="fas fa-magic mr-2"></i>年間振り返りを生成
             </button>
         </div>
 
@@ -321,13 +378,35 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
     </div>
     <?php endif; ?>
 
-    <!-- 日別読書グラフ -->
+    <!-- 月別推移グラフ -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
-            <i class="fas fa-chart-bar mr-2 text-readnest-accent"></i>日別読書記録
+            <i class="fas fa-chart-bar mr-2 text-readnest-accent"></i>月別読了冊数
         </h3>
-        <div class="h-48 md:h-64">
-            <canvas id="dailyChart"></canvas>
+        <div class="h-64 md:h-80">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 月別リンク -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
+            <i class="fas fa-calendar mr-2 text-readnest-accent"></i>各月のレポート
+        </h3>
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            <?php foreach ($report_data['monthly_data'] as $m): ?>
+            <?php
+            // 未来の月はスキップ
+            if ($year == $current_year && $m['month'] > (int)date('n')) continue;
+            ?>
+            <a href="/report/<?php echo $year; ?>/<?php echo $m['month']; ?><?php echo $url_user_path; ?>"
+               class="block p-3 rounded-lg text-center transition-colors <?php echo $m['books'] > 0 ? 'bg-readnest-accent/10 hover:bg-readnest-accent/20' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'; ?>">
+                <div class="text-lg font-bold text-gray-800 dark:text-gray-100"><?php echo $m['month']; ?>月</div>
+                <div class="text-sm <?php echo $m['books'] > 0 ? 'text-readnest-accent' : 'text-gray-400'; ?>">
+                    <?php echo $m['books']; ?>冊
+                </div>
+            </a>
+            <?php endforeach; ?>
         </div>
     </div>
 
@@ -338,45 +417,60 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
             <i class="fas fa-book mr-2 text-readnest-accent"></i>読了した本（<?php echo count($books); ?>冊）
         </h3>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <?php foreach ($books as $book): ?>
-            <a href="/book/<?php echo html($book['book_id']); ?>" class="book-item block group">
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                    <div class="book-cover-wrapper">
-                        <?php
-                        $bookCoverUrl = !empty($book['image_url']) ? $book['image_url'] : '/img/no-image-book.png';
-                        ?>
-                        <img src="<?php echo html($bookCoverUrl); ?>"
-                             alt="<?php echo html($book['name']); ?>"
-                             class="book-cover-img"
-                             loading="lazy"
-                             onerror="this.src='/img/no-image-book.png'">
-                    </div>
-                    <div class="p-2">
-                        <div class="text-xs font-medium line-clamp-2 text-gray-800 dark:text-gray-100 group-hover:text-readnest-accent transition-colors">
-                            <?php echo html($book['name']); ?>
-                        </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mt-1">
-                            <?php echo html($book['author']); ?>
-                        </div>
-                        <?php if (!empty($book['rating']) && $book['rating'] > 0): ?>
-                        <div class="text-yellow-500 text-xs mt-1">
-                            <?php echo str_repeat('★', (int)$book['rating']); ?><?php echo str_repeat('☆', 5 - (int)$book['rating']); ?>
-                        </div>
-                        <?php endif; ?>
-                        <div class="text-xs text-gray-400 mt-1">
+        <?php
+        // 月ごとにグループ化
+        $books_by_month = [];
+        foreach ($books as $book) {
+            $month = (int)$book['finished_month'];
+            if (!isset($books_by_month[$month])) {
+                $books_by_month[$month] = [];
+            }
+            $books_by_month[$month][] = $book;
+        }
+        ksort($books_by_month);
+        ?>
+
+        <?php foreach ($books_by_month as $month => $month_books): ?>
+        <div class="mb-6">
+            <h4 class="text-md font-semibold mb-3 text-gray-700 dark:text-gray-200 border-b dark:border-gray-700 pb-2">
+                <a href="/report/<?php echo $year; ?>/<?php echo $month; ?><?php echo $url_user_path; ?>"
+                   class="hover:text-readnest-accent transition-colors">
+                    <?php echo $month; ?>月
+                    <span class="text-sm font-normal text-gray-500 dark:text-gray-400">（<?php echo count($month_books); ?>冊）</span>
+                    <i class="fas fa-external-link-alt text-xs ml-1"></i>
+                </a>
+            </h4>
+
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                <?php foreach ($month_books as $book): ?>
+                <a href="/book/<?php echo html($book['book_id']); ?>" class="book-item block group">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div class="book-cover-wrapper">
                             <?php
-                            $finished = $book['finished_date'] ?? $book['update_date'];
-                            if ($finished) {
-                                echo date('n/j', strtotime($finished)) . '読了';
-                            }
+                            $bookCoverUrl = !empty($book['image_url']) ? $book['image_url'] : '/img/no-image-book.png';
                             ?>
+                            <img src="<?php echo html($bookCoverUrl); ?>"
+                                 alt="<?php echo html($book['name']); ?>"
+                                 class="book-cover-img"
+                                 loading="lazy"
+                                 onerror="this.src='/img/no-image-book.png'">
+                        </div>
+                        <div class="p-2">
+                            <div class="text-xs font-medium line-clamp-2 text-gray-800 dark:text-gray-100 group-hover:text-readnest-accent transition-colors">
+                                <?php echo html($book['name']); ?>
+                            </div>
+                            <?php if (!empty($book['rating']) && $book['rating'] > 0): ?>
+                            <div class="text-yellow-500 text-xs mt-1">
+                                <?php echo str_repeat('★', (int)$book['rating']); ?>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                </div>
-            </a>
-            <?php endforeach; ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
         </div>
+        <?php endforeach; ?>
     </div>
     <?php endif; ?>
 
@@ -388,13 +482,13 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
         </h3>
 
         <?php
-        $share_text = "{$year}年{$month}月は{$stats['books_finished']}冊読みました！";
+        $share_text = "{$year}年は{$stats['books_finished']}冊読みました！";
         if ($stats['pages_read'] > 0) {
             $share_text .= "（{$stats['pages_read']}ページ）";
         }
-        $share_url = "https://readnest.jp/report/{$year}/{$month}/{$target_user_id}";
-        $x_share_url = getXShareUrl($share_text, $share_url, ['読書記録', 'ReadNest']);
-        $og_image_url = "/og-image/report/{$year}/{$month}/{$target_user_id}.png";
+        $share_url = "https://readnest.jp/report/{$year}/user/{$target_user_id}";
+        $x_share_url = getXShareUrl($share_text, $share_url, ['読書記録', 'ReadNest', '年間読書']);
+        $og_image_url = "/og-image/report/{$year}/{$target_user_id}.png";
         ?>
 
         <div class="flex flex-wrap gap-3 items-center">
@@ -411,7 +505,7 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
 
             <!-- 画像ダウンロードリンク -->
             <a href="<?php echo html($og_image_url); ?>"
-               download="reading_report_<?php echo $year; ?>_<?php echo $month; ?>.png"
+               download="reading_report_<?php echo $year; ?>.png"
                class="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-lg transition-colors">
                 <i class="fas fa-download mr-2"></i>画像を保存
             </a>
@@ -431,13 +525,13 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
             <i class="fas fa-book-open text-6xl"></i>
         </div>
         <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">
-            この月の読書記録はありません
+            この年の読書記録はありません
         </h3>
         <p class="text-gray-500 dark:text-gray-400 mb-4">
             <?php if ($is_my_report): ?>
-            <?php echo $year; ?>年<?php echo $month; ?>月に読了した本はまだ登録されていません。
+            <?php echo $year; ?>年に読了した本はまだ登録されていません。
             <?php else: ?>
-            <?php echo html($display_nickname); ?>さんの<?php echo $year; ?>年<?php echo $month; ?>月の読書記録はありません。
+            <?php echo html($display_nickname); ?>さんの<?php echo $year; ?>年の読書記録はありません。
             <?php endif; ?>
         </p>
         <?php if ($is_my_report): ?>
@@ -454,7 +548,7 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
 // Chart.js設定
 document.addEventListener('DOMContentLoaded', function() {
     <?php if ($report_data['has_data']): ?>
-    const ctx = document.getElementById('dailyChart');
+    const ctx = document.getElementById('monthlyChart');
     if (ctx) {
         const isDark = document.documentElement.classList.contains('dark');
         const textColor = isDark ? '#e5e7eb' : '#374151';
@@ -463,27 +557,48 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: <?php echo json_encode($daily_labels); ?>,
-                datasets: [{
-                    label: 'ページ数',
-                    data: <?php echo json_encode($daily_pages); ?>,
-                    backgroundColor: 'rgba(56, 161, 130, 0.6)',
-                    borderColor: 'rgba(56, 161, 130, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
+                labels: <?php echo json_encode($monthly_labels); ?>,
+                datasets: [
+                    {
+                        label: '読了冊数',
+                        type: 'bar',
+                        data: <?php echo json_encode($monthly_books); ?>,
+                        backgroundColor: 'rgba(56, 161, 130, 0.6)',
+                        borderColor: 'rgba(56, 161, 130, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: '累積冊数',
+                        type: 'line',
+                        data: <?php echo json_encode($cumulative_books); ?>,
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                        fill: false,
+                        tension: 0.3,
+                        order: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: textColor
+                        }
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.parsed.y + 'ページ';
+                                return context.dataset.label + ': ' + context.parsed.y + '冊';
                             }
                         }
                     }
@@ -494,10 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         },
                         ticks: {
-                            color: textColor,
-                            maxRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 15
+                            color: textColor
                         }
                     },
                     y: {
@@ -507,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         ticks: {
                             color: textColor,
-                            stepSize: 50
+                            stepSize: 1
                         }
                     }
                 }
@@ -518,32 +630,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // AI要約機能
     <?php if ($is_my_report && $report_data['has_data']): ?>
-    window.monthlySummaryData = {
+    window.yearlySummaryData = {
         year: <?php echo $year; ?>,
-        month: <?php echo $month; ?>,
         reportData: {
             stats: <?php echo json_encode($stats, JSON_UNESCAPED_UNICODE); ?>,
+            monthly_data: <?php echo json_encode($report_data['monthly_data'], JSON_UNESCAPED_UNICODE); ?>,
             books: <?php echo json_encode(array_map(function($b) {
                 return [
                     'title' => mb_substr($b['name'] ?? $b['title'] ?? '', 0, 50),
                     'author' => mb_substr($b['author'] ?? '', 0, 30),
                     'rating' => $b['rating'] ?? 0,
+                    'month' => $b['finished_month'] ?? 0,
                     'review' => mb_substr($b['memo'] ?? '', 0, 200)
                 ];
-            }, array_slice($books, 0, 15)), JSON_UNESCAPED_UNICODE); ?>
+            }, array_slice($books, 0, 20)), JSON_UNESCAPED_UNICODE); ?>
         }
     };
     <?php endif; ?>
 });
 
-// AI要約を生成
-async function generateMonthlySummary() {
+// AI年間振り返りを生成
+async function generateYearlySummary() {
     const btn = document.getElementById('generate-btn');
     const generateSection = document.getElementById('generate-section');
     const resultSection = document.getElementById('summary-result');
     const summaryText = document.getElementById('summary-text');
 
-    if (!btn || !window.monthlySummaryData) return;
+    if (!btn || !window.yearlySummaryData) return;
 
     // ボタンを無効化
     btn.disabled = true;
@@ -554,10 +667,9 @@ async function generateMonthlySummary() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                action: 'generate_monthly_summary',
-                year: window.monthlySummaryData.year,
-                month: window.monthlySummaryData.month,
-                report_data: window.monthlySummaryData.reportData
+                action: 'generate_yearly_summary',
+                year: window.yearlySummaryData.year,
+                report_data: window.yearlySummaryData.reportData
             })
         });
 
@@ -572,13 +684,13 @@ async function generateMonthlySummary() {
         } else {
             alert(data.error || '要約の生成に失敗しました');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-magic mr-2"></i>要約を生成';
+            btn.innerHTML = '<i class="fas fa-magic mr-2"></i>年間振り返りを生成';
         }
     } catch (error) {
         console.error('Generate summary error:', error);
         alert('通信エラーが発生しました');
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>要約を生成';
+        btn.innerHTML = '<i class="fas fa-magic mr-2"></i>年間振り返りを生成';
     }
 }
 
@@ -587,7 +699,7 @@ async function saveSummary() {
     const btn = document.getElementById('save-btn');
     const isPublic = document.getElementById('new-summary-public')?.checked || false;
 
-    if (!btn || !window.generatedSummary || !window.monthlySummaryData) return;
+    if (!btn || !window.generatedSummary || !window.yearlySummaryData) return;
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
@@ -595,8 +707,7 @@ async function saveSummary() {
     try {
         // 保存するコンテンツ（JSON形式）
         const content = JSON.stringify({
-            year: window.monthlySummaryData.year,
-            month: window.monthlySummaryData.month,
+            year: window.yearlySummaryData.year,
             summary: window.generatedSummary
         });
 
@@ -604,7 +715,7 @@ async function saveSummary() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                analysis_type: 'monthly_report',
+                analysis_type: 'yearly_report',
                 analysis_content: content,
                 is_public: isPublic ? 1 : 0
             })
@@ -668,7 +779,7 @@ function regenerateSummary() {
     if (resultSection) resultSection.classList.add('hidden');
 
     // 生成を開始
-    generateMonthlySummary();
+    generateYearlySummary();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

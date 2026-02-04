@@ -375,6 +375,139 @@ class AIBookRecommender {
     }
 
     /**
+     * 年間読書レポートの要約を生成
+     *
+     * @param int $year 年
+     * @param array $reportData レポートデータ（stats, monthly_data, books）
+     * @return array 生成結果
+     */
+    public function generateYearlySummary(int $year, array $reportData): array {
+        if (!$this->client) {
+            return [
+                'success' => false,
+                'error' => 'OpenAI client is not available'
+            ];
+        }
+
+        $stats = $reportData['stats'] ?? [];
+        $books = $reportData['books'] ?? [];
+        $monthlyData = $reportData['monthly_data'] ?? [];
+
+        if (empty($books) && ($stats['books_finished'] ?? 0) == 0) {
+            return [
+                'success' => false,
+                'error' => 'この年の読書データがありません'
+            ];
+        }
+
+        try {
+            $systemPrompt = "あなたは優しく温かみのある読書アドバイザーです。ユーザーの年間読書レポートとレビューを見て、1年間の読書体験を振り返る温かいコメントを生成してください。ユーザーのレビューから読み取れる感想や成長を反映させてください。日本語で450-550文字程度で書いてください。";
+
+            // 月別推移をフォーマット
+            $monthlyText = "";
+            $bestMonth = 0;
+            $bestMonthCount = 0;
+            foreach ($monthlyData as $m) {
+                $month = $m['month'] ?? 0;
+                $count = $m['books'] ?? 0;
+                if ($count > $bestMonthCount) {
+                    $bestMonth = $month;
+                    $bestMonthCount = $count;
+                }
+                if ($count > 0) {
+                    $monthlyText .= "{$month}月: {$count}冊 ";
+                }
+            }
+
+            // 読了本リストをフォーマット（レビュー付き）
+            $booksText = "";
+            foreach (array_slice($books, 0, 15) as $i => $book) {
+                $title = mb_substr($book['title'] ?? '', 0, 40);
+                $author = mb_substr($book['author'] ?? '', 0, 20);
+                $rating = isset($book['rating']) && $book['rating'] > 0 ? "★{$book['rating']}" : '';
+                $month = $book['month'] ?? '';
+                $review = isset($book['review']) && !empty($book['review']) ? mb_substr($book['review'], 0, 100) : '';
+
+                $booksText .= ($i + 1) . ". 「{$title}」{$author} {$rating}";
+                if ($month) {
+                    $booksText .= " ({$month}月)";
+                }
+                $booksText .= "\n";
+                if (!empty($review)) {
+                    $booksText .= "   レビュー: {$review}\n";
+                }
+            }
+            if (count($books) > 15) {
+                $booksText .= "...他" . (count($books) - 15) . "冊\n";
+            }
+
+            $userPrompt = "{$year}年の年間読書レポート:\n\n";
+            $userPrompt .= "【年間統計】\n";
+            $userPrompt .= "- 年間読了冊数: " . ($stats['books_finished'] ?? count($books)) . "冊\n";
+            $userPrompt .= "- 読んだページ: " . number_format($stats['pages_read'] ?? 0) . "ページ\n";
+            $userPrompt .= "- 読書日数: " . ($stats['reading_days'] ?? 0) . "日\n";
+            $userPrompt .= "- 月平均: " . ($stats['monthly_average'] ?? 0) . "冊\n";
+
+            if ($bestMonth > 0) {
+                $userPrompt .= "- ベスト月: {$bestMonth}月 ({$bestMonthCount}冊)\n";
+            }
+
+            if (($stats['longest_streak'] ?? 0) > 0) {
+                $userPrompt .= "- 最長連続読書: " . $stats['longest_streak'] . "日間\n";
+            }
+
+            if (!empty($monthlyText)) {
+                $userPrompt .= "\n【月別推移】\n{$monthlyText}\n";
+            }
+
+            $userPrompt .= "\n【読了した本とレビュー】\n{$booksText}\n";
+            $userPrompt .= "この1年間の読書を振り返る温かいコメントを書いてください。";
+            $userPrompt .= "ユーザーのレビューから読み取れる感想や発見に触れながら、印象的な本のタイトルを挙げて、1年間の読書の軌跡を称え、来年への期待や励ましも添えてください。";
+
+            $response = $this->client->chatWithSystem(
+                $systemPrompt,
+                $userPrompt,
+                'gpt-4o-mini',
+                0.7,
+                800
+            );
+
+            if (!$response || !is_array($response)) {
+                return [
+                    'success' => false,
+                    'error' => 'AIからの応答が不正です'
+                ];
+            }
+
+            $summary = OpenAIClient::extractText($response);
+
+            if (empty($summary)) {
+                return [
+                    'success' => false,
+                    'error' => '要約の生成に失敗しました'
+                ];
+            }
+
+            // 著者名を修正
+            $summary = AuthorCorrections::correctInText($summary);
+
+            return [
+                'success' => true,
+                'summary' => $summary,
+                'year' => $year,
+                'tokens_used' => OpenAIClient::getUsedTokens($response)
+            ];
+
+        } catch (Exception $e) {
+            error_log('Yearly Summary Generation Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => '要約生成中にエラーが発生しました'
+            ];
+        }
+    }
+
+    /**
      * 読書履歴をフォーマット
      */
     private function formatReadingHistory(array $readingHistory): string {

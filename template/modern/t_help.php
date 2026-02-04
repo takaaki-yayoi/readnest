@@ -132,6 +132,13 @@ ob_start();
                         <span class="font-medium text-gray-900 dark:text-gray-100">月間レポート</span>
                     </div>
                 </a>
+                <a href="#yearly-report" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-alt text-amber-500 text-xl mr-3"></i>
+                        <span class="font-medium text-gray-900 dark:text-gray-100">年間レポート</span>
+                        <span class="ml-2 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 rounded-full">New</span>
+                    </div>
+                </a>
                 <a href="#reading-insights" class="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow">
                     <div class="flex items-center">
                         <i class="fas fa-brain text-purple-500 text-xl mr-3"></i>
@@ -1994,6 +2001,157 @@ ob_start();
                         <p class="text-teal-700 dark:text-teal-400 text-xs">
                             ※ 通知はヘッダーのベルアイコンまたは通知ページで確認できます
                         </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 年間レポート -->
+            <section id="yearly-report" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                    <i class="fas fa-calendar-alt text-amber-500 mr-3"></i>
+                    年間レポート
+                    <span class="ml-3 text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full">New</span>
+                </h2>
+
+                <div class="space-y-8">
+                    <!-- 概要 -->
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">📅 1年間の読書を振り返り</h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            年間レポートは、1年間の読書活動を集計して視覚的に表示する機能です。年間の読了冊数、読んだページ数、月別の推移グラフなどを確認できます。
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">表示される統計：</h4>
+                                <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
+                                    <li>年間読了冊数</li>
+                                    <li>年間読了ページ数</li>
+                                    <li>読書日数</li>
+                                    <li>月平均読了冊数</li>
+                                    <li>月別読了冊数グラフ</li>
+                                    <li>最も読んだ月・最長連続記録</li>
+                                </ul>
+                            </div>
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">こんな方におすすめ：</h4>
+                                <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
+                                    <li>1年間の読書を振り返りたい</li>
+                                    <li>年間の読書量を把握したい</li>
+                                    <li>月ごとの読書ペースを比較したい</li>
+                                    <li>年末に読書成果をシェアしたい</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 使い方 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🚀 年間レポートの使い方</h3>
+                        <div class="grid gap-4">
+                            <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">1</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">アクセス方法</p>
+                                        <p class="text-gray-700 dark:text-gray-300">ナビゲーションメニューから「年間レポート」を選択、または月間レポートページから「年間レポートを見る」をクリック</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">2</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">年を切り替える</p>
+                                        <p class="text-gray-700 dark:text-gray-300">左右の矢印ボタン、または年ドロップダウンで過去の年のレポートを確認できます。ドロップダウンには各年の読了冊数も表示されます</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">3</div>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">シェアする</p>
+                                        <p class="text-gray-700 dark:text-gray-300">「Xでシェア」ボタンで1年間の読書成果をシェアできます。OGP画像が自動生成され、魅力的な投稿になります</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 機能詳細 -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">💡 便利な機能</h3>
+                        <div class="space-y-4">
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-magic text-purple-500 mr-2"></i>
+                                    AI年間振り返り
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    AIが1年間の読書を振り返り、温かいコメントを生成します。読んだ本のタイトル、月別の統計、そしてあなたが書いたレビューの内容をもとに、1年間の読書体験に寄り添った振り返りが作成されます。生成した振り返りは保存でき、公開設定も可能です。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-chart-bar text-amber-500 mr-2"></i>
+                                    月別推移グラフ
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    年間の読書量を月別の棒グラフと累積折れ線グラフで確認できます。どの月にたくさん読んだか、年間を通しての読書ペースを把握できます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                                    年間ハイライト
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    ベスト月（最も読んだ月）、最長連続読書記録、最高評価の本など、年間のハイライトが表示されます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-book text-amber-500 mr-2"></i>
+                                    読了本リスト
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    その年に読了した本が月ごとにグルーピングされて一覧表示されます。本をクリックすると詳細ページに移動できます。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-link text-teal-500 mr-2"></i>
+                                    月間レポートへのリンク
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    各月のカードから、その月の月間レポートに直接移動できます。詳細な月別の記録を確認したい場合に便利です。
+                                </p>
+                            </div>
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-share-alt text-blue-500 mr-2"></i>
+                                    シェア機能
+                                </h4>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    X（Twitter）にレポートをシェアできます。年間読了冊数やページ数を含む画像が自動生成され、1年間の読書成果を魅力的に投稿できます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URLについて -->
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-6">
+                        <h4 class="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                            <i class="fas fa-link text-amber-600 mr-2"></i>
+                            アクセスURL
+                        </h4>
+                        <p class="text-amber-800 dark:text-amber-300 text-sm mb-2">
+                            年間レポートは以下のURLでアクセスできます：
+                        </p>
+                        <ul class="text-amber-700 dark:text-amber-400 text-sm space-y-1">
+                            <li><code class="bg-amber-100 dark:bg-amber-800 px-2 py-0.5 rounded">/report/2025</code> - 2025年のレポート</li>
+                            <li><code class="bg-amber-100 dark:bg-amber-800 px-2 py-0.5 rounded">/report/2024</code> - 2024年のレポート</li>
+                        </ul>
                     </div>
                 </div>
             </section>

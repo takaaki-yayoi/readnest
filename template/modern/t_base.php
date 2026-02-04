@@ -616,6 +616,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <a href="/report/<?php echo date('Y'); ?>/<?php echo date('n'); ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-chart-bar mr-2 text-teal-500"></i> 月間レポート
                                 </a>
+                                <a href="/report/<?php echo date('Y'); ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-calendar-alt mr-2 text-orange-500"></i> 年間レポート
+                                </a>
                                 <?php if (function_exists('isAdmin') && isAdmin()): ?>
                                 <hr class="my-1">
                                 <a href="/admin/" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -759,7 +762,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <i class="fas fa-chart-pie mr-3 w-4 text-purple-500"></i> 読書分析
                     </a>
                     <a href="/report/<?php echo date('Y'); ?>/<?php echo date('n'); ?>" class="block py-2 text-gray-700 hover:text-book-primary-600">
-                        <i class="fas fa-calendar-alt mr-3 w-4 text-teal-500"></i> 月間レポート
+                        <i class="fas fa-chart-bar mr-3 w-4 text-teal-500"></i> 月間レポート
+                    </a>
+                    <a href="/report/<?php echo date('Y'); ?>" class="block py-2 text-gray-700 hover:text-book-primary-600">
+                        <i class="fas fa-calendar-alt mr-3 w-4 text-orange-500"></i> 年間レポート
                     </a>
                     <a href="/my_reviews.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-pen-to-square mr-3 w-4 text-indigo-500"></i> マイレビュー

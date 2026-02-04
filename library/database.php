@@ -3488,26 +3488,26 @@ function saveReadingAnalysis($user_id, $analysis_type, $analysis_content, $is_pu
  */
 function getLatestReadingAnalysis($user_id, $analysis_type = '') {
     global $g_db;
-    
+
     if ($analysis_type) {
-        $sql = "SELECT * FROM b_reading_analysis 
-                WHERE user_id = ? AND analysis_type = ? 
-                ORDER BY created_at DESC 
+        $sql = "SELECT * FROM b_reading_analysis
+                WHERE user_id = ? AND analysis_type = ?
+                ORDER BY created_at DESC
                 LIMIT 1";
         $result = $g_db->getRow($sql, array($user_id, $analysis_type), DB_FETCHMODE_ASSOC);
     } else {
-        $sql = "SELECT * FROM b_reading_analysis 
-                WHERE user_id = ? 
-                ORDER BY created_at DESC 
+        $sql = "SELECT * FROM b_reading_analysis
+                WHERE user_id = ?
+                ORDER BY created_at DESC
                 LIMIT 1";
         $result = $g_db->getRow($sql, array($user_id), DB_FETCHMODE_ASSOC);
     }
-    
+
     if (DB::isError($result)) {
         error_log('Failed to get reading analysis: ' . $result->getMessage());
         return false;
     }
-    
+
     return $result ?: false;
 }
 
@@ -3581,6 +3581,145 @@ function getMonthlyReportSummary($user_id, $year, $month, $public_only = false) 
     }
 
     return null;
+}
+
+function getYearlyReportSummary($user_id, $year, $public_only = false) {
+    global $g_db;
+
+    $sql = "SELECT * FROM b_reading_analysis
+            WHERE user_id = ? AND analysis_type = 'yearly_report'";
+
+    if ($public_only) {
+        $sql .= " AND is_public = 1";
+    }
+
+    $sql .= " ORDER BY created_at DESC";
+
+    $results = $g_db->getAll($sql, array($user_id), DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results) || empty($results)) {
+        return null;
+    }
+
+    // analysis_content内のJSONから該当の年を検索
+    foreach ($results as $row) {
+        $content = json_decode($row['analysis_content'], true);
+        if ($content && isset($content['year'])) {
+            if ((int)$content['year'] === (int)$year) {
+                return [
+                    'analysis_id' => $row['analysis_id'],
+                    'summary' => $content['summary'] ?? '',
+                    'year' => $content['year'],
+                    'is_public' => $row['is_public'],
+                    'created_at' => $row['created_at']
+                ];
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * ユーザーの公開アセット一覧を取得
+ * @param int|string $user_id ユーザーID
+ * @return array 公開アセット一覧
+ */
+function getUserPublicAssets($user_id) {
+    global $g_db;
+
+    $sql = "SELECT analysis_id, analysis_type, analysis_content, is_public, created_at, updated_at
+            FROM b_reading_analysis
+            WHERE user_id = ?
+            ORDER BY created_at DESC";
+
+    $results = $g_db->getAll($sql, array($user_id), DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results) || empty($results)) {
+        return [];
+    }
+
+    $assets = [];
+    foreach ($results as $row) {
+        $content_text = $row['analysis_content'];
+
+        // タイプ別に情報を整形
+        $asset = [
+            'analysis_id' => $row['analysis_id'],
+            'type' => $row['analysis_type'],
+            'is_public' => (int)$row['is_public'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at']
+        ];
+
+        switch ($row['analysis_type']) {
+            case 'trend':
+                $asset['title'] = '読書傾向分析';
+                $asset['description'] = mb_substr($content_text, 0, 100) . '...';
+                $asset['link'] = '/user/' . $user_id . '?share_analysis=' . $row['analysis_id'];
+                $asset['icon'] = 'fa-chart-line';
+                $asset['color'] = 'indigo';
+                break;
+
+            case 'monthly_report':
+                // テキストから年月を抽出（例：「2024年12月」）
+                $year = null;
+                $month = null;
+                if (preg_match('/(\d{4})年(\d{1,2})月/', $content_text, $matches)) {
+                    $year = (int)$matches[1];
+                    $month = (int)$matches[2];
+                }
+
+                if ($year && $month) {
+                    $asset['title'] = $year . '年' . $month . '月のAI振り返り';
+                    $asset['year'] = $year;
+                    $asset['month'] = $month;
+                    $asset['link'] = '/report/' . $year . '/' . $month;
+                } else {
+                    // 作成日から推測
+                    $created = new DateTime($row['created_at']);
+                    $asset['title'] = $created->format('Y') . '年' . (int)$created->format('m') . '月のAI振り返り';
+                    $asset['link'] = '/report/' . $created->format('Y') . '/' . (int)$created->format('m');
+                }
+                $asset['description'] = mb_substr($content_text, 0, 100) . '...';
+                $asset['icon'] = 'fa-calendar';
+                $asset['color'] = 'teal';
+                break;
+
+            case 'yearly_report':
+                // テキストから年を抽出（例：「2024年」）
+                $year = null;
+                if (preg_match('/(\d{4})年/', $content_text, $matches)) {
+                    $year = (int)$matches[1];
+                }
+
+                if ($year) {
+                    $asset['title'] = $year . '年のAI年間振り返り';
+                    $asset['year'] = $year;
+                    $asset['link'] = '/report/' . $year;
+                } else {
+                    // 作成日から推測
+                    $created = new DateTime($row['created_at']);
+                    $asset['title'] = $created->format('Y') . '年のAI年間振り返り';
+                    $asset['link'] = '/report/' . $created->format('Y');
+                }
+                $asset['description'] = mb_substr($content_text, 0, 100) . '...';
+                $asset['icon'] = 'fa-calendar-alt';
+                $asset['color'] = 'amber';
+                break;
+
+            default:
+                $asset['title'] = '分析';
+                $asset['description'] = '';
+                $asset['link'] = '#';
+                $asset['icon'] = 'fa-file';
+                $asset['color'] = 'gray';
+        }
+
+        $assets[] = $asset;
+    }
+
+    return $assets;
 }
 
 function getBooksUserReadInThisMonth($user_id) {

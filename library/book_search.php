@@ -126,6 +126,11 @@ function searchBooksWithGoogleAPI($keyword, $page = 1, $max_results = 20) {
         
         // Google Books API URL - 日本語の本を優先
         $api_url = "https://www.googleapis.com/books/v1/volumes?q={$encoded_query}&startIndex={$start_index}&maxResults={$max_results}&langRestrict=ja&orderBy=relevance";
+
+        // APIキーが設定されていれば追加（レート制限緩和のため）
+        if (defined('GOOGLE_BOOKS_API_KEY') && !empty(GOOGLE_BOOKS_API_KEY)) {
+            $api_url .= "&key=" . GOOGLE_BOOKS_API_KEY;
+        }
         
         error_log("Google Books API search strategy {$strategy_index}: {$search_query}");
         

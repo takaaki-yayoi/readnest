@@ -249,6 +249,31 @@ try {
             echo json_encode($result);
             break;
 
+        case 'generate_yearly_summary':
+            // 年間レポート要約生成
+            $year = isset($input['year']) ? (int)$input['year'] : 0;
+            $reportData = $input['report_data'] ?? [];
+
+            if ($year < 2000 || $year > (int)date('Y')) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => '無効な年です'
+                ]);
+                exit;
+            }
+
+            if (empty($reportData)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'レポートデータがありません'
+                ]);
+                exit;
+            }
+
+            $result = $recommender->generateYearlySummary($year, $reportData);
+            echo json_encode($result);
+            break;
+
         case 'suggest_challenge':
             // 読書チャレンジ提案
             $readingHistory = $input['reading_history'] ?? [];

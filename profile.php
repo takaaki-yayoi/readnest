@@ -281,6 +281,16 @@ if (!empty($reading_analysis) && !empty($reading_analysis['is_public']) && $read
     $g_og_image = "https://readnest.jp/og-image/analysis/{$reading_analysis['analysis_id']}.png";
 }
 
+// 自分のプロフィールの場合、公開アセット一覧を取得（年間レポートは除外）
+$user_assets = [];
+if ($is_own_profile && $profile_accessible) {
+    $all_assets = getUserPublicAssets($target_user_id);
+    // 年間レポートは各年のレポートページで管理するため除外
+    $user_assets = array_filter($all_assets, function($asset) {
+        return $asset['type'] !== 'yearly_report';
+    });
+}
+
 // Analytics設定
 $g_analytics = '<!-- Google Analytics code would go here -->';
 

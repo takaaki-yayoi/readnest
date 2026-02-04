@@ -610,7 +610,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
             </a>
             
             <!-- タブレット以上では1行に5つ、モバイルでは2列目に3つ -->
-            <a href="/bookshelf.php?status=<?php echo READING_FINISH; ?>&filter_year=<?php echo date('Y'); ?>" 
+            <a href="/report/<?php echo date('Y'); ?>"
                class="bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-2.5 sm:p-3 md:p-4 hover:shadow-lg transition-all block group cursor-pointer relative overflow-hidden">
                 <div class="absolute top-1 right-1 text-green-400 opacity-50 group-hover:opacity-100 transition-opacity">
                     <i class="fas fa-arrow-right text-xs"></i>
