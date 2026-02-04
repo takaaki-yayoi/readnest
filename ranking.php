@@ -284,8 +284,12 @@ try {
             }
         }
         
-        // 平均・最高値がゼロの場合はサンプル値を設定
-        if ($avg_books == 0 && !empty($ranking_data)) {
+        // ランキングデータが空の場合は統計も0を表示
+        if (empty($ranking_data)) {
+            $avg_books = 0;
+            $max_books = 0;
+        } elseif ($avg_books == 0) {
+            // 平均・最高値がゼロの場合はranking_dataから計算
             $total_score = 0;
             $user_count = 0;
             foreach ($ranking_data as $user) {
@@ -299,10 +303,6 @@ try {
                 $max_books = max(array_column($ranking_data, 'score'));
             }
         }
-        
-        // それでもゼロの場合はデフォルト値
-        if ($avg_books == 0) $avg_books = 5.2;
-        if ($max_books == 0) $max_books = 42;
         
     } catch (Exception $e) {
         error_log("Exception getting stats: " . $e->getMessage());

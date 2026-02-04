@@ -115,7 +115,13 @@ try {
         $avg_books = 0.0;
         $max_books = 0;
     }
-    
+
+    // ランキングデータが空の場合は統計も0を表示
+    if (empty($ranking_data)) {
+        $avg_books = 0;
+        $max_books = 0;
+    }
+
 } catch (Exception $e) {
     error_log('Ranking page error: ' . $e->getMessage());
     $ranking_data = array();
