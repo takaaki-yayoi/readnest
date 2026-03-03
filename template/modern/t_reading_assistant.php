@@ -349,12 +349,12 @@ function renderMarkdown(text) {
     const codeBlocks = [];
     html = html.replace(/```([^`]+)```/g, function(match, code) {
         const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
-        codeBlocks.push(`<pre class="bg-gray-100 p-2 rounded overflow-x-auto"><code>${code}</code></pre>`);
+        codeBlocks.push(`<pre class="bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-x-auto"><code>${code}</code></pre>`);
         return placeholder;
     });
-    
+
     // インラインコード
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 py-0.5 rounded text-sm">$1</code>');
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded text-sm">$1</code>');
     
     // 太字
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold">$1</strong>');
@@ -363,7 +363,7 @@ function renderMarkdown(text) {
     html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
     
     // リンク
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank">$1</a>');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">$1</a>');
     
     // 見出し
     html = html.replace(/^### (.+)$/gm, '<h3 class="font-bold text-lg mt-2 mb-1">$1</h3>');
@@ -728,7 +728,7 @@ function showHistoryList() {
     const history = loadConversationHistory();
     
     if (history.length === 0) {
-        historyList.innerHTML = '<p class="text-gray-500 text-center py-8">履歴がありません</p>';
+        historyList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-8">履歴がありません</p>';
         return;
     }
     
@@ -740,14 +740,14 @@ function showHistoryList() {
         const dateStr = date.toLocaleDateString('ja-JP') + ' ' + date.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'});
         const firstMessage = session.messages.find(m => m.isUser)?.content || 'メッセージなし';
         const truncatedMessage = firstMessage.length > 50 ? firstMessage.substring(0, 50) + '...' : firstMessage;
-        
+
         return `
-            <div class="bg-gray-50 border rounded-lg p-3 mb-3 hover:bg-gray-100 cursor-pointer transition-colors">
+            <div class="bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-3 mb-3 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex-1" onclick="restoreHistory(${session.id})">
-                        <div class="text-xs text-gray-500 mb-1">${dateStr}</div>
-                        <div class="text-sm text-gray-700">${escapeHtml(truncatedMessage)}</div>
-                        <div class="text-xs text-gray-500 mt-1">${session.messages.length}件のメッセージ</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">${dateStr}</div>
+                        <div class="text-sm text-gray-700 dark:text-gray-200">${escapeHtml(truncatedMessage)}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${session.messages.length}件のメッセージ</div>
                     </div>
                     <button onclick="deleteHistory(${session.id})" class="text-red-500 hover:text-red-700 ml-2" title="削除">
                         <i class="fas fa-trash-alt"></i>

@@ -185,7 +185,7 @@
     /* 入力エリアのレイアウト調整 */
     #ai-assistant-window .input-area {
         padding: 12px;
-        background: white;
+        background: var(--color-surface, white);
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
     
@@ -228,8 +228,8 @@
         padding: 8px 12px; /* 上下パディングを戻す */
         white-space: nowrap;
         border-radius: 16px;
-        background-color: #f3f4f6;
-        border: 1px solid #e5e7eb;
+        background-color: var(--color-surface, #f3f4f6);
+        border: 1px solid var(--color-text-muted, #e5e7eb);
         min-height: 32px; /* 最小高さを設定 */
         display: flex;
         align-items: center;
@@ -260,9 +260,54 @@
     }
 }
 
-/* ダークモード対応（将来的な拡張用） */
-@media (prefers-color-scheme: dark) {
-    /* ダークモード時のスタイルをここに追加 */
+/* ダークモード対応 */
+html.dark #ai-messages {
+    scrollbar-color: #4b5563 #1f2937;
+}
+
+html.dark #ai-messages::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+html.dark #ai-messages::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+html.dark #ai-messages::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+html.dark .context-badge {
+    background-color: #374151;
+    color: #9ca3af;
+}
+
+html.dark .suggestion-chip {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+}
+
+html.dark .suggestion-chip:hover {
+    background-color: #4b5563;
+    border-color: #6b7280;
+}
+
+html.dark .sample-question-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+}
+
+html.dark .sample-question-btn:hover {
+    background-color: #4b5563;
+    border-color: #6b7280;
+}
+
+html.dark .error-message {
+    background-color: #7f1d1d;
+    border-color: #991b1b;
+    color: #fca5a5;
 }
 
 /* 強制的なモバイル対応（最優先） */
@@ -349,15 +394,15 @@
         padding: 8px 12px !important;
         white-space: nowrap !important;
         border-radius: 16px !important;
-        background-color: #f3f4f6 !important;
-        border: 1px solid #e5e7eb !important;
+        background-color: var(--color-surface, #f3f4f6) !important;
+        border: 1px solid var(--color-text-muted, #e5e7eb) !important;
         height: auto !important;
         min-height: 32px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         margin: 0 !important;
-        color: #374151 !important;
+        color: var(--color-text, #374151) !important;
         text-decoration: none !important;
         font-weight: normal !important;
         line-height: 1.2 !important;

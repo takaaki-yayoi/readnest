@@ -83,12 +83,12 @@ class AIAssistant {
         
         container.innerHTML = `
             <!-- チャットボタン -->
-            <div id="ai-assistant-button" class="bg-white border-2 border-readnest-primary hover:border-readnest-accent text-readnest-primary rounded-full p-4 shadow-lg cursor-pointer transition-all duration-300 hover:scale-110">
+            <div id="ai-assistant-button" class="bg-white dark:bg-gray-800 border-2 border-readnest-primary hover:border-readnest-accent text-readnest-primary rounded-full p-4 shadow-lg cursor-pointer transition-all duration-300 hover:scale-110">
                 <img src="/favicon.png" alt="AI Assistant" class="w-8 h-8">
             </div>
             
             <!-- チャットウィンドウ -->
-            <div id="ai-assistant-window" class="hidden bg-white rounded-lg shadow-2xl flex flex-col transition-all duration-300" style="${chatWindowStyle}">
+            <div id="ai-assistant-window" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col transition-all duration-300" style="${chatWindowStyle}">
                 <!-- ヘッダー -->
                 <div class="bg-readnest-primary text-white p-4 rounded-t-lg flex items-center justify-between">
                     <div class="flex items-center space-x-2">
@@ -115,32 +115,32 @@ class AIAssistant {
                 </div>
                 
                 <!-- メッセージエリア -->
-                <div id="ai-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div id="ai-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-gray-800">
                     <!-- ウェルカムメッセージ -->
                     <div class="ai-message assistant">
                         <div class="flex items-start space-x-2">
                             <img src="/favicon.png" alt="AI" class="w-8 h-8 rounded-full">
-                            <div class="bg-gray-100 rounded-lg p-3 max-w-[80%]">
-                                <p class="text-sm">こんにちは！読書アシスタントです。読書に関することなら何でもお聞きください。</p>
-                                <p class="text-xs text-gray-500 mt-2">より詳細なやり取りがしたい場合は<a href="/reading_assistant.php" class="text-readnest-primary hover:underline">読書アシスタントページ</a>へ</p>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 max-w-[80%]">
+                                <p class="text-sm text-gray-800 dark:text-gray-200">こんにちは！読書アシスタントです。読書に関することなら何でもお聞きください。</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">より詳細なやり取りがしたい場合は<a href="/reading_assistant.php" class="text-readnest-primary dark:text-readnest-accent hover:underline">読書アシスタントページ</a>へ</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 入力エリア -->
-                <div class="border-t p-4 input-area">
+                <div class="border-t dark:border-gray-600 p-4 input-area">
                     <!-- サンプル質問ボタン -->
                     <div id="ai-sample-questions" class="mb-3 space-y-2"></div>
-                    
+
                     <div class="flex space-x-2">
-                        <input type="text" id="ai-input" placeholder="メッセージを入力..." 
-                               class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-readnest-primary">
+                        <input type="text" id="ai-input" placeholder="メッセージを入力..."
+                               class="flex-1 px-3 py-2 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-readnest-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                         <button id="ai-send-btn" class="bg-readnest-primary hover:bg-readnest-accent text-white px-4 py-2 rounded-lg transition-colors">
                             送信
                         </button>
                     </div>
-                    <div class="mt-2 text-xs text-gray-500">
+                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                         ${this.getContextHint()}
                     </div>
                 </div>
@@ -303,7 +303,7 @@ class AIAssistant {
                 <span></span>
                 <span></span>
             </div>
-            <span class="text-xs text-gray-500">質問を生成中...</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">質問を生成中...</span>
         `;
         container.appendChild(loadingDiv);
     }
@@ -643,7 +643,7 @@ class AIAssistant {
             `;
         } else if (sender === 'system') {
             messageDiv.innerHTML = `
-                <div class="text-center text-gray-500 text-xs my-2">
+                <div class="text-center text-gray-500 dark:text-gray-400 text-xs my-2">
                     <p>${this.escapeHtml(text)}</p>
                 </div>
             `;
@@ -651,8 +651,8 @@ class AIAssistant {
             messageDiv.innerHTML = `
                 <div class="flex items-start space-x-2">
                     <img src="/favicon.png" alt="AI" class="w-8 h-8 rounded-full">
-                    <div class="bg-gray-100 rounded-xl p-3 max-w-[80%]">
-                        <p class="text-sm">${this.formatAIResponse(text)}</p>
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-xl p-3 max-w-[80%]">
+                        <p class="text-sm text-gray-800 dark:text-gray-200">${this.formatAIResponse(text)}</p>
                     </div>
                 </div>
             `;
@@ -705,11 +705,11 @@ class AIAssistant {
         loadingDiv.innerHTML = `
             <div class="flex items-start space-x-2">
                 <img src="/favicon.png" alt="AI" class="w-8 h-8 rounded-full">
-                <div class="bg-gray-100 rounded-lg p-3">
+                <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
                     <div class="flex space-x-1">
-                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
                     </div>
                 </div>
             </div>
@@ -897,21 +897,21 @@ class AIAssistant {
         formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
             const escapedCode = this.escapeHtml(code.trim());
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
-            placeholders.push(`<pre class="bg-gray-100 p-3 rounded overflow-x-auto my-2"><code>${escapedCode}</code></pre>`);
+            placeholders.push(`<pre class="bg-gray-200 dark:bg-gray-800 p-3 rounded overflow-x-auto my-2"><code>${escapedCode}</code></pre>`);
             return placeholder;
         });
         
         // インラインコード（`code`）を処理して保護
         formatted = formatted.replace(/`([^`]+)`/g, (match, code) => {
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
-            placeholders.push(`<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">${this.escapeHtml(code)}</code>`);
+            placeholders.push(`<code class="bg-gray-200 dark:bg-gray-800 px-1 py-0.5 rounded text-sm">${this.escapeHtml(code)}</code>`);
             return placeholder;
         });
         
         // マークダウンリンク [text](url) を処理
         formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
-            placeholders.push(`<a href="${url}" target="_blank" class="text-readnest-primary hover:underline">${text}</a>`);
+            placeholders.push(`<a href="${url}" target="_blank" class="text-readnest-primary dark:text-readnest-accent hover:underline">${text}</a>`);
             return placeholder;
         });
         
