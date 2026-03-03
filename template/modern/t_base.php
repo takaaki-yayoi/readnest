@@ -406,6 +406,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                         <div class="text-xs text-gray-500">あなた好みの本を提案</div>
                                     </div>
                                 </a>
+                                <a href="/book_discovery.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-compass mr-3 text-pink-500 group-hover:scale-110 transition-transform"></i>
+                                    <div>
+                                        <div class="font-medium">本の発見</div>
+                                        <div class="text-xs text-gray-500">気分から本を探す</div>
+                                    </div>
+                                </a>
                                 <a href="/reading_assistant.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <i class="fas fa-comments mr-3 text-green-500 group-hover:scale-110 transition-transform"></i>
                                     <div>
@@ -707,6 +714,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </a>
                     <a href="/add_book.php" class="block py-2.5 px-3 rounded-lg <?php echo isActivePage('/add_book.php') ? 'bg-readnest-primary text-white' : 'text-gray-700 hover:bg-gray-100'; ?> transition-colors">
                         <i class="fas fa-plus-circle mr-3 w-4"></i> 本を追加
+                    </a>
+                    <a href="/book_discovery.php" class="block py-2.5 px-3 rounded-lg <?php echo isActivePage('/book_discovery.php') ? 'bg-readnest-primary text-white' : 'text-gray-700 hover:bg-gray-100'; ?> transition-colors">
+                        <i class="fas fa-compass mr-3 w-4"></i> 本の発見
                     </a>
                     <a href="/reading_assistant.php" class="block py-2.5 px-3 rounded-lg <?php echo isActivePage('/reading_assistant.php') ? 'bg-readnest-primary text-white' : 'text-gray-700 hover:bg-gray-100'; ?> transition-colors relative">
                         <i class="fas fa-robot mr-3 w-4"></i> アシスタント

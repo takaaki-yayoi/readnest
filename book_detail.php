@@ -1090,7 +1090,7 @@ if (!empty($book['user_id'])) {
 
 if ($should_show_progress && $progress_user_id) {
     try {
-        $progress_sql = "SELECT event_id, event_date, page, memo, event FROM b_book_event WHERE book_id = ? AND user_id = ? ORDER BY event_date DESC LIMIT 20";
+        $progress_sql = "SELECT event_id, event_date, page, memo, event FROM b_book_event WHERE book_id = ? AND user_id = ? ORDER BY event_date DESC";
         $progress_result = $g_db->getAll($progress_sql, [$book_id, $progress_user_id]);
         
         

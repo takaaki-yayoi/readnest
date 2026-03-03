@@ -116,6 +116,10 @@ function generateBreadcrumbs($page_type, $extra_data = []) {
         case 'recommendations':
             $breadcrumbs[] = ['label' => 'AI推薦', 'url' => null];
             break;
+
+        case 'book_discovery':
+            $breadcrumbs[] = ['label' => '本の発見', 'url' => null];
+            break;
             
         case 'favorites':
             $breadcrumbs[] = ['label' => 'お気に入り', 'url' => null];

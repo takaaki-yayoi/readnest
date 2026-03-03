@@ -952,7 +952,7 @@ ob_start();
                             </div>
                             <div class="p-6">
                                 <div class="space-y-3">
-                                    <?php foreach (array_slice($reading_progress, 0, 10) as $progress): ?>
+                                    <?php foreach ($reading_progress as $progress): ?>
                                     <div class="flex items-start space-x-3 text-sm border-b border-gray-100 dark:border-gray-600 pb-2">
                                         <span class="text-gray-500 whitespace-nowrap">
                                             <?php echo formatDate($progress['date'], 'Y/m/d'); ?>
@@ -967,10 +967,6 @@ ob_start();
                                         <?php endif; ?>
                                     </div>
                                     <?php endforeach; ?>
-                                </div>
-                                <?php if (count($reading_progress) > 10): ?>
-                                <p class="text-gray-500 dark:text-gray-400 text-sm mt-3">他<?php echo count($reading_progress) - 10; ?>件の履歴があります</p>
-                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -1219,7 +1215,7 @@ ob_start();
                                                     </script>
                                                     <?php endif; ?>
                                                     
-                                                    <div class="space-y-2 max-h-40 overflow-y-auto" x-data="{ editingId: null }">
+                                                    <div class="space-y-2 max-h-80 overflow-y-auto" x-data="{ editingId: null }">
                                                         <?php foreach ($reading_progress as $progress): ?>
                                                         <div class="group hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded" x-data="{ editing: false }" @finish-edit="editing = false; editingId = null">
                                                             <div x-show="!editing" class="flex items-start space-x-2 text-xs">

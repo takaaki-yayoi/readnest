@@ -310,6 +310,74 @@ function handleMcpMessage($message, $user_id) {
                                     ]
                                 ]
                             ]
+                        ],
+                        [
+                            'name' => 'get_high_rated_books',
+                            'description' => '高評価の本をレビュー付きで一括取得します。プロファイル生成の入力データとして使用します。
+
+パラメータ:
+- min_rating (required): 最低評価（例: 4）
+- limit (optional): 取得件数 (デフォルト: 50)',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'min_rating' => [
+                                        'type' => 'integer',
+                                        'description' => '最低評価（1-5）'
+                                    ],
+                                    'limit' => [
+                                        'type' => 'integer',
+                                        'description' => '取得件数（最大200）',
+                                        'default' => 50
+                                    ]
+                                ],
+                                'required' => ['min_rating']
+                            ]
+                        ],
+                        [
+                            'name' => 'is_book_read',
+                            'description' => 'ユーザーが特定の本を読んだかどうかをあいまい検索で確認します。全角/半角、中黒の有無、副題の有無などの表記ゆれを吸収します。
+
+パラメータ:
+- title (required): 書籍タイトル
+- author (optional): 著者名（指定するとマッチ精度が向上）',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'title' => [
+                                        'type' => 'string',
+                                        'description' => '書籍タイトル'
+                                    ],
+                                    'author' => [
+                                        'type' => 'string',
+                                        'description' => '著者名（任意）'
+                                    ]
+                                ],
+                                'required' => ['title']
+                            ]
+                        ],
+                        [
+                            'name' => 'get_books_by_tag',
+                            'description' => 'タグ（ジャンル）別の本一覧を取得します。
+
+パラメータ:
+- tag (required): タグ名（例: "SF", "小説", "戦争"）
+- limit (optional): 取得件数 (デフォルト: 50)',
+                            'inputSchema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'tag' => [
+                                        'type' => 'string',
+                                        'description' => 'タグ名'
+                                    ],
+                                    'limit' => [
+                                        'type' => 'integer',
+                                        'description' => '取得件数（最大200）',
+                                        'default' => 50
+                                    ]
+                                ],
+                                'required' => ['tag']
+                            ]
                         ]
                     ]
                 ]
@@ -333,6 +401,12 @@ function handleMcpMessage($message, $user_id) {
                 return handleGetFavoriteGenres($tool_args, $user_id, $id);
             } elseif ($tool_name === 'get_reviews') {
                 return handleGetReviews($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'get_high_rated_books') {
+                return handleGetHighRatedBooks($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'is_book_read') {
+                return handleIsBookRead($tool_args, $user_id, $id);
+            } elseif ($tool_name === 'get_books_by_tag') {
+                return handleGetBooksByTag($tool_args, $user_id, $id);
             } else {
                 return [
                     'jsonrpc' => '2.0',
@@ -936,6 +1010,222 @@ function handleGetReviews($args, $user_id, $id) {
     $text = count($output_lines) > 0
         ? implode("\n\n---\n\n", $output_lines)
         : "レビューがありません";
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $text
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * 高評価の本をレビュー付きで取得
+ */
+function handleGetHighRatedBooks($args, $user_id, $id) {
+    global $g_db;
+
+    $min_rating = (int)($args['min_rating'] ?? 4);
+    $limit = min((int)($args['limit'] ?? 50), 200);
+
+    if ($min_rating < 1 || $min_rating > 5) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32602,
+                'message' => 'min_rating must be between 1 and 5'
+            ]
+        ];
+    }
+
+    $sql = "SELECT bl.book_id, bl.name,
+            COALESCE(bl.author, br.author, '') as author,
+            bl.rating, bl.memo as review, bl.finished_date, bl.total_page
+            FROM b_book_list bl
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE bl.user_id = ? AND bl.rating >= ?
+            ORDER BY bl.rating DESC, bl.finished_date DESC
+            LIMIT ?";
+
+    $results = $g_db->getAll($sql, [$user_id, $min_rating, $limit], DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results)) {
+        error_log("handleGetHighRatedBooks DB error: " . $results->getMessage());
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error'
+            ]
+        ];
+    }
+
+    $output_lines = [];
+    foreach ($results as $book) {
+        $line = "📖 {$book['name']}";
+        if ($book['author']) {
+            $line .= " / {$book['author']}";
+        }
+        $line .= " ⭐️ {$book['rating']}";
+        if ($book['total_page']) {
+            $line .= " ({$book['total_page']}ページ)";
+        }
+        if ($book['finished_date'] && $book['finished_date'] !== '0000-00-00') {
+            $line .= " 読了: {$book['finished_date']}";
+        }
+        if (!empty($book['review'])) {
+            $review_preview = mb_substr($book['review'], 0, 200, 'UTF-8');
+            if (mb_strlen($book['review'], 'UTF-8') > 200) {
+                $review_preview .= '...';
+            }
+            $line .= "\n  レビュー: {$review_preview}";
+        }
+        $line .= " [ID: {$book['book_id']}]";
+        $output_lines[] = $line;
+    }
+
+    $text = count($output_lines) > 0
+        ? "高評価本 (⭐️{$min_rating}以上): " . count($output_lines) . "件\n\n" . implode("\n\n", $output_lines)
+        : "評価{$min_rating}以上の本が見つかりませんでした";
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $text
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * 既読チェック（あいまい検索）
+ */
+function handleIsBookRead($args, $user_id, $id) {
+    require_once(dirname(__DIR__) . '/library/book_fuzzy_matcher.php');
+
+    $title = $args['title'] ?? '';
+    $author = $args['author'] ?? null;
+
+    if (empty($title)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32602,
+                'message' => 'title parameter is required'
+            ]
+        ];
+    }
+
+    $match = findMatchingBook($title, $author, $user_id);
+
+    if ($match) {
+        $result_json = json_encode([
+            'is_read' => true,
+            'matched_book' => [
+                'id' => $match['book_id'],
+                'title' => $match['name'],
+                'author' => $match['author'],
+                'rating' => $match['rating']
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        $result_json = json_encode([
+            'is_read' => false,
+            'matched_book' => null
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    return [
+        'jsonrpc' => '2.0',
+        'id' => $id,
+        'result' => [
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => $result_json
+                ]
+            ]
+        ]
+    ];
+}
+
+/**
+ * タグ別の本一覧を取得
+ */
+function handleGetBooksByTag($args, $user_id, $id) {
+    global $g_db;
+
+    $tag = $args['tag'] ?? '';
+    $limit = min((int)($args['limit'] ?? 50), 200);
+
+    if (empty($tag)) {
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32602,
+                'message' => 'tag parameter is required'
+            ]
+        ];
+    }
+
+    $sql = "SELECT bl.book_id, bl.name,
+            COALESCE(bl.author, br.author, '') as author,
+            bl.rating, bl.total_page
+            FROM b_book_tags bt
+            JOIN b_book_list bl ON bt.book_id = bl.book_id AND bt.user_id = bl.user_id
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE bt.user_id = ? AND bt.tag_name = ?
+            ORDER BY bl.rating DESC, bl.update_date DESC
+            LIMIT ?";
+
+    $results = $g_db->getAll($sql, [$user_id, $tag, $limit], DB_FETCHMODE_ASSOC);
+
+    if (DB::isError($results)) {
+        error_log("handleGetBooksByTag DB error: " . $results->getMessage());
+        return [
+            'jsonrpc' => '2.0',
+            'id' => $id,
+            'error' => [
+                'code' => -32603,
+                'message' => 'Database error'
+            ]
+        ];
+    }
+
+    $output_lines = [];
+    foreach ($results as $book) {
+        $line = "📖 {$book['name']}";
+        if ($book['author']) {
+            $line .= " / {$book['author']}";
+        }
+        if ($book['rating']) {
+            $line .= " ⭐️ {$book['rating']}";
+        }
+        if ($book['total_page']) {
+            $line .= " ({$book['total_page']}ページ)";
+        }
+        $line .= " [ID: {$book['book_id']}]";
+        $output_lines[] = $line;
+    }
+
+    $text = count($output_lines) > 0
+        ? "🏷️ タグ「{$tag}」の本: " . count($output_lines) . "件\n\n" . implode("\n", $output_lines)
+        : "タグ「{$tag}」に該当する本が見つかりませんでした";
 
     return [
         'jsonrpc' => '2.0',
