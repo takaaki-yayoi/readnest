@@ -2816,6 +2816,50 @@ ob_start();
                             </div>
                         </div>
                         
+                        <!-- 本の発見 NEW! -->
+                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-lg p-6 relative">
+                            <span class="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">NEW!</span>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <i class="fas fa-compass text-pink-600 mr-3"></i>
+                                本の発見
+                            </h3>
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                今の気分やテーマを入力するだけで、AIがあなたの読書傾向を分析し、ぴったりの本を推薦する新機能です。推薦された本はその場で本棚に追加できます。
+                            </p>
+
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">主な機能:</h4>
+                                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li><strong>気分ベースの推薦：</strong>「冒険がしたい気分」「泣ける小説を読みたい」など自由入力</li>
+                                    <li><strong>読書プロファイル分析：</strong>好きなテーマ・スタイル・お気に入り著者を自動分析</li>
+                                    <li><strong>既読チェック：</strong>本棚にある本は自動除外</li>
+                                    <li><strong>表紙画像表示：</strong>Google Booksから表紙を自動取得</li>
+                                    <li><strong>ワンクリック追加：</strong>推薦カードから直接本棚に追加</li>
+                                </ul>
+
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
+                                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li>ナビゲーションのAI機能メニュー内「本の発見」から</li>
+                                    <li>直接 <a href="/book_discovery.php" class="text-purple-600 dark:text-purple-400 hover:underline">/book_discovery.php</a> にアクセス</li>
+                                </ul>
+
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">使い方:</h4>
+                                <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li>テキストボックスに今の気分やテーマを入力（またはサジェストチップを選択）</li>
+                                    <li>AIがあなたの読書プロファイルを分析し、推薦候補を生成</li>
+                                    <li>推薦カードで各本の推薦理由・マッチ要素・意外性ポイントを確認</li>
+                                    <li>「本棚に追加」ボタンからGoogle Books検索→ステータス選択→追加</li>
+                                </ol>
+
+                                <div class="mt-4 p-3 bg-pink-100 dark:bg-pink-900/30 rounded text-sm">
+                                    <p class="text-pink-800 dark:text-pink-300">
+                                        <i class="fas fa-lightbulb mr-1"></i>
+                                        <strong class="dark:text-gray-200">ヒント：</strong>具体的な気分やテーマを入力するほど、より的確な推薦が得られます。例：「雨の日に読みたい、静かで美しい文体の日本文学」
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 読書アシスタント NEW! -->
                         <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-6 relative">
                             <span class="absolute top-4 right-4 bg-gradient-to-r from-green-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">AI</span>
