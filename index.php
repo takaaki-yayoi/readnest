@@ -1096,17 +1096,27 @@ function getDailyPageProgress($user_id, $days = 30) {
         // 日付をキーとしたデータ構造を作成
         $date_pages = [];
         $book_progress = []; // 各本の現在ページを追跡
-        
-        // finished_dateベースの本を先に処理
+
+        // イベントに存在するbook_idを先に収集（二重カウント防止）
+        $event_book_ids = [];
+        foreach ($events as $event) {
+            $event_book_ids[$event['book_id']] = true;
+        }
+
+        // finished_dateベースの本を処理（イベントがない本のみ）
         foreach ($finished_books as $book) {
+            // イベントで既にページ追跡されている本はスキップ（二重カウント防止）
+            if (isset($event_book_ids[$book['book_id']])) {
+                continue;
+            }
             $date_key = $book['finished_date'];
             if (!isset($date_pages[$date_key])) {
                 $date_pages[$date_key] = 0;
             }
-            // 読了本の総ページ数を加算
+            // イベントのない読了本の総ページ数を加算
             $date_pages[$date_key] += intval($book['total_page']);
         }
-        
+
         foreach ($events as $event) {
             // event_dateがDATETIME形式の場合とUnix timestampの場合に対応
             if (is_numeric($event['event_date'])) {
