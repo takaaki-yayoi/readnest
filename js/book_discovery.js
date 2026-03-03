@@ -163,11 +163,10 @@ async function loadSingleCover(rec, index) {
     if (!imgEl) return;
 
     try {
-        var query = rec.title + ' ' + rec.author;
         var response = await fetchWithCSRF('/api/book_search_quick.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: query, limit: 1 })
+            body: JSON.stringify({ title: cleanTitleForSearch(rec.title), author: rec.author, limit: 1 })
         });
         var data = await response.json();
 
@@ -192,7 +191,7 @@ async function openAddBookModal(title, author, cardIndex) {
     if (!modal) return;
 
     modal.style.display = 'flex';
-    document.getElementById('modal-search-query').textContent = title + ' ' + author;
+    document.getElementById('modal-search-query').textContent = cleanTitleForSearch(title) + ' ' + author;
     document.getElementById('modal-results').innerHTML = '';
     document.getElementById('modal-error').classList.add('hidden');
     document.getElementById('modal-loading').classList.remove('hidden');
@@ -201,11 +200,10 @@ async function openAddBookModal(title, author, cardIndex) {
     _modalSearchResults = [];
 
     try {
-        var query = title + ' ' + author;
         var response = await fetchWithCSRF('/api/book_search_quick.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: query, limit: 5 })
+            body: JSON.stringify({ title: cleanTitleForSearch(title), author: author, limit: 5 })
         });
         var data = await response.json();
 
@@ -581,6 +579,16 @@ function renderRecommendations(recommendations) {
             html += '<p class="mt-2 text-sm text-gray-700 dark:text-gray-300">' + escapeHtml(shortReasoning) + '</p>';
         }
 
+        // アクションボタン（常に表示）
+        html += '<div class="card-actions flex items-center gap-2 mt-3">';
+        html += '<button type="button" onclick="openAddBookModal(\'' + safeTitle + '\', \'' + safeAuthor + '\', ' + index + ')"';
+        html += ' class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors">';
+        html += '<i class="fas fa-plus mr-1"></i>本棚に追加</button>';
+        html += '<button type="button" onclick="addBookManually(\'' + safeTitle + '\', \'' + safeAuthor + '\')"';
+        html += ' class="text-gray-500 dark:text-gray-400 px-3 py-2 text-sm hover:text-gray-700 dark:hover:text-gray-300 transition-colors">';
+        html += '<i class="fas fa-edit mr-1"></i>手動で追加</button>';
+        html += '</div>';
+
         // 展開ボタン
         html += '<button @click="expanded = !expanded" class="mt-3 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 flex items-center">';
         html += '<span x-text="expanded ? \'詳細を閉じる\' : \'なぜこの本？ 詳細を見る\'"></span>';
@@ -627,16 +635,6 @@ function renderRecommendations(recommendations) {
             html += '<p class="text-sm text-yellow-800 dark:text-yellow-200">' + escapeHtml(rec.surprise_factor) + '</p>';
             html += '</div>';
         }
-
-        // アクションボタン
-        html += '<div class="card-actions flex items-center gap-2 pt-2">';
-        html += '<button type="button" onclick="openAddBookModal(\'' + safeTitle + '\', \'' + safeAuthor + '\', ' + index + ')"';
-        html += ' class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors">';
-        html += '<i class="fas fa-plus mr-1"></i>本棚に追加</button>';
-        html += '<button type="button" onclick="addBookManually(\'' + safeTitle + '\', \'' + safeAuthor + '\')"';
-        html += ' class="text-gray-500 dark:text-gray-400 px-3 py-2 text-sm hover:text-gray-700 dark:hover:text-gray-300 transition-colors">';
-        html += '<i class="fas fa-edit mr-1"></i>手動で追加</button>';
-        html += '</div>';
 
         html += '</div>'; // /展開セクション
         html += '</div>'; // /カード
@@ -705,4 +703,17 @@ function escapeHtml(text) {
 function escapeAttr(text) {
     if (!text) return '';
     return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+/**
+ * 検索クエリ用にタイトルをクリーンアップ
+ * 出版社名などの括弧付き情報を除去
+ */
+function cleanTitleForSearch(title) {
+    if (!title) return '';
+    // (新潮社)、（ダイヤモンド社）など全角・半角括弧の出版社情報を除去
+    return title
+        .replace(/[\(（][^)）]*(?:社|文庫|書店|書房|新書|選書|ブックス|プレス|出版|堂)[^)）]*[\)）]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }

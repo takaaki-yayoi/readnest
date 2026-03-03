@@ -48,9 +48,18 @@ if (!verifyCSRFToken($csrf_token)) {
 // POSTデータ取得
 $input = json_decode(file_get_contents('php://input'), true);
 $query = trim($input['query'] ?? '');
+$title = trim($input['title'] ?? '');
+$author = trim($input['author'] ?? '');
 $limit = min(max((int)($input['limit'] ?? 5), 1), 10);
 
-if (empty($query)) {
+// title+author が指定されていれば構造化クエリを構築
+if (!empty($title)) {
+    $structured_query = 'intitle:' . $title;
+    if (!empty($author)) {
+        $structured_query .= '+inauthor:' . $author;
+    }
+    $query = $structured_query;
+} elseif (empty($query)) {
     ob_end_clean();
     echo json_encode(['success' => false, 'error' => '検索キーワードが必要です']);
     exit;

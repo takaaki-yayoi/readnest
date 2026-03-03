@@ -513,32 +513,9 @@ function createBook($user_id, $book_name, $book_asin, $book_isbn, $author, $memo
   if (file_exists(dirname(__FILE__) . '/cache.php')) {
     require_once(dirname(__FILE__) . '/cache.php');
     $cache = getCache();
-    
-    // 本棚関連のキャッシュをクリア
+
     $cache->delete('bookshelf_stats_' . md5((string)$user_id));
     $cache->delete('user_tags_' . md5((string)$user_id));
-    
-    // 本一覧キャッシュをクリア（新しい本が追加されるため）
-    $statuses = ['', '1', '2', '3', '4']; // 全体、読む前、読んでる、読了、読む予定
-    // 新しいソート形式に対応
-    $sorts = [
-      'update_date_desc', 'update_date_asc',
-      'finished_date_desc', 'finished_date_asc',
-      'rating_desc', 'rating_asc',
-      'title_asc', 'title_desc',
-      'author_asc', 'author_desc',
-      'pages_desc', 'pages_asc',
-      'created_date_desc', 'created_date_asc',
-      // レガシー互換用
-      'update_date', 'create_date', 'name', 'author', 'rating', 'status', 'total_page', 'current_page'
-    ];
-    
-    foreach ($statuses as $cache_status) {
-      foreach ($sorts as $sort) {
-        $booksCacheKey = 'bookshelf_books_' . md5((string)$user_id . '_' . $cache_status . '_' . $sort . '_' . '' . '_' . '' . '_' . '' . '_' . '' . '_' . '' . '_' . '');
-        $cache->delete($booksCacheKey);
-      }
-    }
   }
   
   // ジャンル情報を保存（genre_detector.phpが読み込まれている場合のみ）
@@ -1099,20 +1076,8 @@ function updateBook($user_id, $book_id, $status, $rating, $comment, $finished_da
     if (file_exists(dirname(__FILE__) . '/cache.php')) {
       require_once(dirname(__FILE__) . '/cache.php');
       $cache = getCache();
-      
-      // 本棚統計キャッシュをクリア
+
       $cache->delete('bookshelf_stats_' . md5((string)$user_id));
-      
-      // ステータス変更があった場合のみ本一覧キャッシュをクリア
-      $statuses = ['', '1', '2', '3', '4']; // 全体、読む前、読んでる、読了、読む予定
-      $sorts = ['update_date', 'create_date', 'name']; // 並び順
-      
-      foreach ($statuses as $cache_status) {
-        foreach ($sorts as $sort) {
-          $booksCacheKey = 'bookshelf_books_' . md5((string)$user_id . '_' . $cache_status . '_' . $sort . '_' . '' . '_' . '' . '_' . '' . '_' . '' . '_' . '' . '_' . '');
-          $cache->delete($booksCacheKey);
-        }
-      }
     }
   }
   
@@ -1187,16 +1152,11 @@ function deleteBook($user_id, $book_id) {
   if (file_exists(dirname(__FILE__) . '/cache.php')) {
     require_once(dirname(__FILE__) . '/cache.php');
     $cache = getCache();
-    
-    // 本棚関連のキャッシュをクリア
+
     $cache->delete('bookshelf_stats_' . md5((string)$user_id));
     $cache->delete('user_tags_' . md5((string)$user_id));
-    
-    // すべての本棚表示キャッシュをクリアする
-    // ユーザーIDを含むすべての組み合わせのキャッシュを削除
-    clearUserBookshelfCache($user_id);
   }
-  
+
   // ユーザー作家クラウドを更新（リアルタイム更新）
   if (file_exists(dirname(__FILE__) . '/user_author_cloud.php')) {
     require_once(dirname(__FILE__) . '/user_author_cloud.php');
@@ -1204,94 +1164,6 @@ function deleteBook($user_id, $book_id) {
   }
 
   return DB_OPERATE_SUCCESS;
-}
-
-/**
- * ユーザーの本棚関連のすべてのキャッシュをクリア
- * 
- * @param int $user_id ユーザーID
- * @return void
- */
-function clearUserBookshelfCache($user_id) {
-  if (file_exists(dirname(__FILE__) . '/cache.php')) {
-    require_once(dirname(__FILE__) . '/cache.php');
-    $cache = getCache();
-    
-    // キャッシュディレクトリのパスを取得
-    $cache_dir = dirname(__DIR__) . '/cache';
-    
-    if (is_dir($cache_dir)) {
-      // ユーザーIDを含む可能性のあるすべてのキャッシュキーパターンを生成
-      // 本棚の表示で使用される可能性のあるすべてのパラメータの組み合わせ
-      
-      // ステータスの全パターン
-      $statuses = ['', '0', '1', '2', '3', '4', '5'];
-      
-      // ソート順の全パターン
-      $sorts = [
-        '', 'update_date', 'create_date', 'name', 'author', 'rating',
-        'update_date_desc', 'update_date_asc',
-        'create_date_desc', 'create_date_asc',
-        'title_asc', 'title_desc',
-        'author_asc', 'author_desc',
-        'rating_desc', 'rating_asc',
-        'finished_date_desc', 'finished_date_asc'
-      ];
-      
-      // 各種フィルタパターンを含むキャッシュキーを削除
-      foreach ($statuses as $status) {
-        foreach ($sorts as $sort) {
-          // 基本パターン（フィルタなし）
-          $base_key = 'bookshelf_books_' . md5((string)$user_id . '_' . $status . '_' . $sort . '______');
-          $cache->delete($base_key);
-          
-          // タグフィルタ付きパターン
-          $tag_filters = ['', 'no_tags'];
-          for ($tag_id = 1; $tag_id <= 100; $tag_id++) {
-            $tag_filters[] = (string)$tag_id;
-          }
-          
-          foreach ($tag_filters as $tag_filter) {
-            // カバーフィルタ付きパターン
-            $cover_filters = ['', 'no_cover', 'has_cover'];
-            foreach ($cover_filters as $cover_filter) {
-              // 検索タイプ付きパターン
-              $search_types = ['', 'title', 'author', 'isbn', 'all'];
-              foreach ($search_types as $search_type) {
-                // 年月フィルタは動的なので一般的なパターンのみ
-                $years = ['', date('Y'), date('Y', strtotime('-1 year'))];
-                $months = [''];
-                for ($m = 1; $m <= 12; $m++) {
-                  $months[] = sprintf('%02d', $m);
-                }
-                
-                foreach ($years as $year) {
-                  foreach ($months as $month) {
-                    // 検索ワードは動的なので空文字のみ
-                    $cache_key = 'bookshelf_books_' . md5(
-                      (string)$user_id . '_' . 
-                      $status . '_' . 
-                      $sort . '_' . 
-                      $search_type . '_' . 
-                      '' . '_' .  // search_word
-                      $year . '_' . 
-                      $month . '_' . 
-                      $tag_filter . '_' . 
-                      $cover_filter
-                    );
-                    $cache->delete($cache_key);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      // 一般的な検索ワードパターンも削除（部分一致は困難なので主要パターンのみ）
-      // これにより大部分のキャッシュがクリアされる
-    }
-  }
 }
 
 // create event
@@ -1401,26 +1273,13 @@ function createEvent($user_id, $book_id, $memo, $number_of_pages, $event_date = 
     updateUserReadingStat($user_id);
   }
   
-  // 本棚キャッシュをクリア（読書進捗更新時の即座な反映のため）
-  if (file_exists(dirname(__FILE__) . '/cache.php')) {
-    require_once(dirname(__FILE__) . '/cache.php');
-    $cache = getCache();
-    
-    // 本棚統計キャッシュをクリア（読了時のみ）
-    if ($status == READING_FINISH) {
+  // 本棚キャッシュをクリア（読了時の統計反映のため）
+  if ($status == READING_FINISH) {
+    if (file_exists(dirname(__FILE__) . '/cache.php')) {
+      require_once(dirname(__FILE__) . '/cache.php');
+      $cache = getCache();
+
       $cache->delete('bookshelf_stats_' . md5((string)$user_id));
-    }
-    
-    // 本一覧キャッシュをクリア（update_dateが変更されるため）
-    $statuses = ['', '1', '2', '3', '4']; // 全体、読む前、読んでる、読了、読む予定
-    // update_date関連のソートをクリア（進捗更新で並び順が変わるため）
-    $sorts = ['update_date_desc', 'update_date_asc', 'update_date']; // 新旧両方の形式
-    
-    foreach ($statuses as $cache_status) {
-      foreach ($sorts as $sort) {
-        $booksCacheKey = 'bookshelf_books_' . md5((string)$user_id . '_' . $cache_status . '_' . $sort . '_' . '' . '_' . '' . '_' . '' . '_' . '' . '_' . '' . '_' . '');
-        $cache->delete($booksCacheKey);
-      }
     }
   }
   
