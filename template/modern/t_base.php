@@ -322,10 +322,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <a href="/add_book.php" class="<?php echo getNavClass('/add_book.php'); ?> px-2 py-2 text-sm" title="本を追加">
                         <i class="fas fa-plus-circle text-lg"></i>
                     </a>
-                    <a href="/book_discovery.php" class="<?php echo getNavClass('/book_discovery.php'); ?> px-2 py-2 text-sm relative" title="本の発見">
-                        <i class="fas fa-compass text-lg"></i>
-                        <span class="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[8px] px-1 py-0.5 rounded-full font-bold">New</span>
-                    </a>
                     <a href="/reading_assistant.php" class="<?php echo getNavClass('/reading_assistant.php'); ?> px-2 py-2 text-sm relative" title="アシスタント">
                         <i class="fas fa-robot text-lg"></i>
                         <span class="absolute -top-1 -right-1 bg-gradient-to-r from-green-600 to-blue-600 text-white text-[8px] px-1 py-0.5 rounded-full font-bold">AI</span>
@@ -335,7 +331,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
                                 @click.away="open = false"
-                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false) ? 'text-readnest-primary dark:text-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white'; ?> px-2 py-2 text-sm" title="発見">
+                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false) ? 'text-readnest-primary dark:text-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white'; ?> px-2 py-2 text-sm" title="発見">
                             <i class="fas fa-compass text-lg"></i>
                         </button>
                         <div x-show="open"
@@ -348,6 +344,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                              x-transition:leave-end="transform opacity-0 scale-95"
                              class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                             <div class="py-1">
+                                <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                                <a href="/book_discovery.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 relative">
+                                    <i class="fas fa-compass mr-2"></i>本の発見
+                                    <span class="ml-1 text-[8px] bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1 py-0.5 rounded-full font-bold">New</span>
+                                </a>
+                                <?php endif; ?>
                                 <a href="/popular_books.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-fire mr-2"></i>人気の本
                                 </a>
@@ -387,7 +389,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
                                 @click.away="open = false"
-                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'recommendations') !== false || strpos($_SERVER['REQUEST_URI'], 'reading_assistant') !== false || strpos($_SERVER['REQUEST_URI'], 'reading_insights') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center relative">
+                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'recommendations') !== false || strpos($_SERVER['REQUEST_URI'], 'reading_assistant') !== false || strpos($_SERVER['REQUEST_URI'], 'reading_insights') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center relative">
                             <i class="fas fa-robot mr-1"></i>AI機能
                             <i class="fas fa-chevron-down ml-1 text-xs"></i>
                         </button>
@@ -408,13 +410,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                     <div>
                                         <div class="font-medium">AI推薦</div>
                                         <div class="text-xs text-gray-500">あなた好みの本を提案</div>
-                                    </div>
-                                </a>
-                                <a href="/book_discovery.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <i class="fas fa-compass mr-3 text-pink-500 group-hover:scale-110 transition-transform"></i>
-                                    <div>
-                                        <div class="font-medium">本の発見<span class="ml-1 text-xs bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold">New</span></div>
-                                        <div class="text-xs text-gray-500">気分から本を探す</div>
                                     </div>
                                 </a>
                                 <a href="/reading_assistant.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -440,7 +435,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
                                 @click.away="open = false"
-                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center">
+                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center">
                             <i class="fas fa-compass mr-1"></i>発見
                             <i class="fas fa-chevron-down ml-1 text-xs"></i>
                         </button>
@@ -456,6 +451,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                              class="origin-top-left absolute left-0 mt-2 w-64 rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
                             
                             <div class="py-1">
+                                <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                                <a href="/book_discovery.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-compass mr-3 text-pink-500 group-hover:scale-110 transition-transform"></i>
+                                    <div>
+                                        <div class="font-medium">本の発見<span class="ml-1 text-xs bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold">New</span></div>
+                                        <div class="text-xs text-gray-500">気分やテーマから本を探す</div>
+                                    </div>
+                                </a>
+                                <?php endif; ?>
                                 <a href="/popular_book.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <i class="fas fa-fire mr-3 text-red-500 group-hover:scale-110 transition-transform"></i>
                                     <div>
@@ -719,10 +723,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <a href="/add_book.php" class="block py-2.5 px-3 rounded-lg <?php echo isActivePage('/add_book.php') ? 'bg-readnest-primary text-white' : 'text-gray-700 hover:bg-gray-100'; ?> transition-colors">
                         <i class="fas fa-plus-circle mr-3 w-4"></i> 本を追加
                     </a>
-                    <a href="/book_discovery.php" class="block py-2.5 px-3 rounded-lg <?php echo isActivePage('/book_discovery.php') ? 'bg-readnest-primary text-white' : 'text-gray-700 hover:bg-gray-100'; ?> transition-colors relative">
-                        <i class="fas fa-compass mr-3 w-4"></i> 本の発見
-                        <span class="absolute top-2 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">New</span>
-                    </a>
                     <a href="/reading_assistant.php" class="block py-2.5 px-3 rounded-lg <?php echo isActivePage('/reading_assistant.php') ? 'bg-readnest-primary text-white' : 'text-gray-700 hover:bg-gray-100'; ?> transition-colors relative">
                         <i class="fas fa-robot mr-3 w-4"></i> アシスタント
                         <span class="absolute top-2 right-3 bg-gradient-to-r from-green-600 to-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full font-bold animate-pulse">AI</span>
@@ -733,6 +733,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <!-- 発見機能 -->
                 <div class="mb-6">
                     <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">発見</h4>
+                    <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                    <a href="/book_discovery.php" class="block py-2 text-gray-700 hover:text-book-primary-600 relative">
+                        <i class="fas fa-compass mr-3 w-4 text-pink-500"></i> 本の発見
+                        <span class="ml-1 text-xs bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold">New</span>
+                    </a>
+                    <?php endif; ?>
                     <a href="/global_search.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-globe mr-3 w-4 text-purple-500"></i> グローバル検索
                     </a>

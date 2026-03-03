@@ -2839,7 +2839,7 @@ ob_start();
 
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
                                 <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                                    <li>ナビゲーションのAI機能メニュー内「本の発見」から</li>
+                                    <li>ナビゲーションの「発見」メニュー内「本の発見」から</li>
                                     <li>直接 <a href="/book_discovery.php" class="text-purple-600 dark:text-purple-400 hover:underline">/book_discovery.php</a> にアクセス</li>
                                 </ul>
 
