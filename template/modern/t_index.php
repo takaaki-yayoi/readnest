@@ -1098,15 +1098,15 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                             </a>
                         </div>
                         <div class="flex items-center mb-2">
-                            <?php if ($my_ranking_info['rank'] !== '圈外' && $my_ranking_info['rank'] !== '-' && intval($my_ranking_info['rank']) <= 3): ?>
+                            <?php if ($my_ranking_info['rank'] !== '圏外' && $my_ranking_info['rank'] !== '-' && intval($my_ranking_info['rank']) <= 3): ?>
                                 <i class="fas fa-trophy text-2xl mr-2 <?php echo intval($my_ranking_info['rank']) == 1 ? 'text-yellow-500' : (intval($my_ranking_info['rank']) == 2 ? 'text-gray-400' : 'text-amber-600'); ?>"></i>
                             <?php endif; ?>
                             <span class="text-lg font-bold text-purple-600">
-                                <?php if ($my_ranking_info['rank'] === '圈外' || $my_ranking_info['rank'] === '-'): ?>
+                                <?php if ($my_ranking_info['rank'] === '圏外' || $my_ranking_info['rank'] === '-'): ?>
                                     <?php if ($my_ranking_info['book_count'] == 0): ?>
                                         未参加
                                     <?php else: ?>
-                                        ランキング圈外
+                                        ランキング圏外
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <?php echo $my_ranking_info['rank']; ?>位
@@ -1116,7 +1116,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                         <div class="text-xs text-gray-600 dark:text-gray-400">
                             今月<?php echo $my_ranking_info['book_count']; ?>冊読了
                         </div>
-                        <?php if ($my_ranking_info['rank'] !== '圈外' && $my_ranking_info['rank'] !== '-' && is_numeric($my_ranking_info['rank']) && intval($my_ranking_info['rank']) <= 10): ?>
+                        <?php if ($my_ranking_info['rank'] !== '圏外' && $my_ranking_info['rank'] !== '-' && is_numeric($my_ranking_info['rank']) && intval($my_ranking_info['rank']) <= 10): ?>
                         <div class="text-xs text-purple-700 dark:text-purple-400 mt-1">
                             <i class="fas fa-chart-line mr-1"></i>TOP 10入り！
                         </div>

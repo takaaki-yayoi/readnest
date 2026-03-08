@@ -1251,53 +1251,62 @@ if ($login_flag) {
     $yearly_progress = getYearlyReadingProgress($user_id);
     $daily_progress = getDailyPageProgress($user_id, 30); // 過去30日分
     
-    // 今月のランキング情報を取得
+    // 今月のランキング情報を取得（getUserRanking()と同じロジックを使用）
     $my_ranking_info = null;
     try {
-        $month_start = date('Y-m-01');
-        $month_end = date('Y-m-t');
-        
-        // 自分の今月の読了冊数を取得
+        $month_start = date('Y-m-01 00:00:00');
+        $month_end = date('Y-m-t 23:59:59');
+
+        // 自分の今月の読了冊数を取得（b_book_event + b_book_list.finished_date を合算）
         $my_books_sql = "
-            SELECT COUNT(DISTINCT book_id) as book_count
-            FROM b_book_event
-            WHERE user_id = ?
-            AND event = ?
-            AND event_date BETWEEN ? AND ?
+            SELECT (
+                COALESCE((SELECT COUNT(DISTINCT be.book_id)
+                    FROM b_book_event be
+                    WHERE be.user_id = ?
+                    AND be.event = " . READING_FINISH . "
+                    AND be.event_date BETWEEN ? AND ?), 0)
+                +
+                COALESCE((SELECT COUNT(DISTINCT bl.book_id)
+                    FROM b_book_list bl
+                    WHERE bl.user_id = ?
+                    AND bl.finished_date >= DATE(?)
+                    AND bl.finished_date <= DATE(?)
+                    AND bl.status IN (" . READING_FINISH . ", " . READ_BEFORE . ")
+                    AND NOT EXISTS (
+                        SELECT 1 FROM b_book_event be2
+                        WHERE be2.user_id = bl.user_id
+                        AND be2.book_id = bl.book_id
+                        AND be2.event = " . READING_FINISH . "
+                        AND be2.event_date BETWEEN ? AND ?
+                    )), 0)
+            ) as book_count
         ";
-        $my_book_count = $g_db->getOne($my_books_sql, [$user_id, READING_FINISH, $month_start, $month_end]);
-        
+        $my_book_count = $g_db->getOne($my_books_sql, [
+            $user_id, $month_start, $month_end,           // b_book_event
+            $user_id, $month_start, $month_end,           // b_book_list.finished_date
+            $month_start, $month_end                       // NOT EXISTS
+        ]);
+
         if (!DB::isError($my_book_count)) {
             $my_book_count = intval($my_book_count);
-            
+
             if ($my_book_count > 0) {
-                // 自分より上位のユーザー数を取得（ranking.phpと同じロジック）
-                // 同点の場合はuser_idの昇順で順位を決定
-                $rank_sql = "
-                    SELECT COUNT(*) as rank FROM (
-                        SELECT u.user_id, COUNT(DISTINCT be.book_id) as score
-                        FROM b_user u
-                        INNER JOIN b_book_event be ON u.user_id = be.user_id
-                        WHERE u.diary_policy = 1
-                        AND u.status = 1
-                        AND be.event = ?
-                        AND be.event_date BETWEEN ? AND ?
-                        GROUP BY u.user_id
-                        HAVING score > ? OR (score = ? AND u.user_id < ?)
-                    ) as t
-                ";
-                $my_rank = $g_db->getOne($rank_sql, [READING_FINISH, $month_start, $month_end, $my_book_count, $my_book_count, $user_id]);
-                
-                if (DB::isError($my_rank) || $my_rank === null) {
-                    $my_rank = 1; // エラーの場合は1位
-                } else {
-                    $my_rank = intval($my_rank) + 1; // 自分より上位の人数 + 1
+                // getUserRanking()の結果から自分の順位を特定
+                $ranking_data = getUserRanking('read_books_month');
+                $my_rank = '圏外';
+                if (!DB::isError($ranking_data) && is_array($ranking_data)) {
+                    foreach ($ranking_data as $idx => $rank_user) {
+                        if ($rank_user['user_id'] == $user_id) {
+                            $my_rank = $idx + 1;
+                            break;
+                        }
+                    }
                 }
             } else {
                 // 0冊の場合はランキング圏外
                 $my_rank = '圏外';
             }
-            
+
             $my_ranking_info = [
                 'rank' => $my_rank,
                 'book_count' => $my_book_count,
