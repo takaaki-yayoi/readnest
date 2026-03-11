@@ -1291,15 +1291,23 @@ if ($login_flag) {
             $my_book_count = intval($my_book_count);
 
             if ($my_book_count > 0) {
-                // getUserRanking()の結果から自分の順位を特定
+                // getUserRanking()の結果から自分の順位を特定（同点処理あり）
                 $ranking_data = getUserRanking('read_books_month');
                 $my_rank = '圏外';
                 if (!DB::isError($ranking_data) && is_array($ranking_data)) {
+                    $current_rank = 1;
+                    $previous_score = null;
                     foreach ($ranking_data as $idx => $rank_user) {
+                        $score = intval($rank_user['read_books_month']);
+                        // スコアが変わったら順位を更新（同点なら同じ順位）
+                        if ($previous_score !== null && $score !== $previous_score) {
+                            $current_rank = $idx + 1;
+                        }
                         if ($rank_user['user_id'] == $user_id) {
-                            $my_rank = $idx + 1;
+                            $my_rank = $current_rank;
                             break;
                         }
+                        $previous_score = $score;
                     }
                 }
             } else {
