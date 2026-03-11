@@ -1251,76 +1251,35 @@ if ($login_flag) {
     $yearly_progress = getYearlyReadingProgress($user_id);
     $daily_progress = getDailyPageProgress($user_id, 30); // 過去30日分
     
-    // 今月のランキング情報を取得（getUserRanking()と同じロジックを使用）
+    // 今月のランキング情報を取得（getUserRanking()を単一のソースとして使用）
     $my_ranking_info = null;
     try {
-        $month_start = date('Y-m-01 00:00:00');
-        $month_end = date('Y-m-t 23:59:59');
+        $ranking_data = getUserRanking('read_books_month');
+        $my_rank = '圏外';
+        $my_book_count = 0;
 
-        // 自分の今月の読了冊数を取得（b_book_event + b_book_list.finished_date を合算）
-        $my_books_sql = "
-            SELECT (
-                COALESCE((SELECT COUNT(DISTINCT be.book_id)
-                    FROM b_book_event be
-                    WHERE be.user_id = ?
-                    AND be.event = " . READING_FINISH . "
-                    AND be.event_date BETWEEN ? AND ?), 0)
-                +
-                COALESCE((SELECT COUNT(DISTINCT bl.book_id)
-                    FROM b_book_list bl
-                    WHERE bl.user_id = ?
-                    AND bl.finished_date >= DATE(?)
-                    AND bl.finished_date <= DATE(?)
-                    AND bl.status IN (" . READING_FINISH . ", " . READ_BEFORE . ")
-                    AND NOT EXISTS (
-                        SELECT 1 FROM b_book_event be2
-                        WHERE be2.user_id = bl.user_id
-                        AND be2.book_id = bl.book_id
-                        AND be2.event = " . READING_FINISH . "
-                        AND be2.event_date BETWEEN ? AND ?
-                    )), 0)
-            ) as book_count
-        ";
-        $my_book_count = $g_db->getOne($my_books_sql, [
-            $user_id, $month_start, $month_end,           // b_book_event
-            $user_id, $month_start, $month_end,           // b_book_list.finished_date
-            $month_start, $month_end                       // NOT EXISTS
-        ]);
-
-        if (!DB::isError($my_book_count)) {
-            $my_book_count = intval($my_book_count);
-
-            if ($my_book_count > 0) {
-                // getUserRanking()の結果から自分の順位を特定（同点処理あり）
-                $ranking_data = getUserRanking('read_books_month');
-                $my_rank = '圏外';
-                if (!DB::isError($ranking_data) && is_array($ranking_data)) {
-                    $current_rank = 1;
-                    $previous_score = null;
-                    foreach ($ranking_data as $idx => $rank_user) {
-                        $score = intval($rank_user['read_books_month']);
-                        // スコアが変わったら順位を更新（同点なら同じ順位）
-                        if ($previous_score !== null && $score !== $previous_score) {
-                            $current_rank = $idx + 1;
-                        }
-                        if ($rank_user['user_id'] == $user_id) {
-                            $my_rank = $current_rank;
-                            break;
-                        }
-                        $previous_score = $score;
-                    }
+        if (!DB::isError($ranking_data) && is_array($ranking_data)) {
+            $current_rank = 1;
+            $previous_score = null;
+            foreach ($ranking_data as $idx => $rank_user) {
+                $score = intval($rank_user['read_books_month']);
+                if ($previous_score !== null && $score !== $previous_score) {
+                    $current_rank = $idx + 1;
                 }
-            } else {
-                // 0冊の場合はランキング圏外
-                $my_rank = '圏外';
+                if ($rank_user['user_id'] == $user_id) {
+                    $my_rank = $current_rank;
+                    $my_book_count = $score;
+                    break;
+                }
+                $previous_score = $score;
             }
-
-            $my_ranking_info = [
-                'rank' => $my_rank,
-                'book_count' => $my_book_count,
-                'month' => date('n')
-            ];
         }
+
+        $my_ranking_info = [
+            'rank' => $my_rank,
+            'book_count' => $my_book_count,
+            'month' => date('n')
+        ];
     } catch (Exception $e) {
         error_log('Failed to get ranking info: ' . $e->getMessage());
     }
