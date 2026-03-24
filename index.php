@@ -307,8 +307,8 @@ if (isNewReviewsEnabled()) {
 // 読書中の本を取得（キャッシュ機能付き・エラーハンドリング強化）
 if (isPopularBooksEnabled()) {
     try {
-    $booksCacheKey = 'popular_reading_books_v1';
-    $booksCacheTime = 3600; // 1時間キャッシュ（人気の本もゆっくり変化）
+    $booksCacheKey = 'popular_reading_books_recent30d';
+    $booksCacheTime = 3600; // 1時間キャッシュ
     
     // デバッグモード（URLに?debug_popular=1を追加で有効）
     $debug_popular = isset($_GET['debug_popular']) && $_GET['debug_popular'] == '1';
@@ -322,12 +322,11 @@ if (isPopularBooksEnabled()) {
     
     if ($reading_books === false) {
         
-        // 人気の本を取得（最適化版を使用）
-        if (function_exists('getPopularBooksFromCache')) {
-            // 集計テーブルから高速取得
-            $reading_books = getPopularBooksFromCache(9);
+        // 直近30日間でみんなが読んでいる本を取得
+        if (function_exists('getPopularBooksRecent')) {
+            $reading_books = getPopularBooksRecent(9);
         } elseif (function_exists('getPopularBooksOptimized')) {
-            // 最適化されたクエリを使用
+            // フォールバック：全期間の人気本
             $reading_books = getPopularBooksOptimized(9);
         } else {
             // 従来のクエリを使用

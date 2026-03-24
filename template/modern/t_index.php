@@ -1638,7 +1638,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                 <h3 class="text-xl font-semibold mb-4 flex items-center">
                     <i class="fas fa-book-reader text-book-secondary-600 mr-2"></i>
-                    みんなが読んでいる本
+                    最近みんなが読んでいる本
                 </h3>
                 <div id="read_book" class="grid grid-cols-3 gap-3">
                     <?php if (!empty($reading_books)): ?>
@@ -1662,7 +1662,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                     <?php endif; ?>
                 </div>
                 <div class="mt-4 text-center">
-                    <a href="/popular_book.php" class="text-readnest-primary hover:text-readnest-accent text-sm font-medium">
+                    <a href="/popular_book.php?period=month" class="text-readnest-primary hover:text-readnest-accent text-sm font-medium">
                         もっと見る <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>

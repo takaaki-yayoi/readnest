@@ -171,6 +171,53 @@ function preCalculatePopularBooks() {
 }
 
 /**
+ * 直近30日間でみんなが読んでいる本を取得
+ * 直近30日に読書活動（読了イベント・ステータス更新）がある本を人気順で返す
+ */
+function getPopularBooksRecent($limit = 9) {
+    global $g_db;
+
+    $since = date('Y-m-d H:i:s', strtotime('-30 days'));
+
+    $sql = "
+        SELECT
+            MIN(bl.book_id) as book_id,
+            bl.name as title,
+            bl.image_url,
+            MIN(bl.amazon_id) as amazon_id,
+            COUNT(DISTINCT bl.user_id) as bookmark_count
+        FROM b_book_list bl
+        INNER JOIN b_user u ON bl.user_id = u.user_id
+        WHERE u.diary_policy = 1
+            AND u.status = 1
+            AND bl.name IS NOT NULL
+            AND bl.name != ''
+            AND bl.image_url IS NOT NULL
+            AND bl.image_url != ''
+            AND bl.image_url NOT LIKE '%noimage%'
+            AND bl.image_url NOT LIKE '%no-image%'
+            AND bl.update_date >= ?
+        GROUP BY bl.name, bl.image_url
+        HAVING COUNT(DISTINCT bl.user_id) > 0
+        ORDER BY bookmark_count DESC, MAX(bl.update_date) DESC
+        LIMIT ?
+    ";
+
+    $result = $g_db->getAll(
+        $sql,
+        array($since, intval($limit)),
+        DB_FETCHMODE_ASSOC
+    );
+
+    if (DB::isError($result)) {
+        error_log("getPopularBooksRecent failed: " . $result->getMessage());
+        return array();
+    }
+
+    return $result;
+}
+
+/**
  * 事前計算された人気の本を取得
  */
 function getPopularBooksFromCache($limit = 9) {
