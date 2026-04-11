@@ -142,6 +142,11 @@ function generateBreadcrumbs($page_type, $extra_data = []) {
             $breadcrumbs[] = ['label' => '発見', 'url' => '#'];
             $breadcrumbs[] = ['label' => 'ランキング', 'url' => null];
             break;
+
+        case 'new_releases':
+            $breadcrumbs[] = ['label' => '発見', 'url' => '#'];
+            $breadcrumbs[] = ['label' => '新刊情報', 'url' => null];
+            break;
     }
     
     return $breadcrumbs;

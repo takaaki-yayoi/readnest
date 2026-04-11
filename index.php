@@ -123,8 +123,42 @@ if ($login_flag) {
         error_log('Failed to get next_to_read data: ' . $e->getMessage());
     }
 
-    // お気に入り作家の未読作品から1冊だけ囁く（作家が偏らないようにランダム選出）
+    // 囁きレコメンド：新刊通知があれば優先、なければ未読作品からランダム
     $whisper_book = null;
+    $whisper_type = 'undiscovered'; // 'new_release' or 'undiscovered'
+    try {
+        // まず未読の新刊通知があるかチェック
+        $new_release_sql = "
+            SELECT n.title, n.data, n.link_url, n.notification_id
+            FROM b_notifications n
+            WHERE n.user_id = ? AND n.notification_type = 'new_release' AND n.is_read = 0
+            ORDER BY n.created_at DESC
+            LIMIT 5
+        ";
+        $new_releases = $g_db->getAll($new_release_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
+        if (!DB::isError($new_releases) && !empty($new_releases)) {
+            $pick = $new_releases[array_rand($new_releases)];
+            $data = json_decode($pick['data'], true);
+            if ($data) {
+                $whisper_book = [
+                    'title' => $data['title'] ?? '',
+                    'author' => $data['author'] ?? '',
+                    'image_url' => $data['image_url'] ?? '',
+                    'amazon_id' => null,
+                    'reason_count' => null,
+                    'reason_rating' => null,
+                    'notification_id' => $pick['notification_id'],
+                    'link_url' => $pick['link_url'] ?? '/add_book.php?keyword=' . urlencode($data['title'] ?? '')
+                ];
+                $whisper_type = 'new_release';
+            }
+        }
+    } catch (Exception $e) {
+        // 新刊通知テーブルがまだなくてもエラーにしない
+    }
+
+    // 新刊通知がなければ、既存の未読作品から囁く
+    if (!$whisper_book) {
     try {
         // ユーザーが2冊以上読んでいる or 高評価の作家を取得
         $fav_auth_sql = "
@@ -188,6 +222,7 @@ if ($login_flag) {
         }
     } catch (Exception $e) {
         error_log('Failed to get whisper book: ' . $e->getMessage());
+    }
     }
 }
 

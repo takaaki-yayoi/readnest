@@ -677,7 +677,17 @@ $icon = $type_icons[$type] ?? 'bullhorn';
         
         <?php if (!empty($whisper_book)): ?>
         <div class="mb-8">
-            <a href="/add_book.php?keyword=<?php echo urlencode($whisper_book['title']); ?>"
+            <?php
+            $whisper_link = '#';
+            if (!empty($whisper_book['link_url'])) {
+                $whisper_link = $whisper_book['link_url'];
+            } elseif (!empty($whisper_book['amazon_id'])) {
+                $whisper_link = '/add_book.php?keyword=' . urlencode($whisper_book['title']);
+            } else {
+                $whisper_link = '/add_book.php?keyword=' . urlencode($whisper_book['title']);
+            }
+            ?>
+            <a href="<?php echo html($whisper_link); ?>"
                class="group flex items-center gap-4 max-w-lg mx-auto px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <?php if (!empty($whisper_book['image_url'])): ?>
                 <img src="<?php echo html($whisper_book['image_url']); ?>"
@@ -686,13 +696,30 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                      onerror="this.parentElement.style.display='none'">
                 <?php endif; ?>
                 <div class="min-w-0">
+                    <?php if (isset($whisper_type) && $whisper_type === 'new_release'): ?>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-readnest-primary dark:group-hover:text-readnest-accent transition-colors">
+                        <?php echo html($whisper_book['author']); ?>の新刊『<?php echo html($whisper_book['title']); ?>』が出ました
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        お気に入り作家の新しい作品です
+                    </p>
+                    <?php else: ?>
                     <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-readnest-primary dark:group-hover:text-readnest-accent transition-colors">
                         『<?php echo html($whisper_book['title']); ?>』、まだ読んでいませんね
                     </p>
                     <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         <?php echo html($whisper_book['author']); ?>の作品を<?php echo $whisper_book['reason_count']; ?>冊読了<?php if ($whisper_book['reason_rating']): ?> · 平均<?php echo $whisper_book['reason_rating']; ?>点<?php endif; ?>
                     </p>
+                    <?php endif; ?>
                 </div>
+            </a>
+        </div>
+        <?php endif; ?>
+
+        <?php if (isset($whisper_type) && $whisper_type === 'new_release'): ?>
+        <div class="text-center mb-4">
+            <a href="/new_releases.php" class="text-xs text-gray-400 dark:text-gray-500 hover:text-readnest-primary dark:hover:text-readnest-accent transition-colors">
+                新刊情報をもっと見る <i class="fas fa-arrow-right ml-0.5"></i>
             </a>
         </div>
         <?php endif; ?>

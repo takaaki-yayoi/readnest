@@ -39,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute_cron'])) {
         'update_static_stats.php',
         'update_sitemap.php',
         'update_popular_tags_cache.php',
-        'update_user_reading_stats.php'
+        'update_user_reading_stats.php',
+        'check_new_releases.php'
     ];
     
     if (in_array($cron_script, $allowed_scripts)) {
@@ -156,6 +157,15 @@ $cron_jobs = [
         'schedule_desc' => '毎日午前3時',
         'icon' => 'fas fa-user-chart',
         'color' => 'cyan'
+    ],
+    [
+        'name' => '新刊チェック',
+        'script' => 'check_new_releases.php',
+        'description' => 'お気に入り作家の新刊をGoogle Books APIで検出し通知',
+        'schedule' => '0 6 * * *',
+        'schedule_desc' => '毎日午前6時',
+        'icon' => 'fas fa-bell',
+        'color' => 'yellow'
     ]
 ];
 

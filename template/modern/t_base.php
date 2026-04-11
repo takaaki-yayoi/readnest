@@ -331,7 +331,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
                                 @click.away="open = false"
-                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false) ? 'text-readnest-primary dark:text-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white'; ?> px-2 py-2 text-sm" title="発見">
+                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false || strpos($_SERVER['REQUEST_URI'], 'new_releases') !== false) ? 'text-readnest-primary dark:text-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white'; ?> px-2 py-2 text-sm" title="発見">
                             <i class="fas fa-compass text-lg"></i>
                         </button>
                         <div x-show="open"
@@ -348,6 +348,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <a href="/book_discovery.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 relative">
                                     <i class="fas fa-compass mr-2"></i>本の発見
                                     <span class="ml-1 text-[8px] bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1 py-0.5 rounded-full font-bold">New</span>
+                                </a>
+                                <?php endif; ?>
+                                <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                                <a href="/new_releases.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-bell mr-2"></i>新刊情報
                                 </a>
                                 <?php endif; ?>
                                 <a href="/popular_books.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -435,7 +440,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
                                 @click.away="open = false"
-                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center">
+                                class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'popular') !== false || strpos($_SERVER['REQUEST_URI'], 'ranking') !== false || strpos($_SERVER['REQUEST_URI'], 'review') !== false || strpos($_SERVER['REQUEST_URI'], 'book_discovery') !== false || strpos($_SERVER['REQUEST_URI'], 'new_releases') !== false) ? 'text-readnest-primary dark:text-white border-b-2 border-readnest-primary dark:border-white' : 'text-gray-700 dark:text-gray-300 hover:text-readnest-primary dark:hover:text-white border-b-2 border-transparent'; ?> px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap inline-flex items-center">
                             <i class="fas fa-compass mr-1"></i>発見
                             <i class="fas fa-chevron-down ml-1 text-xs"></i>
                         </button>
@@ -457,6 +462,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                     <div>
                                         <div class="font-medium">本の発見<span class="ml-1 text-xs bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold">New</span></div>
                                         <div class="text-xs text-gray-500">気分やテーマから本を探す</div>
+                                    </div>
+                                </a>
+                                <?php endif; ?>
+                                <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                                <a href="/new_releases.php" class="group flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-bell mr-3 text-yellow-500 group-hover:scale-110 transition-transform"></i>
+                                    <div>
+                                        <div class="font-medium">新刊情報</div>
+                                        <div class="text-xs text-gray-500">お気に入り作家の新刊</div>
                                     </div>
                                 </a>
                                 <?php endif; ?>
@@ -739,6 +753,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <span class="ml-1 text-xs bg-gradient-to-r from-pink-500 to-purple-600 text-white px-1.5 py-0.5 rounded-full font-bold">New</span>
                     </a>
                     <?php endif; ?>
+                    <a href="/new_releases.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
+                        <i class="fas fa-bell mr-3 w-4 text-yellow-500"></i> 新刊情報
+                    </a>
                     <a href="/global_search.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-globe mr-3 w-4 text-purple-500"></i> グローバル検索
                     </a>
