@@ -675,6 +675,28 @@ $icon = $type_icons[$type] ?? 'bullhorn';
         </div>
         <?php endif; ?>
         
+        <?php if (!empty($whisper_book)): ?>
+        <div class="mb-8">
+            <a href="/add_book.php?keyword=<?php echo urlencode($whisper_book['title']); ?>"
+               class="group flex items-center gap-4 max-w-lg mx-auto px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <?php if (!empty($whisper_book['image_url'])): ?>
+                <img src="<?php echo html($whisper_book['image_url']); ?>"
+                     alt="<?php echo html($whisper_book['title']); ?>"
+                     class="w-10 h-14 object-cover rounded shadow-sm flex-shrink-0"
+                     onerror="this.parentElement.style.display='none'">
+                <?php endif; ?>
+                <div class="min-w-0">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-readnest-primary dark:group-hover:text-readnest-accent transition-colors">
+                        『<?php echo html($whisper_book['title']); ?>』、まだ読んでいませんね
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        <?php echo html($whisper_book['author']); ?>の作品を<?php echo $whisper_book['reason_count']; ?>冊読了<?php if ($whisper_book['reason_rating']): ?> · 平均<?php echo $whisper_book['reason_rating']; ?>点<?php endif; ?>
+                    </p>
+                </div>
+            </a>
+        </div>
+        <?php endif; ?>
+
         <!-- 個人統計情報 -->
         <div class="text-center mb-6 sm:mb-8">
             <h2 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">あなたの読書記録</h2>

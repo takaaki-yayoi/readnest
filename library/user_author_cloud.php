@@ -243,10 +243,10 @@ class UserAuthorCloud {
         }
         
         $html = '<div class="author-cloud-user ' . ($compact ? 'compact' : '') . '">';
-        
+
         foreach ($authors as $author) {
             $html .= sprintf(
-                '<a href="/bookshelf.php?search_word=%s&search_type=author" 
+                '<a href="/bookshelf.php?search_word=%s&search_type=author"
                    class="inline-block px-2 py-1 m-1 rounded-lg transition-all duration-300 hover:scale-110 bg-gradient-to-r %s text-white %s"
                    style="font-size: %dpx;"
                    title="%s (%d冊)">
@@ -262,7 +262,7 @@ class UserAuthorCloud {
                 $author['is_favorite'] ? ' ⭐' : ''
             );
         }
-        
+
         $html .= '</div>';
         
         

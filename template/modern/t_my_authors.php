@@ -32,7 +32,7 @@ ob_start();
                     $fontSize = $author['font_size'] ?? 14;
                     $isFavorite = $author['is_favorite'] ?? false;
                     ?>
-                    <a href="/bookshelf.php?search_word=<?php echo urlencode($author['author']); ?>&search_type=author" 
+                    <a href="/bookshelf.php?search_word=<?php echo urlencode($author['author']); ?>&search_type=author"
                        class="inline-block px-3 py-2 m-2 rounded-lg transition-all duration-300 hover:scale-110 bg-gradient-to-r <?php echo $colorClass; ?> text-white <?php echo $isFavorite ? 'ring-2 ring-yellow-400' : ''; ?>"
                        style="font-size: <?php echo $fontSize; ?>px;"
                        title="<?php echo htmlspecialchars($author['author']); ?> (<?php echo $author['book_count']; ?>冊)">

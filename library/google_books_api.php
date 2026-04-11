@@ -174,6 +174,49 @@ class GoogleBooksAPI {
     }
     
     /**
+     * 著者名で著作一覧を検索（複数件取得）
+     */
+    public function searchByAuthor(string $author, int $maxResults = 20): array {
+        $query = 'inauthor:' . urlencode($author);
+        $url = $this->baseUrl . '?q=' . $query . '&langRestrict=ja&maxResults=' . $maxResults . '&orderBy=newest';
+
+        if ($this->apiKey) {
+            $url .= '&key=' . $this->apiKey;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'Accept-Language: ja,en'
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || !$response) {
+            error_log("Google Books searchByAuthor failed: HTTP $httpCode");
+            return [];
+        }
+
+        $data = json_decode($response, true);
+
+        if (!isset($data['items']) || empty($data['items'])) {
+            return [];
+        }
+
+        $books = [];
+        foreach ($data['items'] as $item) {
+            $volumeInfo = $item['volumeInfo'] ?? [];
+            $books[] = $this->parseVolumeInfo($volumeInfo);
+        }
+
+        return $books;
+    }
+
+    /**
      * キャッシュテーブルを作成
      */
     private function createCacheTableIfNotExists(): void {

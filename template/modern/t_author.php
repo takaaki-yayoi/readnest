@@ -188,6 +188,57 @@ ob_start();
         </div>
         <?php endif; ?>
         
+        <!-- まだ読んでいない著作 -->
+        <?php if (!empty($undiscovered_books)): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mt-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>まだ読んでいない著作
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                あなたの本棚にない<?php echo htmlspecialchars($author_name); ?>の著作です
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <?php foreach ($undiscovered_books as $book): ?>
+                <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>"
+                   class="group bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:shadow-md">
+                    <div class="flex items-start space-x-3">
+                        <?php if (!empty($book['imageLinks']['thumbnail'])): ?>
+                        <img src="<?php echo htmlspecialchars($book['imageLinks']['thumbnail']); ?>"
+                             alt="<?php echo htmlspecialchars($book['title']); ?>"
+                             class="w-16 h-22 object-cover rounded shadow-sm flex-shrink-0"
+                             onerror="this.src='/img/no-image-book.png'">
+                        <?php else: ?>
+                        <div class="w-16 h-22 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-book text-gray-400 text-xl"></i>
+                        </div>
+                        <?php endif; ?>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 group-hover:text-readnest-primary transition-colors">
+                                <?php echo htmlspecialchars($book['title']); ?>
+                            </h4>
+                            <?php if (!empty($book['publishedDate'])): ?>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <?php echo htmlspecialchars(substr($book['publishedDate'], 0, 4)); ?>年
+                            </p>
+                            <?php endif; ?>
+                            <?php if (!empty($book['description'])): ?>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                <?php echo htmlspecialchars(mb_substr($book['description'], 0, 60)); ?>...
+                            </p>
+                            <?php endif; ?>
+                            <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span class="inline-flex items-center text-xs text-readnest-primary">
+                                    <i class="fas fa-plus mr-1"></i>本棚に追加
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- CTAセクション -->
         <?php if (!$login_flag): ?>
         <div class="mt-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-8 text-center text-white">

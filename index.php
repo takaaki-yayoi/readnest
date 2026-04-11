@@ -122,6 +122,73 @@ if ($login_flag) {
     } catch (Exception $e) {
         error_log('Failed to get next_to_read data: ' . $e->getMessage());
     }
+
+    // お気に入り作家の未読作品から1冊だけ囁く（作家が偏らないようにランダム選出）
+    $whisper_book = null;
+    try {
+        // ユーザーが2冊以上読んでいる or 高評価の作家を取得
+        $fav_auth_sql = "
+            SELECT
+                br.author,
+                COUNT(DISTINCT bl.amazon_id) as book_count,
+                AVG(CASE WHEN bl.rating > 0 THEN bl.rating ELSE NULL END) as avg_rating
+            FROM b_book_list bl
+            INNER JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE bl.user_id = ?
+            AND bl.status IN (" . READING_NOW . ", " . READING_FINISH . ", " . READ_BEFORE . ")
+            AND br.author IS NOT NULL AND br.author != ''
+            GROUP BY br.author
+            HAVING book_count >= 2 OR avg_rating >= 4.0
+            ORDER BY avg_rating DESC, book_count DESC
+            LIMIT 15
+        ";
+        $fav_auth_rows = $g_db->getAll($fav_auth_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
+
+        if (!DB::isError($fav_auth_rows) && !empty($fav_auth_rows)) {
+            // ランダムに作家を1人選ぶ
+            $random_author = $fav_auth_rows[array_rand($fav_auth_rows)];
+
+            // このユーザーが既に持っているasinを取得
+            $owned_sql = "SELECT amazon_id FROM b_book_list WHERE user_id = ? AND amazon_id IS NOT NULL AND amazon_id != ''";
+            $owned_rows = $g_db->getAll($owned_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
+            $owned_asins = [];
+            if (!DB::isError($owned_rows)) {
+                $owned_asins = array_column($owned_rows, 'amazon_id');
+            }
+
+            // その作家の未所持本からランダムに1冊
+            $params = [$random_author['author']];
+            $exclude_clause = "";
+            if (!empty($owned_asins)) {
+                $exclude_placeholders = implode(',', array_fill(0, count($owned_asins), '?'));
+                $exclude_clause = "AND br.asin NOT IN ($exclude_placeholders)";
+                $params = array_merge($params, $owned_asins);
+            }
+
+            $whisper_sql = "
+                SELECT
+                    br.asin as amazon_id,
+                    br.title,
+                    br.author,
+                    br.image_url
+                FROM b_book_repository br
+                WHERE br.author = ?
+                $exclude_clause
+                AND br.title IS NOT NULL AND br.title != ''
+                ORDER BY RAND()
+                LIMIT 1
+            ";
+
+            $whisper_result = $g_db->getRow($whisper_sql, $params, DB_FETCHMODE_ASSOC);
+            if (!DB::isError($whisper_result) && !empty($whisper_result)) {
+                $whisper_book = $whisper_result;
+                $whisper_book['reason_count'] = intval($random_author['book_count']);
+                $whisper_book['reason_rating'] = $random_author['avg_rating'] ? round(floatval($random_author['avg_rating']), 1) : null;
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Failed to get whisper book: ' . $e->getMessage());
+    }
 }
 
 // SEOヘルパーを読み込み

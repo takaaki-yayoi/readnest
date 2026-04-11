@@ -57,6 +57,51 @@ $popular_books_sql = "
 
 $popular_books = $g_db->getAll($popular_books_sql, [$author_name], DB_FETCHMODE_ASSOC);
 
+// ログインユーザー向け：この作家のまだ持っていない著作を取得
+$undiscovered_books = [];
+if ($login_flag) {
+    try {
+        // ユーザーの本棚にあるこの作家の本タイトルを取得
+        $my_books_sql = "
+            SELECT DISTINCT bl.name
+            FROM b_book_list bl
+            WHERE bl.user_id = ?
+            AND (bl.author = ? OR bl.author LIKE ?)
+            AND bl.name IS NOT NULL AND bl.name != ''
+        ";
+        $my_book_rows = $g_db->getAll($my_books_sql, [$user_id, $author_name, '%' . $author_name . '%'], DB_FETCHMODE_ASSOC);
+        $my_book_titles = [];
+        if (!DB::isError($my_book_rows) && !empty($my_book_rows)) {
+            $my_book_titles = array_map(function($b) { return mb_strtolower($b['name']); }, $my_book_rows);
+        }
+
+        // Google Books APIで著作一覧を取得
+        require_once(dirname(__FILE__) . '/library/google_books_api.php');
+        $google_api = new GoogleBooksAPI();
+        $author_works = $google_api->searchByAuthor($author_name, 30);
+
+        // 本棚にない本をフィルタリング
+        foreach ($author_works as $work) {
+            if (empty($work['title'])) continue;
+            $work_title_lower = mb_strtolower($work['title']);
+
+            // 本棚に同じタイトルがあるかチェック（部分一致）
+            $found = false;
+            foreach ($my_book_titles as $my_title) {
+                if (mb_strpos($my_title, $work_title_lower) !== false || mb_strpos($work_title_lower, $my_title) !== false) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $undiscovered_books[] = $work;
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Failed to get undiscovered books: ' . $e->getMessage());
+    }
+}
+
 // ページメタ情報
 $d_site_title = htmlspecialchars($author_name) . ' - 作家紹介 - ReadNest';
 $g_meta_description = htmlspecialchars($author_name) . 'の作品一覧と読者数。ReadNestで人気の本を探そう。';
