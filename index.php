@@ -30,6 +30,7 @@ require_once(dirname(__FILE__) . '/library/monthly_goals.php');
 $login_flag = checkLogin();
 $mine_user_id = '';
 $my_recent_books = [];
+$next_to_read = ['reading' => [], 'tsundoku_by_fav' => []];
 
 // ログアウトユーザー向け高速化は一時的に無効化（ログイン問題のため）
 // if (!$login_flag && !isset($_GET['full'])) {
@@ -42,8 +43,8 @@ $my_recent_books = [];
 
 if ($login_flag) {
     $mine_user_id = $_SESSION['AUTH_USER'];
-    
-    
+
+
     // 自分の最近更新した本を取得
     try {
         $my_books_sql = "
@@ -54,12 +55,72 @@ if ($login_flag) {
             LIMIT 5
         ";
         $my_recent_books = $g_db->getAll($my_books_sql, [$mine_user_id]);
-        
+
         if(DB::isError($my_recent_books)) {
             $my_recent_books = [];
         }
     } catch (Exception $e) {
         $my_recent_books = [];
+    }
+
+    // 「次に読む」データを取得
+    try {
+        // 読みかけの本（読書中）
+        $reading_sql = "
+            SELECT bl.book_id, bl.name AS title, bl.author, bl.image_url,
+                   bl.status, bl.current_page, bl.total_page, bl.update_date
+            FROM b_book_list bl
+            WHERE bl.user_id = ? AND bl.status = ?
+            ORDER BY bl.update_date DESC
+            LIMIT 10
+        ";
+        $reading_books = $g_db->getAll($reading_sql, [$mine_user_id, READING_NOW], DB_FETCHMODE_ASSOC);
+        if (DB::isError($reading_books)) {
+            $reading_books = [];
+        }
+
+        // お気に入り作家を特定（高評価 or 多読）
+        $fav_authors_sql = "
+            SELECT bl.author
+            FROM b_book_list bl
+            WHERE bl.user_id = ?
+            AND bl.author IS NOT NULL AND bl.author != '' AND bl.author != '-'
+            AND bl.status IN (" . READING_FINISH . ", " . READ_BEFORE . ")
+            GROUP BY bl.author
+            HAVING AVG(CASE WHEN bl.rating > 0 THEN bl.rating ELSE NULL END) >= 4.0
+               OR COUNT(DISTINCT bl.book_id) >= 3
+            ORDER BY AVG(CASE WHEN bl.rating > 0 THEN bl.rating ELSE NULL END) DESC,
+                     COUNT(DISTINCT bl.book_id) DESC
+            LIMIT 20
+        ";
+        $fav_authors_rows = $g_db->getAll($fav_authors_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
+
+        $tsundoku_by_fav = [];
+        if (!DB::isError($fav_authors_rows) && !empty($fav_authors_rows)) {
+            $fav_author_names = array_column($fav_authors_rows, 'author');
+            $placeholders = implode(',', array_fill(0, count($fav_author_names), '?'));
+            $tsundoku_sql = "
+                SELECT bl.book_id, bl.name AS title, bl.author, bl.image_url,
+                       bl.status, bl.current_page, bl.total_page, bl.create_date
+                FROM b_book_list bl
+                WHERE bl.user_id = ? AND bl.status = ?
+                AND bl.author IN ($placeholders)
+                ORDER BY bl.create_date DESC
+                LIMIT 10
+            ";
+            $params = array_merge([$mine_user_id, NOT_STARTED], $fav_author_names);
+            $tsundoku_by_fav = $g_db->getAll($tsundoku_sql, $params, DB_FETCHMODE_ASSOC);
+            if (DB::isError($tsundoku_by_fav)) {
+                $tsundoku_by_fav = [];
+            }
+        }
+
+        $next_to_read = [
+            'reading' => $reading_books,
+            'tsundoku_by_fav' => $tsundoku_by_fav
+        ];
+    } catch (Exception $e) {
+        error_log('Failed to get next_to_read data: ' . $e->getMessage());
     }
 }
 

@@ -496,7 +496,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
 <section class="bg-white dark:bg-gray-900 py-12 border-b dark:border-gray-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- 統合タブボックス：最近更新した本 / 作家クラウド -->
-        <?php if (!empty($my_recent_books) || !empty($user_author_cloud_html)): ?>
+        <?php if (!empty($my_recent_books) || !empty($user_author_cloud_html) || !empty($next_to_read['reading']) || !empty($next_to_read['tsundoku_by_fav'])): ?>
         <div class="mb-12" x-data="{ activeTab: localStorage.getItem('indexActiveTab') || 'recent' }">
             <!-- タブヘッダー -->
             <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
@@ -510,6 +510,15 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                     </button>
                     <?php endif; ?>
                     
+                    <?php if (!empty($next_to_read['reading']) || !empty($next_to_read['tsundoku_by_fav'])): ?>
+                    <button @click="activeTab = 'next_read'; localStorage.setItem('indexActiveTab', 'next_read')"
+                            :class="activeTab === 'next_read' ? 'border-readnest-primary text-readnest-primary' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'"
+                            class="py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-bookmark mr-2"></i>
+                        次に読む
+                    </button>
+                    <?php endif; ?>
+
                     <?php if (!empty($user_author_cloud_html)): ?>
                     <button @click="activeTab = 'authors'; localStorage.setItem('indexActiveTab', 'authors')"
                             :class="activeTab === 'authors' ? 'border-readnest-primary text-readnest-primary' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'"
@@ -573,6 +582,84 @@ $icon = $type_icons[$type] ?? 'bullhorn';
             </div>
             <?php endif; ?>
             
+            <?php if (!empty($next_to_read['reading']) || !empty($next_to_read['tsundoku_by_fav'])): ?>
+            <div x-show="activeTab === 'next_read'" x-cloak>
+                <?php if (!empty($next_to_read['reading'])): ?>
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    <i class="fas fa-book-open mr-1 text-blue-500"></i>読みかけの本
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <?php foreach ($next_to_read['reading'] as $book): ?>
+                    <a href="/book/<?php echo html($book['book_id']); ?>"
+                       class="group bg-gray-50 dark:bg-gray-800 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all hover:shadow-md">
+                        <div class="flex items-start space-x-3">
+                            <img src="<?php echo html(!empty($book['image_url']) ? $book['image_url'] : '/img/no-image-book.png'); ?>"
+                                 alt="<?php echo html($book['title']); ?>"
+                                 class="w-12 h-16 object-cover rounded shadow-sm group-hover:shadow-md transition-shadow"
+                                 onerror="this.src='/img/no-image-book.png'">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-readnest-primary transition-colors">
+                                    <?php echo html($book['title']); ?>
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    <?php echo html($book['author'] ?? ''); ?>
+                                </p>
+                                <div class="mt-1">
+                                    <span class="text-xs text-blue-600 font-medium">読書中</span>
+                                    <?php if ($book['current_page'] > 0 && $book['total_page'] > 0): ?>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                        <?php echo round(($book['current_page'] / $book['total_page']) * 100); ?>%
+                                    </span>
+                                    <div class="mt-1 w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: <?php echo round(($book['current_page'] / $book['total_page']) * 100); ?>%"></div>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($next_to_read['tsundoku_by_fav'])): ?>
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 <?php echo !empty($next_to_read['reading']) ? 'mt-6' : ''; ?>">
+                    <i class="fas fa-star mr-1 text-yellow-500"></i>お気に入り作家の積読
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <?php foreach ($next_to_read['tsundoku_by_fav'] as $book): ?>
+                    <a href="/book/<?php echo html($book['book_id']); ?>"
+                       class="group bg-gray-50 dark:bg-gray-800 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all hover:shadow-md">
+                        <div class="flex items-start space-x-3">
+                            <img src="<?php echo html(!empty($book['image_url']) ? $book['image_url'] : '/img/no-image-book.png'); ?>"
+                                 alt="<?php echo html($book['title']); ?>"
+                                 class="w-12 h-16 object-cover rounded shadow-sm group-hover:shadow-md transition-shadow"
+                                 onerror="this.src='/img/no-image-book.png'">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-readnest-primary transition-colors">
+                                    <?php echo html($book['title']); ?>
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    <i class="fas fa-star text-yellow-400 mr-0.5" style="font-size: 0.6rem;"></i><?php echo html($book['author'] ?? ''); ?>
+                                </p>
+                                <div class="mt-1">
+                                    <span class="text-xs text-yellow-600 font-medium">積読</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <div class="mt-4 text-center">
+                    <a href="/bookshelf.php?status=<?php echo NOT_STARTED; ?>" class="text-sm text-readnest-primary hover:text-readnest-accent font-medium">
+                        積読本をすべて見る <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <?php if (!empty($user_author_cloud_html)): ?>
             <div x-show="activeTab === 'authors'" x-cloak>
                 <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
