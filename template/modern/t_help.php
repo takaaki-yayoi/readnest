@@ -2164,6 +2164,64 @@ ob_start();
                 </h2>
                 
                 <div class="space-y-8">
+                    <!-- 次に読むタブ NEW! -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 relative">
+                        <span class="absolute top-4 right-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-bookmark text-blue-600 mr-3"></i>
+                            「次に読む」タブ
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            ホーム画面に「次に読む」タブが追加されました。読みかけの本やお気に入り作家の積読をまとめて確認できます。
+                        </p>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100">表示内容:</h4>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                <li><strong>読みかけの本：</strong>現在読んでいる本が進捗バーとともに表示されます</li>
+                                <li><strong>お気に入り作家の積読：</strong>よく読む作家の未読本が表示されます</li>
+                            </ul>
+
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
+                            <p class="text-gray-700 dark:text-gray-300">ホーム画面の「次に読む」タブをクリック</p>
+                        </div>
+                    </div>
+
+                    <!-- 新刊通知 NEW! -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-6 relative">
+                        <span class="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-bell text-yellow-500 mr-3"></i>
+                            新刊通知
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            お気に入り作家の新刊が出たらお知らせします。毎日自動でチェックし、見逃しを防ぎます。
+                        </p>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100">主な機能:</h4>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                <li><strong>自動検出：</strong>Google Books APIで毎日新刊をチェック</li>
+                                <li><strong>対象作家：</strong>2冊以上読了、または平均評価4.0点以上の作家</li>
+                                <li><strong>ホーム画面の囁き：</strong>新刊がある場合、ホーム画面で優先的にお知らせ</li>
+                                <li><strong>新刊情報ページ：</strong>通知一覧、近刊、チェック対象作家を確認</li>
+                            </ul>
+
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                <li>ナビゲーションの「発見」メニュー内「新刊情報」から</li>
+                                <li>ホーム画面の囁きレコメンドの「新刊情報をもっと見る」リンクから</li>
+                            </ul>
+
+                            <div class="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded text-sm">
+                                <p class="text-yellow-800 dark:text-yellow-300">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    <strong class="dark:text-gray-200">ヒント：</strong>本を読めば読むほど、チェック対象の作家が増え、より多くの新刊情報が届きます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ダークモード対応 -->
                     <div class="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600">
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🌙 ダークモード対応</h3>
@@ -2816,64 +2874,6 @@ ob_start();
                             </div>
                         </div>
                         
-                        <!-- 次に読むタブ NEW! -->
-                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 relative">
-                            <span class="absolute top-4 right-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                                <i class="fas fa-bookmark text-blue-600 mr-3"></i>
-                                「次に読む」タブ
-                            </h3>
-                            <p class="text-gray-700 dark:text-gray-300 mb-4">
-                                ホーム画面に「次に読む」タブが追加されました。読みかけの本やお気に入り作家の積読をまとめて確認できます。
-                            </p>
-
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">表示内容:</h4>
-                                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                                    <li><strong>読みかけの本：</strong>現在読んでいる本が進捗バーとともに表示されます</li>
-                                    <li><strong>お気に入り作家の積読：</strong>よく読む作家の未読本が表示されます</li>
-                                </ul>
-
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
-                                <p class="text-gray-700 dark:text-gray-300">ホーム画面の「次に読む」タブをクリック</p>
-                            </div>
-                        </div>
-
-                        <!-- 新刊通知 NEW! -->
-                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-6 relative">
-                            <span class="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                                <i class="fas fa-bell text-yellow-500 mr-3"></i>
-                                新刊通知
-                            </h3>
-                            <p class="text-gray-700 dark:text-gray-300 mb-4">
-                                お気に入り作家の新刊が出たらお知らせします。毎日自動でチェックし、見逃しを防ぎます。
-                            </p>
-
-                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">主な機能:</h4>
-                                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                                    <li><strong>自動検出：</strong>Google Books APIで毎日新刊をチェック</li>
-                                    <li><strong>対象作家：</strong>2冊以上読了、または平均評価4.0点以上の作家</li>
-                                    <li><strong>ホーム画面の囁き：</strong>新刊がある場合、ホーム画面で優先的にお知らせ</li>
-                                    <li><strong>新刊情報ページ：</strong>通知一覧、近刊、チェック対象作家を確認</li>
-                                </ul>
-
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
-                                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                                    <li>ナビゲーションの「発見」メニュー内「新刊情報」から</li>
-                                    <li>ホーム画面の囁きレコメンドの「新刊情報をもっと見る」リンクから</li>
-                                </ul>
-
-                                <div class="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded text-sm">
-                                    <p class="text-yellow-800 dark:text-yellow-300">
-                                        <i class="fas fa-lightbulb mr-1"></i>
-                                        <strong class="dark:text-gray-200">ヒント：</strong>本を読めば読むほど、チェック対象の作家が増え、より多くの新刊情報が届きます。
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- 本の発見 NEW! -->
                         <div class="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-lg p-6 relative">
                             <span class="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">NEW!</span>
