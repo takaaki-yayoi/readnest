@@ -20,6 +20,7 @@ $mine_user_id = (int)$_SESSION['AUTH_USER'];
 
 // 通知ヘルパーを読み込み
 require_once(dirname(__FILE__) . '/library/notification_helpers.php');
+require_once(dirname(__FILE__) . '/library/csrf.php');
 
 // ページネーション設定
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
