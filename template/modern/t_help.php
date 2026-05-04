@@ -2443,98 +2443,52 @@ ob_start();
                 </h2>
                 
                 <div class="space-y-8">
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6">
+                        <p class="text-yellow-800 dark:text-yellow-300 font-medium mb-2">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            自動投稿機能は現在停止しています
+                        </p>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-400">
+                            X APIの利用コスト上昇に伴い、読書記録の自動投稿機能を一時停止しています。代わりに、レポートや読了画面からワンクリックでXにシェアできる「Xでシェア」ボタンをご利用ください。
+                        </p>
+                    </div>
+
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">📱 自動投稿機能</h3>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">📤 Xでシェア（手動）</h3>
                         <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                            <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-4">読書記録を自動的にX（旧Twitter）に投稿できます。</p>
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">「Xでシェア」ボタンを押すと、文面入りのX投稿画面が開きます。内容を確認・編集してから投稿できるので、自分の言葉で読書記録を共有できます。</p>
                             <div class="space-y-3">
                                 <div class="flex items-start">
                                     <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
                                     <div class="dark:text-gray-300">
-                                        <p class="font-medium text-gray-900 dark:text-gray-100">投稿されるタイミング</p>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">シェアできる場所</p>
                                         <ul class="text-sm text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside ml-4">
-                                            <li>本を「読みたい」リストに追加したとき</li>
-                                            <li>本を読み始めたとき</li>
-                                            <li>読書進捗を更新したとき（読書メモも含まれます）</li>
-                                            <li>本を読み終わったとき</li>
-                                            <li>レビューを投稿したとき</li>
+                                            <li>書籍詳細ページ（読書状況に応じて文面が変わります：読書中は進捗、読了は感想や評価など）</li>
+                                            <li>月間レポート</li>
+                                            <li>年間レポート</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="flex items-start mt-4">
                                     <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
                                     <div class="dark:text-gray-300">
-                                        <p class="font-medium text-gray-800 dark:text-gray-200">@dokusho アカウントについて</p>
+                                        <p class="font-medium text-gray-800 dark:text-gray-200">ReadNest側でXのアカウント連携は不要</p>
                                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            日記を「公開」に設定しているユーザーの読書活動は、ReadNest公式アカウント 
-                                            <a href="https://x.com/dokusho" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">@dokusho</a> 
-                                            からも自動的に投稿されます。これにより、ReadNestコミュニティ全体で読書の輪が広がります。
-                                        </p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                                            ※ プライバシー設定で日記を「非公開」にしている場合、@dokushoからの投稿は行われません。
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start mt-4">
-                                    <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-3"></i>
-                                    <div class="dark:text-gray-300">
-                                        <p class="font-medium text-gray-800 dark:text-gray-200">文字数制限について</p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            Xの文字数制限（280文字）を考慮して、日本語は2文字、英数字は1文字として計算されます。
-                                            長いレビューは自動的に省略され、ReadNestへのリンクが付加されます。
+                                            手動シェアはX側の標準機能を使うため、ReadNestへのアカウント連携は必要ありません。Xにログインしたブラウザでボタンを押すだけで投稿画面が開きます。
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🔗 連携方法</h3>
-                        <div class="grid gap-4">
-                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
-                                <div class="flex items-start space-x-4">
-                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">1</div>
-                                    <div class="flex-1">
-                                        <p class="font-medium text-gray-900 mb-1">アカウント設定にアクセス</p>
-                                        <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300">ユーザーメニューから「設定」→「X連携設定」タブを選択</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
-                                <div class="flex items-start space-x-4">
-                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">2</div>
-                                    <div class="flex-1">
-                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">Xと連携</p>
-                                        <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300">「Xと連携する」ボタンをクリックし、Xの認証画面で承認</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
-                                <div class="flex items-start space-x-4">
-                                    <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">3</div>
-                                    <div class="flex-1">
-                                        <p class="font-medium text-gray-900 dark:text-gray-100 mb-1">投稿設定をカスタマイズ</p>
-                                        <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300">投稿するイベントを個別に選択できます</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🔄 自動投稿の今後について</h3>
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                            <p class="text-sm text-gray-700 dark:text-gray-300">
+                                自動投稿機能はサービスの収益化が進んだ段階で再開を検討しています。アカウント設定の「X連携設定」タブはそのまま残しており、過去に連携済みのトークンは保持されます。
+                            </p>
                         </div>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">📝 投稿例</h3>
-                        <div class="bg-gray-900 text-white rounded-lg p-4 font-mono text-sm">
-                            <p class="mb-2">@あなたのユーザー名 さんが「ノルウェイの森」を読み始めました！ #読書記録 #ReadNest</p>
-                            <p class="text-blue-400">https://readnest.jp/book/12345</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6">
-                        <p class="text-yellow-800 dark:text-yellow-300">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>注意：</strong>読書記録が「公開」設定の場合のみ投稿されます。
-                        </p>
                     </div>
                 </div>
             </section>

@@ -103,24 +103,37 @@ if (!DB::isError($connected_users_result)) {
     }
 }
 
-// X関連エラーログの取得
+// X関連エラーログの取得（末尾のみ読み込み、巨大ログでもメモリ枯渇しないように）
 $error_log_path = '/home/icotfeels/readnest.jp/log/dokusho_error_log.txt';
 $x_errors = [];
 if (file_exists($error_log_path) && is_readable($error_log_path)) {
-    $log_content = file_get_contents($error_log_path);
-    $entries = explode('-----------------------------------------', $log_content);
-    foreach ($entries as $entry) {
-        if (stripos($entry, 'x_connect') !== false || 
-            stripos($entry, 'x_callback') !== false || 
-            stripos($entry, 'oauth') !== false ||
-            stripos($entry, 'X_API') !== false ||
-            stripos($entry, 'twitter') !== false) {
-            $x_errors[] = trim($entry);
+    $log_content = '';
+    $file_size = filesize($error_log_path);
+    $read_size = 2 * 1024 * 1024; // 末尾2MBのみ
+    $fp = @fopen($error_log_path, 'r');
+    if ($fp) {
+        if ($file_size > $read_size) {
+            fseek($fp, -$read_size, SEEK_END);
+            fgets($fp); // 途中で切れた行を捨てる
         }
+        $log_content = stream_get_contents($fp);
+        fclose($fp);
     }
-    // 最新の10件のみ表示
-    $x_errors = array_slice($x_errors, -10);
-    $x_errors = array_reverse($x_errors);
+    if ($log_content !== '' && $log_content !== false) {
+        $entries = explode('-----------------------------------------', $log_content);
+        foreach ($entries as $entry) {
+            if (stripos($entry, 'x_connect') !== false ||
+                stripos($entry, 'x_callback') !== false ||
+                stripos($entry, 'oauth') !== false ||
+                stripos($entry, 'X_API') !== false ||
+                stripos($entry, 'twitter') !== false) {
+                $x_errors[] = trim($entry);
+            }
+        }
+        // 最新の10件のみ表示
+        $x_errors = array_slice($x_errors, -10);
+        $x_errors = array_reverse($x_errors);
+    }
 }
 
 // 統計情報の取得

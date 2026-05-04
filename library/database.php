@@ -1003,7 +1003,7 @@ function getFinishedNumber($user_id, $book_asin) {
 function updateBook($user_id, $book_id, $status, $rating, $comment, $finished_date = null) {
   global $g_db;
   // $g_db is already a DB_PDO instance
-  
+
   // まず現在の本の情報を取得
   $book_info = $g_db->getRow('SELECT total_page, current_page, status as old_status FROM b_book_list WHERE user_id=? AND book_id=?', array($user_id, $book_id));
   if(DB::isError($book_info)) {

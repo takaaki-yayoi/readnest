@@ -136,32 +136,38 @@ class XApiClient {
  */
 function postReadingEventToX($user_id, $book_id, $event_type, $rating = 0, $review_text = '') {
     global $g_db;
-    
+
+    // 自動投稿は停止中（X APIクレジット枯渇のため）。手動シェアボタンを案内する運用に切替。
+    // 収益化等で復活する場合は X_AUTO_POST_ENABLED を true に戻す。
+    if (!defined('X_AUTO_POST_ENABLED') || !X_AUTO_POST_ENABLED) {
+        return false;
+    }
+
     // X投稿抑制フラグをチェック
     if (isset($_SESSION['suppress_x_post']) && $_SESSION['suppress_x_post'] === true) {
         unset($_SESSION['suppress_x_post']); // フラグをクリア
         return false;
     }
-    
+
     // Get user information
     $user_info = getUserInformation($user_id);
     if (!$user_info) {
         error_log('[X API] User not found: ' . $user_id);
         return false;
     }
-    
+
     // Check if user has public diary
     if ($user_info['diary_policy'] != 1) {
         // User's diary is not public
         return false;
     }
-    
+
     // Check if user has X posting enabled
     if (!isset($user_info['x_post_enabled']) || $user_info['x_post_enabled'] != 1) {
         // User has not enabled X posting
         return false;
     }
-    
+
     // Check if this event type is enabled for posting
     $x_post_events = isset($user_info['x_post_events']) ? (int)$user_info['x_post_events'] : 13;
     $event_flags = [
@@ -170,14 +176,14 @@ function postReadingEventToX($user_id, $book_id, $event_type, $rating = 0, $revi
         READING_FINISH => 4,   // Finish reading
         'review' => 8          // Reviews
     ];
-    
+
     if (isset($event_flags[$event_type])) {
         if (!($x_post_events & $event_flags[$event_type])) {
             // This event type is not enabled for posting
             return false;
         }
     }
-    
+
     // Get user's display name
     $user_name = $user_info['nickname'] ?? $user_info['user_id'];
     
@@ -419,18 +425,24 @@ function postReviewToX($user_id, $book_id, $rating, $review_text = '') {
  */
 function postReadingProgressToX($user_id, $book_id, $current_page, $total_page = 0, $memo = '') {
     global $g_db;
-    
+
+    // 自動投稿は停止中（X APIクレジット枯渇のため）。手動シェアボタンを案内する運用に切替。
+    // 収益化等で復活する場合は X_AUTO_POST_ENABLED を true に戻す。
+    if (!defined('X_AUTO_POST_ENABLED') || !X_AUTO_POST_ENABLED) {
+        return false;
+    }
+
     // Get user information
     $user_info = getUserInformation($user_id);
     if (!$user_info) {
         return false;
     }
-    
+
     // Check if user has public diary
     if ($user_info['diary_policy'] != 1) {
         return false;
     }
-    
+
     // Get book information
     $book_info = getBookInformation($book_id);
     if (!$book_info) {

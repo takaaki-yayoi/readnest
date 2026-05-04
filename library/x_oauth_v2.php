@@ -72,14 +72,14 @@ class XOAuthV2 {
             return ['success' => true, 'data' => $result];
         } else {
             error_log('[X OAuth v2] Failed to post tweet. HTTP: ' . $httpCode . ', Response: ' . $response);
-            
+
             $error_message = 'HTTPステータス: ' . $httpCode;
-            
+
             if ($error) {
                 error_log('[X OAuth v2] CURL Error: ' . $error);
                 $error_message .= ', CURLエラー: ' . $error;
             }
-            
+
             // Parse error details
             $error_data = json_decode($response, true);
             if (isset($error_data['errors'])) {
@@ -95,7 +95,7 @@ class XOAuthV2 {
             } elseif (isset($error_data['detail'])) {
                 $error_message .= ', 詳細: ' . $error_data['detail'];
             }
-            
+
             // Common error patterns
             if ($httpCode === 401) {
                 $error_message .= ' (認証エラー: APIキーまたはトークンが無効です)';
@@ -104,7 +104,7 @@ class XOAuthV2 {
             } elseif ($httpCode === 429) {
                 $error_message .= ' (レート制限: しばらく待ってから再試行してください)';
             }
-            
+
             return ['success' => false, 'error' => $error_message, 'http_code' => $httpCode, 'response' => $response];
         }
     }

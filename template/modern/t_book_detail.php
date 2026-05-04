@@ -722,17 +722,66 @@ ob_start();
                                 <?php endif; ?>
                                 
                                 <!-- ソーシャルメディア共有ボタン -->
+                                <?php
+                                // Xシェア文面を読書状況に応じて生成（自動投稿の文面に合わせる）。本棚に無い場合は書誌情報のみ。
+                                $share_book_url = 'https://readnest.jp/book/' . (int)$book['book_id'];
+                                $share_title = $book['title'] ?? '';
+                                $share_author = $book['author'] ?? '';
+                                $share_author_part = $share_author !== '' ? '（' . $share_author . '）' : '';
+                                $share_x_text = '「' . $share_title . '」' . $share_author_part;
+
+                                if ($login_flag && $is_book_owner && !empty($user_book_info)) {
+                                    $share_status = isset($user_book_info['status']) ? (int)$user_book_info['status'] : 0;
+                                    $share_rating = isset($user_book_info['rating']) ? (int)$user_book_info['rating'] : 0;
+                                    $share_current_page = isset($user_book_info['current_page']) ? (int)$user_book_info['current_page'] : 0;
+                                    $share_total_page = (int)($book['pages'] ?? 0);
+                                    $share_memo_raw = isset($user_book_info['memo']) ? trim(strip_tags((string)$user_book_info['memo'])) : '';
+                                    $share_memo_raw = preg_replace('/\s+/', ' ', $share_memo_raw);
+                                    $share_star = $share_rating > 0 ? str_repeat('★', $share_rating) . str_repeat('☆', 5 - $share_rating) : '';
+
+                                    if ($share_status === READING_FINISH || $share_status === READ_BEFORE) {
+                                        if ($share_memo_raw !== '') {
+                                            $share_excerpt = mb_strlen($share_memo_raw) > 80 ? mb_substr($share_memo_raw, 0, 80) . '…' : $share_memo_raw;
+                                            $share_x_text = '「' . $share_title . '」' . $share_author_part . 'のレビューを投稿しました。';
+                                            if ($share_star !== '') {
+                                                $share_x_text .= ' 評価: ' . $share_star;
+                                            }
+                                            $share_x_text .= "\n\n" . $share_excerpt;
+                                        } elseif ($share_star !== '') {
+                                            $share_x_text = '「' . $share_title . '」' . $share_author_part . 'を読み終わりました！ 評価: ' . $share_star;
+                                        } else {
+                                            $share_x_text = '「' . $share_title . '」' . $share_author_part . 'を読み終わりました！';
+                                        }
+                                    } elseif ($share_status === READING_NOW) {
+                                        if ($share_current_page > 0 && $share_total_page > 0) {
+                                            $share_pct = (int)round(($share_current_page / $share_total_page) * 100);
+                                            $share_progress = $share_current_page . '/' . $share_total_page . 'ページ (' . $share_pct . '%)';
+                                            $share_x_text = '「' . $share_title . '」' . $share_author_part . 'を読んでいます。進捗: ' . $share_progress;
+                                        } elseif ($share_current_page > 0) {
+                                            $share_x_text = '「' . $share_title . '」' . $share_author_part . 'を読んでいます。進捗: ' . $share_current_page . 'ページ';
+                                        } else {
+                                            $share_x_text = '「' . $share_title . '」' . $share_author_part . 'を読んでいます。';
+                                        }
+                                    }
+                                }
+
+                                $share_x_url = 'https://x.com/intent/post?' . http_build_query([
+                                    'text' => $share_x_text,
+                                    'url' => $share_book_url,
+                                    'hashtags' => '読書記録,ReadNest',
+                                ]);
+                                ?>
                                 <div class="mt-6 bg-gray-50 rounded-lg p-4">
                                     <h3 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
                                         <i class="fas fa-share-alt mr-2"></i>この本を共有する
                                     </h3>
                                     <div class="flex items-center space-x-3">
                                         <!-- Twitter (X) -->
-                                        <a href="https://twitter.com/intent/tweet?url=<?php echo urlencode('https://readnest.jp/book/' . $book['book_id']); ?>&text=<?php echo urlencode('「' . $book['title'] . '」' . ($book['author'] ? ' - ' . $book['author'] : '') . ' #ReadNest'); ?>" 
-                                           target="_blank" 
+                                        <a href="<?php echo html($share_x_url); ?>"
+                                           target="_blank"
                                            rel="noopener noreferrer"
                                            class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-gray-300 bg-white text-gray-900 hover:bg-gray-100 transition-colors font-bold text-sm"
-                                           title="X (Twitter)で共有">
+                                           title="Xで共有">
                                             X
                                         </a>
                                         

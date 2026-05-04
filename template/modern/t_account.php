@@ -389,13 +389,23 @@ ob_start();
                     <div x-show="activeTab === 'x_settings'" x-transition class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-6">
                             X（Twitter）連携設定
-                            <a href="/help.php#x-integration" target="_blank" 
+                            <a href="/help.php#x-integration" target="_blank"
                                class="ml-2 text-sm text-blue-500 hover:text-blue-600"
                                title="X連携の詳細">
                                 <i class="fas fa-question-circle"></i>
                             </a>
                         </h3>
-                        
+
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                            <p class="text-yellow-800 font-medium mb-1">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                自動投稿機能は現在停止しています
+                            </p>
+                            <p class="text-sm text-yellow-700">
+                                X APIの利用コスト上昇により、読書記録の自動投稿を一時停止しています。書籍詳細ページやレポートに表示される「Xでシェア」ボタンからは引き続き投稿可能です。連携情報は保持しているため、自動投稿が再開された際は既存の設定がそのまま使えます。
+                            </p>
+                        </div>
+
                         <?php if (!$x_connected): ?>
                             <!-- X未連携の場合 -->
                             <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 text-center">

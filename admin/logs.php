@@ -254,17 +254,30 @@ require_once(__DIR__ . '/layout/header.php');
                 // X関連ログの処理（両方のログから抽出）
                 $x_logs = [];
                 
-                // ReadNestログからX関連を抽出
+                // ReadNestログからX関連を抽出（末尾のみ読み込み、巨大ログでもメモリ枯渇しないように）
                 if (file_exists($readnest_log_path) && is_readable($readnest_log_path)) {
-                    $content = file_get_contents($readnest_log_path);
-                    $entries = explode('-----------------------------------------', $content);
-                    foreach ($entries as $entry) {
-                        if (trim($entry) && (
-                            stripos($entry, 'x_connect') !== false || 
-                            stripos($entry, 'x_callback') !== false || 
-                            stripos($entry, 'oauth') !== false ||
-                            stripos($entry, '[X ') !== false)) {
-                            $x_logs[] = ['source' => 'ReadNest', 'content' => trim($entry)];
+                    $content = '';
+                    $file_size = filesize($readnest_log_path);
+                    $read_size = max($lines * 1024, 2 * 1024 * 1024); // 末尾2MB以上
+                    $fp = @fopen($readnest_log_path, 'r');
+                    if ($fp) {
+                        if ($file_size > $read_size) {
+                            fseek($fp, -$read_size, SEEK_END);
+                            fgets($fp); // 途中で切れた行を捨てる
+                        }
+                        $content = stream_get_contents($fp);
+                        fclose($fp);
+                    }
+                    if ($content !== '' && $content !== false) {
+                        $entries = explode('-----------------------------------------', $content);
+                        foreach ($entries as $entry) {
+                            if (trim($entry) && (
+                                stripos($entry, 'x_connect') !== false ||
+                                stripos($entry, 'x_callback') !== false ||
+                                stripos($entry, 'oauth') !== false ||
+                                stripos($entry, '[X ') !== false)) {
+                                $x_logs[] = ['source' => 'ReadNest', 'content' => trim($entry)];
+                            }
                         }
                     }
                 }
