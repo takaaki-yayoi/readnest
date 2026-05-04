@@ -184,27 +184,83 @@ if ($view_mode === 'overview') {
         }
         
         // 日別データ（過去30日）
+        // page カラムは累積位置なので、日ごとの SUM ではなく book_id ごとの差分を取って加算する
+        $period_start = date('Y-m-d', strtotime('-29 days'));
+        $period_end = date('Y-m-d');
+
+        // 日付配列を初期化＆冊数取得
         for ($i = 29; $i >= 0; $i--) {
             $target_date = date('Y-m-d', strtotime("-$i days"));
-            
-            // ページ数
-            $daily_pages_sql = "SELECT SUM(page) as pages 
-                               FROM b_book_event 
-                               WHERE user_id = ? 
-                               AND DATE(event_date) = ?";
-            
-            $result = $g_db->getOne($daily_pages_sql, [$user_id, $target_date]);
-            $stats['daily_pages'][$target_date] = !DB::isError($result) && $result ? (int)$result : 0;
-            
+            $stats['daily_pages'][$target_date] = 0;
+
             // 冊数（その日に読了した本の数）
-            $daily_books_sql = "SELECT COUNT(*) as count 
-                               FROM b_book_list 
-                               WHERE user_id = ? 
+            $daily_books_sql = "SELECT COUNT(*) as count
+                               FROM b_book_list
+                               WHERE user_id = ?
                                AND status = " . READING_FINISH . "
                                AND finished_date = ?";
-            
             $result = $g_db->getOne($daily_books_sql, [$user_id, $target_date]);
             $stats['daily_books'][$target_date] = !DB::isError($result) && $result ? (int)$result : 0;
+        }
+
+        // 期間内のイベントを取得
+        $events_sql = "SELECT book_id, DATE(event_date) AS date, page
+                       FROM b_book_event
+                       WHERE user_id = ?
+                       AND DATE(event_date) >= ?
+                       AND DATE(event_date) <= ?
+                       AND page > 0
+                       ORDER BY book_id, event_date ASC";
+        $events_in_period = $g_db->getAll($events_sql, [$user_id, $period_start, $period_end], DB_FETCHMODE_ASSOC);
+        if (DB::isError($events_in_period) || empty($events_in_period)) {
+            $events_in_period = [];
+        }
+
+        // 各本の期間開始前の最終ページ位置を取得
+        $prev_pages = [];
+        $book_ids_in_period = array_unique(array_column($events_in_period, 'book_id'));
+        if (!empty($book_ids_in_period)) {
+            $placeholders = implode(',', array_fill(0, count($book_ids_in_period), '?'));
+            $prev_sql = "SELECT book_id, MAX(page) AS last_page
+                         FROM b_book_event
+                         WHERE user_id = ?
+                         AND event_date < ?
+                         AND book_id IN ({$placeholders})
+                         AND page > 0
+                         GROUP BY book_id";
+            $prev_params = array_merge([$user_id, $period_start], $book_ids_in_period);
+            $prev_results = $g_db->getAll($prev_sql, $prev_params, DB_FETCHMODE_ASSOC);
+            if (!DB::isError($prev_results)) {
+                foreach ($prev_results as $prev_row) {
+                    $prev_pages[$prev_row['book_id']] = (int)$prev_row['last_page'];
+                }
+            }
+        }
+
+        // 本ごとの日別最大ページを集計
+        $book_daily_max = [];
+        foreach ($events_in_period as $event) {
+            $book_id = $event['book_id'];
+            $date = $event['date'];
+            $page = (int)$event['page'];
+            if (!isset($book_daily_max[$book_id])) {
+                $book_daily_max[$book_id] = [];
+            }
+            if (!isset($book_daily_max[$book_id][$date]) || $page > $book_daily_max[$book_id][$date]) {
+                $book_daily_max[$book_id][$date] = $page;
+            }
+        }
+
+        // 差分から日別ページ数を算出
+        foreach ($book_daily_max as $book_id => $daily_max) {
+            $prev_page = $prev_pages[$book_id] ?? 0;
+            ksort($daily_max);
+            foreach ($daily_max as $date => $max_page) {
+                if (isset($stats['daily_pages'][$date])) {
+                    $stats['daily_pages'][$date] += max(0, $max_page - $prev_page);
+                }
+                $prev_page = $max_page;
+            }
         }
         
         // 累積データを計算

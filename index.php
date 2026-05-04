@@ -1189,7 +1189,8 @@ function getDailyPageProgress($user_id, $days = 30) {
     global $g_db, $cache;
 
     // キャッシュチェック（30分間有効）
-    $cacheKey = 'daily_page_progress_' . $user_id . '_' . $days;
+    // v2: 期間開始前の進捗を考慮した差分計算に修正したためキー更新
+    $cacheKey = 'daily_page_progress_v2_' . $user_id . '_' . $days;
     if (isset($cache)) {
         $cached = $cache->get($cacheKey);
         if ($cached !== false) {
@@ -1263,6 +1264,27 @@ function getDailyPageProgress($user_id, $days = 30) {
         $event_book_ids = [];
         foreach ($events as $event) {
             $event_book_ids[$event['book_id']] = true;
+        }
+
+        // 期間開始前の各本の最終ページ位置を取得し、book_progressの初期値にする
+        // （期間内初回イベントを「ゼロからの加算」と誤計算しないため）
+        if (!empty($event_book_ids)) {
+            $book_ids_in_events = array_keys($event_book_ids);
+            $prev_placeholders = implode(',', array_fill(0, count($book_ids_in_events), '?'));
+            $prev_sql = "SELECT book_id, MAX(page) AS last_page
+                         FROM b_book_event
+                         WHERE user_id = ?
+                         AND event_date < ?
+                         AND book_id IN ({$prev_placeholders})
+                         AND page > 0
+                         GROUP BY book_id";
+            $prev_params = array_merge([$user_id, $start_datetime], $book_ids_in_events);
+            $prev_results = $g_db->getAll($prev_sql, $prev_params);
+            if (!DB::isError($prev_results)) {
+                foreach ($prev_results as $prev_row) {
+                    $book_progress[$prev_row['book_id']] = (int)$prev_row['last_page'];
+                }
+            }
         }
 
         // finished_dateベースの本を処理（イベントがない本のみ）
