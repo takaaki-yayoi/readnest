@@ -420,14 +420,16 @@ async function initBarcodeScanner() {
     errorDiv.classList.add('hidden');
     
     try {
-        // 優先順位: Native BarcodeDetector → ZXing → QuaggaJS
-        // Native が一番高速・高精度（Android Chrome / Edge）。iOS Safari は Native 非対応のため ZXing にフォールバック。
+        // 優先順位: Native BarcodeDetector → QuaggaJS → ZXing
+        // Native は Android Chrome / Edge で最速・最精密。
+        // iOS Safari は Native 非対応 + ZXing が getUserMedia を明示的に呼ばない仕様のため、
+        // 確実にカメラ権限ダイアログが出る Quagga を次点に配置する。ZXing は最後の保険。
         if (typeof NativeBarcodeScanner !== 'undefined' && await NativeBarcodeScanner.isSupported()) {
             currentScanner = new NativeBarcodeScanner();
-        } else if (typeof ZXing !== 'undefined') {
-            currentScanner = new ZXingBarcodeScanner();
         } else if (typeof Quagga !== 'undefined') {
             currentScanner = new BarcodeScanner();
+        } else if (typeof ZXing !== 'undefined') {
+            currentScanner = new ZXingBarcodeScanner();
         } else {
             throw new Error('バーコードスキャナーライブラリが利用できません');
         }
