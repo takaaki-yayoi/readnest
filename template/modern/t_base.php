@@ -11,6 +11,13 @@ if(!defined('CONFIG')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
+    <!-- 主要 CDN への先読み接続: DNS解決+TLSハンドシェイクを早める -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://www.google-analytics.com">
     
     <!-- キャッシュ制御（スマートフォン対策） -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">

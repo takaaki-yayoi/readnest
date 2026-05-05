@@ -420,12 +420,14 @@ async function initBarcodeScanner() {
     errorDiv.classList.add('hidden');
     
     try {
-        // まずQuaggaJSを試す
-        if (typeof Quagga !== 'undefined') {
-            currentScanner = new BarcodeScanner();
+        // 優先順位: Native BarcodeDetector → ZXing → QuaggaJS
+        // Native が一番高速・高精度（Android Chrome / Edge）。iOS Safari は Native 非対応のため ZXing にフォールバック。
+        if (typeof NativeBarcodeScanner !== 'undefined' && await NativeBarcodeScanner.isSupported()) {
+            currentScanner = new NativeBarcodeScanner();
         } else if (typeof ZXing !== 'undefined') {
-            // フォールバックとしてZXingを使用
             currentScanner = new ZXingBarcodeScanner();
+        } else if (typeof Quagga !== 'undefined') {
+            currentScanner = new BarcodeScanner();
         } else {
             throw new Error('バーコードスキャナーライブラリが利用できません');
         }

@@ -6,7 +6,11 @@
 //   - HTML ナビゲーション                   : Network First → /offline.html
 // 外部解析スクリプト (GTM/gtag/Tailwind CDN等) はキャッシュ対象外（passthrough）。
 
-const VERSION = 'v1.0.1';
+const VERSION = 'v1.0.2';
+
+// ナビゲーション (HTML) のネットワーク待ちタイムアウト (ms)
+// この時間を超えてもサーバーが応答しなければキャッシュ済みHTMLを返す
+const NAV_TIMEOUT_MS = 3000;
 const STATIC_CACHE = `readnest-static-${VERSION}`;
 const IMAGE_CACHE = `readnest-images-${VERSION}`;
 const API_CACHE = `readnest-api-${VERSION}`;
@@ -175,15 +179,38 @@ async function staleWhileRevalidate(request, cacheName, maxEntries) {
 
 async function navigationHandler(request) {
   const cache = await caches.open(HTML_CACHE);
-  try {
-    const response = await fetch(request);
+
+  // ネットワーク取得とキャッシュ更新
+  const networkPromise = fetch(request).then((response) => {
     if (response && response.status === 200) {
       cache.put(request, response.clone());
     }
     return response;
+  });
+
+  const cached = await cache.match(request);
+
+  // キャッシュがある場合: ネットワークと NAV_TIMEOUT_MS を競争させる
+  // サーバーが遅い時は古いキャッシュを返して体感速度を維持（裏で取得は継続）
+  if (cached) {
+    let timeoutId;
+    const timeoutPromise = new Promise((resolve) => {
+      timeoutId = setTimeout(() => resolve(cached), NAV_TIMEOUT_MS);
+    });
+    try {
+      const winner = await Promise.race([networkPromise, timeoutPromise]);
+      clearTimeout(timeoutId);
+      return winner;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      return cached;
+    }
+  }
+
+  // 初回訪問でキャッシュなし: ネットワーク完了まで待つ。失敗時はオフラインページ
+  try {
+    return await networkPromise;
   } catch (err) {
-    const cached = await cache.match(request);
-    if (cached) return cached;
     const offline = await caches.match('/offline.html');
     return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
   }

@@ -18,21 +18,21 @@ class BarcodeScanner {
         // デバイス判定
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // QuaggaJSの設定
+        // QuaggaJSの設定（精度優先：halfSample 無効化、解像度・patchSize アップ）
         this.quaggaConfig = {
             inputStream: {
                 name: "Live",
                 type: "LiveStream",
                 target: null, // 後で設定
                 constraints: {
-                    width: { min: 320, ideal: 640, max: 1280 },
-                    height: { min: 240, ideal: 480, max: 720 },
+                    width: { min: 640, ideal: 1280, max: 1920 },
+                    height: { min: 480, ideal: 720, max: 1080 },
                     facingMode: this.isMobile ? "environment" : "user" // PCでは前面カメラを使用
                 }
             },
             locator: {
-                patchSize: "medium",
-                halfSample: true
+                patchSize: "large",  // 小さい本のバーコードでも捕捉しやすくする
+                halfSample: false    // フル解像度で処理（精度優先）
             },
             numOfWorkers: Math.min(navigator.hardwareConcurrency || 2, 4), // PCでの安定性を向上
             frequency: 10,
@@ -503,6 +503,173 @@ class ZXingBarcodeScanner {
     }
 }
 
+/**
+ * ネイティブ BarcodeDetector API を使った高精度・高速なスキャナー
+ * 対応: Android Chrome 83+, ChromeOS, Edge (Windows)
+ * 非対応: iOS Safari, Firefox → 既存の ZXing/Quagga にフォールバック
+ */
+class NativeBarcodeScanner {
+    constructor() {
+        this.video = null;
+        this.stream = null;
+        this.detector = null;
+        this.scanning = false;
+        this.lastResult = '';
+        this.lastScanTime = 0;
+        this.timerId = null;
+    }
+
+    /**
+     * このブラウザで BarcodeDetector が EAN-13 を扱えるか確認
+     */
+    static async isSupported() {
+        if (!('BarcodeDetector' in window)) return false;
+        try {
+            const formats = await window.BarcodeDetector.getSupportedFormats();
+            return formats.includes('ean_13');
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async init(videoElement, resultCallback) {
+        try {
+            this.video = videoElement;
+            this.resultCallback = resultCallback;
+
+            this.detector = new window.BarcodeDetector({
+                formats: ['ean_13', 'ean_8', 'code_128', 'code_39']
+            });
+
+            // 高解像度を要求して小さいバーコードでも認識率を上げる
+            const highRes = {
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1920, max: 1920 },
+                    height: { ideal: 1080, max: 1080 },
+                    focusMode: 'continuous',
+                    whiteBalanceMode: 'auto',
+                    exposureMode: 'auto'
+                }
+            };
+
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia(highRes);
+            } catch (e) {
+                // 高解像度が拒否された場合は素直にフォールバック
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } }
+                });
+            }
+
+            this.video.srcObject = this.stream;
+            await new Promise((resolve) => {
+                this.video.onloadedmetadata = resolve;
+            });
+            await this.video.play();
+
+            return true;
+        } catch (error) {
+            console.error('NativeBarcodeScanner 初期化失敗:', error);
+            this.handleError(error);
+            return false;
+        }
+    }
+
+    start() {
+        if (this.scanning) return;
+        this.scanning = true;
+        this.scanLoop();
+    }
+
+    async scanLoop() {
+        if (!this.scanning || !this.detector || !this.video) return;
+        try {
+            const barcodes = await this.detector.detect(this.video);
+            if (barcodes && barcodes.length > 0) {
+                this.onBarcodeDetected(barcodes[0]);
+            }
+        } catch (e) {
+            // 検出エラーは無視して継続
+        }
+        // 100ms 間隔 = 約10fps（CPU負荷とレスポンスのバランス）
+        this.timerId = setTimeout(() => this.scanLoop(), 100);
+    }
+
+    stop() {
+        this.scanning = false;
+        if (this.timerId) {
+            clearTimeout(this.timerId);
+            this.timerId = null;
+        }
+    }
+
+    destroy() {
+        this.stop();
+        if (this.stream) {
+            this.stream.getTracks().forEach((t) => t.stop());
+            this.stream = null;
+        }
+        if (this.video) this.video.srcObject = null;
+        this.detector = null;
+    }
+
+    onBarcodeDetected(barcode) {
+        const code = barcode.rawValue;
+        const now = Date.now();
+        if (code === this.lastResult && (now - this.lastScanTime) < 1000) return;
+
+        this.lastResult = code;
+        this.lastScanTime = now;
+
+        if (this.isValidISBN(code)) {
+            this.playBeep();
+            if (this.resultCallback) {
+                this.resultCallback({ code: code, format: barcode.format, isISBN: true });
+            }
+        }
+    }
+
+    isValidISBN(code) {
+        const isbn10Regex = /^[0-9]{9}[0-9Xx]$/;
+        const isbn13Regex = /^(978|979)[0-9]{10}$/;
+        return isbn10Regex.test(code) || isbn13Regex.test(code);
+    }
+
+    playBeep() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 1000;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.1);
+        } catch (e) {
+            // ビープ失敗は無視
+        }
+    }
+
+    handleError(error) {
+        let message = 'エラーが発生しました';
+        if (error.name === 'NotAllowedError') {
+            message = 'カメラへのアクセスが許可されていません。';
+        } else if (error.name === 'NotFoundError') {
+            message = 'カメラが見つかりません。';
+        } else if (error.name === 'NotReadableError') {
+            message = 'カメラが使用中です。他のアプリを閉じてください。';
+        }
+        if (this.resultCallback) {
+            this.resultCallback({ error: true, message: message, details: error.message });
+        }
+    }
+}
+
 // グローバルに公開
 window.BarcodeScanner = BarcodeScanner;
 window.ZXingBarcodeScanner = ZXingBarcodeScanner;
+window.NativeBarcodeScanner = NativeBarcodeScanner;
