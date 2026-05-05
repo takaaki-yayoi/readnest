@@ -8,7 +8,7 @@ if(!defined('CONFIG')) {
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     
@@ -73,12 +73,17 @@ if(!defined('CONFIG')) {
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=<?php echo date('Ymd'); ?>">
     <link rel="shortcut icon" href="/favicon.ico?v=<?php echo date('Ymd'); ?>">
     
-    <!-- iOS Safari用の設定 - apple-touch-iconを削除してサイトプレビューでの大きな表示を防ぐ -->
-    <!-- apple-touch-iconは意図的に設定しない（Safariのプレビューで大きく表示される問題を回避） -->
+    <!-- iOS Safari / PWA 用設定 -->
+    <!-- apple-touch-icon は PWA「ホーム画面に追加」用に設定（過去 Safariプレビュー回避で外していたが PWA対応で復活） -->
+    <link rel="apple-touch-icon" href="/img/icons/apple-touch-icon-180.png">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ReadNest">
-    
+
+    <!-- PWA: Web App Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
     <!-- テーマカラー -->
     <meta name="theme-color" content="#1a4d3e">
     
@@ -220,13 +225,82 @@ if(!defined('CONFIG')) {
         .dark ::-webkit-scrollbar {
             background-color: #1f2937;
         }
-        
+
         .dark ::-webkit-scrollbar-thumb {
             background-color: #4b5563;
         }
-        
+
         .dark ::-webkit-scrollbar-thumb:hover {
             background-color: #6b7280;
+        }
+
+        /* === PWA / モバイル UX === */
+        /* タップ時の青フラッシュを除去（モバイル全般） */
+        html {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* PWA standalone モード時のみ適用するモバイル最適化 */
+        @media (display-mode: standalone) {
+            /* Android Chrome の引っ張り更新（pull-to-refresh）を抑止 */
+            body {
+                overscroll-behavior-y: contain;
+            }
+            /* iOS ノッチ対応: sticky ヘッダーがノッチ下から始まるよう余白を確保 */
+            header.sticky {
+                padding-top: env(safe-area-inset-top);
+            }
+            /* ホームバー対応: フッターと固定パネルに下部安全領域 */
+            footer {
+                padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+            }
+            /* 左右ノッチ（横向き時）対応 */
+            body {
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+        }
+
+        /* === SW 更新通知トースト === */
+        #pwa-update-toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #1a4d3e;
+            color: #fff;
+            border-radius: 9999px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            font-size: 0.875rem;
+            z-index: 9999;
+            max-width: calc(100vw - 2rem);
+            animation: pwa-toast-in 0.25s ease-out;
+        }
+        #pwa-update-toast button {
+            font: inherit;
+            color: inherit;
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+        }
+        #pwa-update-toast .pwa-update-reload {
+            background: #fff;
+            color: #1a4d3e;
+            font-weight: 600;
+            padding: 0.25rem 0.875rem;
+        }
+        #pwa-update-toast .pwa-update-reload:hover { background: #f5f1e8; }
+        #pwa-update-toast .pwa-update-dismiss { opacity: 0.75; font-size: 1.25rem; line-height: 1; }
+        #pwa-update-toast .pwa-update-dismiss:hover { opacity: 1; }
+        @keyframes pwa-toast-in {
+            from { opacity: 0; transform: translate(-50%, 1rem); }
+            to   { opacity: 1; transform: translate(-50%, 0); }
         }
     </style>
     
@@ -1145,11 +1219,63 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <?php echo isset($g_analytics) ? $g_analytics : ''; ?>
     
     <!-- SQL Debug Log -->
-    <?php 
+    <?php
     // デバッグモードの場合のみSQLログを表示
     if (defined('DEBUG') && DEBUG && function_exists('displaySQLLog')) {
         echo displaySQLLog();
     }
     ?>
+
+    <!-- PWA: Service Worker 登録 + 更新通知トースト -->
+    <script>
+        (function() {
+            if (!('serviceWorker' in navigator)) return;
+
+            // 新SWがactiveになったらリロード（controllerchange ベース）
+            var refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
+
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function(registration) {
+                        registration.addEventListener('updatefound', function() {
+                            var newWorker = registration.installing;
+                            if (!newWorker) return;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showUpdateToast(newWorker);
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(err) {
+                        console.warn('[ReadNest PWA] Service Worker 登録失敗:', err);
+                    });
+            });
+
+            function showUpdateToast(worker) {
+                if (document.getElementById('pwa-update-toast')) return;
+                var toast = document.createElement('div');
+                toast.id = 'pwa-update-toast';
+                toast.setAttribute('role', 'status');
+                toast.innerHTML =
+                    '<span>新しいバージョンが利用可能です</span>' +
+                    '<button type="button" class="pwa-update-reload">更新</button>' +
+                    '<button type="button" class="pwa-update-dismiss" aria-label="閉じる">×</button>';
+                document.body.appendChild(toast);
+                toast.querySelector('.pwa-update-reload').addEventListener('click', function() {
+                    worker.postMessage({ type: 'SKIP_WAITING' });
+                    // 実リロードは controllerchange ハンドラで実行
+                });
+                toast.querySelector('.pwa-update-dismiss').addEventListener('click', function() {
+                    toast.remove();
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

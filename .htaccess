@@ -124,6 +124,15 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
         Header set Pragma "no-cache"
         Header set Expires "0"
     </FilesMatch>
+
+    # PWA: Service Worker と Web App Manifest はキャッシュさせない
+    # （SW更新を確実にデプロイするため。ブラウザは仕様上 sw.js を24h以内に再検証するが明示）
+    <FilesMatch "^(sw\.js|manifest\.json)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+        Header set Service-Worker-Allowed "/"
+    </FilesMatch>
 </IfModule>
 
 # ETagの削除（CDN使用時の問題を防ぐ）
