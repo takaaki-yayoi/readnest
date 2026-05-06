@@ -362,7 +362,9 @@ function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $s
             'tags' => $tags,
             'update_date' => $update_date,
             'create_date' => $create_date,
-            'is_favorite' => $is_favorite
+            'is_favorite' => $is_favorite,
+            'amazon_id' => $book['amazon_id'] ?? null,
+            'isbn' => $book['isbn'] ?? null
         ];
     }
 

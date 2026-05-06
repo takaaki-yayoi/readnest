@@ -10,6 +10,7 @@ if(!defined('CONFIG')) {
 
 // ヘルパー関数を読み込み
 require_once(dirname(dirname(__DIR__)) . '/library/form_helpers.php');
+require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
 
 // メインコンテンツを生成
 ob_start();
@@ -78,14 +79,20 @@ ob_start();
                             <?php endif; ?>
                         </div>
                         
-                        <?php if (isset($_SESSION['AUTH_USER'])): ?>
-                        <div class="mt-3">
-                            <a href="/book_entity/<?php echo urlencode($book['asin']); ?>" 
+                        <div class="mt-3 flex items-center flex-wrap gap-3">
+                            <?php if (isset($_SESSION['AUTH_USER'])): ?>
+                            <a href="/book_entity/<?php echo urlencode($book['asin']); ?>"
                                class="text-blue-600 hover:text-blue-700 text-sm font-medium">
                                 詳細を見る <i class="fas fa-arrow-right ml-1 text-xs"></i>
                             </a>
+                            <?php endif; ?>
+                            <a href="<?php echo htmlspecialchars(getAmazonProductUrl($book)); ?>"
+                               target="_blank"
+                               rel="noopener noreferrer sponsored"
+                               class="ml-auto inline-flex items-center px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors">
+                                <i class="fab fa-amazon mr-1"></i>Amazon
+                            </a>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>

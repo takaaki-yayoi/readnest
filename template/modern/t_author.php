@@ -4,6 +4,8 @@ if(!defined('CONFIG')) {
     die('reference for this file is not allowed.');
 }
 
+require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
+
 // メインコンテンツを生成
 ob_start();
 ?>
@@ -177,6 +179,12 @@ ob_start();
                     <?php if ($login_flag): ?>
                     </a>
                     <?php endif; ?>
+                    <a href="<?php echo htmlspecialchars(getAmazonProductUrl($book)); ?>"
+                       target="_blank"
+                       rel="noopener noreferrer sponsored"
+                       class="mt-2 inline-flex items-center justify-center px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors">
+                        <i class="fab fa-amazon mr-1"></i>Amazon
+                    </a>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -199,41 +207,49 @@ ob_start();
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <?php foreach ($undiscovered_books as $book): ?>
-                <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>"
-                   class="group bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:shadow-md">
-                    <div class="flex items-start space-x-3">
-                        <?php if (!empty($book['imageLinks']['thumbnail'])): ?>
-                        <img src="<?php echo htmlspecialchars($book['imageLinks']['thumbnail']); ?>"
-                             alt="<?php echo htmlspecialchars($book['title']); ?>"
-                             class="w-16 h-22 object-cover rounded shadow-sm flex-shrink-0"
-                             onerror="this.src='/img/no-image-book.png'">
-                        <?php else: ?>
-                        <div class="w-16 h-22 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-book text-gray-400 text-xl"></i>
-                        </div>
-                        <?php endif; ?>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 group-hover:text-readnest-primary transition-colors">
-                                <?php echo htmlspecialchars($book['title']); ?>
-                            </h4>
-                            <?php if (!empty($book['publishedDate'])): ?>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                <?php echo htmlspecialchars(substr($book['publishedDate'], 0, 4)); ?>年
-                            </p>
+                <div class="group bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:shadow-md">
+                    <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>" class="block">
+                        <div class="flex items-start space-x-3">
+                            <?php if (!empty($book['imageLinks']['thumbnail'])): ?>
+                            <img src="<?php echo htmlspecialchars($book['imageLinks']['thumbnail']); ?>"
+                                 alt="<?php echo htmlspecialchars($book['title']); ?>"
+                                 class="w-16 h-22 object-cover rounded shadow-sm flex-shrink-0"
+                                 onerror="this.src='/img/no-image-book.png'">
+                            <?php else: ?>
+                            <div class="w-16 h-22 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-book text-gray-400 text-xl"></i>
+                            </div>
                             <?php endif; ?>
-                            <?php if (!empty($book['description'])): ?>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                                <?php echo htmlspecialchars(mb_substr($book['description'], 0, 60)); ?>...
-                            </p>
-                            <?php endif; ?>
-                            <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span class="inline-flex items-center text-xs text-readnest-primary">
-                                    <i class="fas fa-plus mr-1"></i>本棚に追加
-                                </span>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 group-hover:text-readnest-primary transition-colors">
+                                    <?php echo htmlspecialchars($book['title']); ?>
+                                </h4>
+                                <?php if (!empty($book['publishedDate'])): ?>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <?php echo htmlspecialchars(substr($book['publishedDate'], 0, 4)); ?>年
+                                </p>
+                                <?php endif; ?>
+                                <?php if (!empty($book['description'])): ?>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                    <?php echo htmlspecialchars(mb_substr($book['description'], 0, 60)); ?>...
+                                </p>
+                                <?php endif; ?>
                             </div>
                         </div>
+                    </a>
+                    <div class="mt-3 flex items-center gap-2">
+                        <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>"
+                           class="inline-flex items-center text-xs text-readnest-primary hover:text-readnest-accent">
+                            <i class="fas fa-plus mr-1"></i>本棚に追加
+                        </a>
+                        <a href="<?php echo htmlspecialchars(getAmazonProductUrl($book)); ?>"
+                           target="_blank"
+                           rel="noopener noreferrer sponsored"
+                           class="ml-auto inline-flex items-center px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors">
+                            <i class="fab fa-amazon mr-1"></i>Amazonで見る
+                        </a>
                     </div>
-                </a>
+                </div>
                 <?php endforeach; ?>
             </div>
         </div>

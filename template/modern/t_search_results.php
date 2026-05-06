@@ -6,6 +6,7 @@ if(!defined('CONFIG')) {
 
 // ヘルパー関数を読み込み
 require_once(dirname(dirname(__DIR__)) . '/library/form_helpers.php');
+require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
 
 // コンテンツを生成
 ob_start();
@@ -150,10 +151,16 @@ if (isset($breadcrumbs)) {
                                                 ?>
                                             </p>
                                         <?php endif; ?>
-                                        <div class="flex items-center space-x-2 mt-3">
-                                            <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>" 
+                                        <div class="flex items-center flex-wrap gap-2 mt-3">
+                                            <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>"
                                                class="inline-flex items-center px-3 py-1 bg-readnest-primary text-white text-sm rounded hover:bg-readnest-accent transition-colors">
                                                 <i class="fas fa-book-open mr-1"></i>詳細を見る
+                                            </a>
+                                            <a href="<?php echo htmlspecialchars(getAmazonProductUrl($book)); ?>"
+                                               target="_blank"
+                                               rel="noopener noreferrer sponsored"
+                                               class="inline-flex items-center px-3 py-1 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 transition-colors">
+                                                <i class="fab fa-amazon mr-1"></i>Amazon
                                             </a>
                                             <?php if (!empty($book['memo'])): ?>
                                                 <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 text-xs rounded">

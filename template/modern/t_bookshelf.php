@@ -4,6 +4,8 @@ if(!defined('CONFIG')) {
   die('reference for this file is not allowed.');
 }
 
+require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
+
 // コンテンツ部分を生成
 ob_start();
 
@@ -807,7 +809,19 @@ if (isset($breadcrumbs)) {
                         </div>
                         <?php endif; ?>
                     </div>
-                    
+
+                    <!-- Amazon導線（読みたい・積読のみ） -->
+                    <?php if ($is_own_bookshelf && ($book['status_id'] == BUY_SOMEDAY || $book['status_id'] == NOT_STARTED)): ?>
+                    <div class="mt-2">
+                        <a href="<?php echo html(getAmazonProductUrl($book)); ?>"
+                           target="_blank"
+                           rel="noopener noreferrer sponsored"
+                           class="inline-flex items-center justify-center w-full px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors">
+                            <i class="fab fa-amazon mr-1"></i><?php echo $book['status_id'] == BUY_SOMEDAY ? 'Amazonで購入' : 'Amazonで見る'; ?>
+                        </a>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- 登録日と更新日（常に最下部・一行表示） -->
                     <div class="pt-2 text-xs text-gray-500 border-t flex justify-between items-center">
                         <span>

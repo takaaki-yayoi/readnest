@@ -26,6 +26,8 @@ $d_footer = <<< DOC_END
 
 <a href="/terms.php#privacy">プライバシーポリシー</a>&nbsp;
 
+<a href="/terms.php#affiliate">アフィリエイトについて</a>&nbsp;
+
 
 <a href="https://icotfeels.blog66.fc2.com/blog-category-18.html">作っている人の日記</a>&nbsp;
 
@@ -35,6 +37,8 @@ $d_footer = <<< DOC_END
 
 <br />
 <span style="font-size:x-small;">Copyright 2007, {$current_year} icot. All rights reserved.</span>
+<br />
+<span style="font-size:x-small; color:#666;">当サイトはAmazon.co.jpを宣伝しリンクすることによって、サイトが紹介料を獲得できる手段を提供することを目的に設定されたアフィリエイトプログラムである、Amazonアソシエイト・プログラムの参加者です。</span>
 DOC_END;
 
 $d_mobile_footer = '<div style="text-align:center;font-size:x-small;">Copyright 2007, ' . $current_year . ' icot.</div>';

@@ -1007,6 +1007,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <li><a href="/announcements.php" class="text-gray-300 hover:text-white transition-colors">お知らせ</a></li>
                         <li><a href="/terms.php" class="text-gray-300 hover:text-white transition-colors">利用規約</a></li>
                         <li><a href="/terms.php#privacy" class="text-gray-300 hover:text-white transition-colors">プライバシーポリシー</a></li>
+                        <li><a href="/terms.php#affiliate" class="text-gray-300 hover:text-white transition-colors">アフィリエイトについて</a></li>
                         <li><a href="https://yayoi-taka.hatenablog.com/" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-white transition-colors">開発者ブログ</a></li>
                     </ul>
                 </div>
@@ -1067,8 +1068,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         
         <!-- コピーライトセクション（フルwidth） -->
         <div class="mt-8 pt-8 border-t border-gray-700">
-            <div class="text-center text-sm text-gray-400 py-4">
+            <div class="text-center text-sm text-gray-400 py-4 space-y-2">
                 <p>&copy; <?php echo date('Y'); ?> ReadNest. All rights reserved.</p>
+                <p class="text-xs leading-relaxed max-w-3xl mx-auto px-4">
+                    当サイトはAmazon.co.jpを宣伝しリンクすることによって、サイトが紹介料を獲得できる手段を提供することを目的に設定されたアフィリエイトプログラムである、Amazonアソシエイト・プログラムの参加者です。
+                </p>
                 <p class="mt-2">このサイトはバイブコーディングでメンテナンスしています</p>
             </div>
         </div>

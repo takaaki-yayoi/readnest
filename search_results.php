@@ -48,6 +48,8 @@ if (strlen($search_query) >= 2) {
                     bl.update_date,
                     bl.memo,
                     bl.finished_date,
+                    bl.amazon_id,
+                    bl.isbn,
                     CASE
                         WHEN bl.name LIKE ? THEN 1
                         WHEN bl.name LIKE ? THEN 2

@@ -6,6 +6,7 @@ if(!defined('CONFIG')) {
 
 // フォームヘルパーを読み込み
 require_once(dirname(dirname(__DIR__)) . '/library/form_helpers.php');
+require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
 
 // 追加のヘッド要素
 ob_start();
@@ -374,12 +375,12 @@ ob_start();
                                     </a>
                                     <?php endif; ?>
                                     
-                                    <!-- Amazonで検索ボタン -->
-                                    <a href="https://www.amazon.co.jp/s?k=<?php echo urlencode($book['title'] . ' ' . ($book['author'] ?? '')); ?>" 
+                                    <!-- Amazonで見る（アソシエイト） -->
+                                    <a href="<?php echo html(getAmazonProductUrl($book)); ?>"
                                        target="_blank"
-                                       rel="noopener noreferrer"
+                                       rel="noopener noreferrer sponsored"
                                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors text-sm">
-                                        <i class="fab fa-amazon mr-2"></i>Amazonで検索
+                                        <i class="fab fa-amazon mr-2"></i>Amazonで見る
                                     </a>
                                 </div>
                             </div>

@@ -52,6 +52,11 @@ ob_start();
                         <i class="fas fa-user-shield mr-2"></i>プライバシーポリシー
                     </a>
                 </li>
+                <li>
+                    <a href="#affiliate" class="text-readnest-primary hover:text-readnest-accent dark:text-readnest-primary dark:hover:text-readnest-accent">
+                        <i class="fas fa-handshake mr-2"></i>アフィリエイトプログラムについて
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -346,7 +351,54 @@ ob_start();
                 <div class="mt-8 p-4 bg-gray-100 dark:bg-gray-700 rounded">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                         制定日：2024年1月1日<br>
-                        最終更新日：2024年1月1日
+                        最終更新日：2026年5月6日
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- アフィリエイトプログラムについて -->
+        <section id="affiliate" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mt-8">
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                <i class="fas fa-handshake text-readnest-primary mr-3"></i>
+                アフィリエイトプログラムについて
+            </h2>
+
+            <div class="prose prose-lg max-w-none">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Amazonアソシエイト・プログラム</h3>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            当サイトはAmazon.co.jpを宣伝しリンクすることによって、サイトが紹介料を獲得できる手段を提供することを目的に設定されたアフィリエイトプログラムである、Amazonアソシエイト・プログラムの参加者です。
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">紹介料について</h3>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            当サイトに掲載されているAmazon.co.jpへのリンクを経由して商品をご購入いただいた場合、当サイトに紹介料が支払われることがあります。紹介料は、Amazon.co.jpが定める規約に基づいて算定されます。
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">商品情報・価格について</h3>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            当サイトに表示される書籍の価格・在庫・画像等の情報は、Amazon.co.jpの情報を参照して表示している場合があります。実際の販売価格・在庫状況・商品仕様は、リンク先のAmazon.co.jpの商品ページにてご確認ください。当サイトの表示内容と販売元の情報に差異がある場合、販売元の情報が優先されます。
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">免責事項</h3>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            アフィリエイトリンクを経由した商品の購入・取引については、当サービスは一切の責任を負いません。商品に関するお問い合わせ、返品、キャンセル等は、購入先（Amazon.co.jp）までご連絡ください。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-gray-100 dark:bg-gray-700 rounded">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        制定日：2026年5月6日<br>
+                        最終更新日：2026年5月6日
                     </p>
                 </div>
             </div>
