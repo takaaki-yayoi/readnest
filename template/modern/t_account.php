@@ -154,6 +154,11 @@ ob_start();
                                 class="w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             <i class="fas fa-shield-alt mr-2"></i>プライバシー設定
                         </button>
+                        <button @click="activeTab = 'notifications'"
+                                :class="activeTab === 'notifications' ? 'bg-readnest-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                class="w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-bell mr-2"></i>通知設定
+                        </button>
                         <button @click="activeTab = 'api'"
                                 :class="activeTab === 'api' ? 'bg-readnest-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
                                 class="w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -780,6 +785,47 @@ ob_start();
 
                     </div>
 
+                    <!-- 通知設定 -->
+                    <div x-show="activeTab === 'notifications'" x-transition class="p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">通知設定</h3>
+
+                        <div class="space-y-6">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-200">
+                                <p class="font-medium mb-1"><i class="fas fa-info-circle mr-2"></i>ブラウザのpush通知について</p>
+                                <p>記録忘れの防止に通知を活用できます。AndroidとPCのChrome/Edgeに加えて、iOS 16.4+ では <strong>ホーム画面に追加した状態（PWAインストール済み）</strong> でのみ動作します。Safariのブラウザタブからは受け取れません。</p>
+                            </div>
+
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6"
+                                 x-data='streakReminderToggle(<?php echo (int)$streak_reminder_enabled; ?>, <?php echo json_encode($vapid_public_key, JSON_UNESCAPED_SLASHES); ?>)'>
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                            <i class="fas fa-fire text-orange-500 mr-2"></i>記録忘れリマインダー
+                                        </h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ストリーク（連続記録）が継続中で、その日の記録がまだない場合に、夜21時頃にやさしくお知らせします。
+                                        </p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                        <input type="checkbox" class="sr-only peer"
+                                               x-model="enabled"
+                                               @change="onToggle()"
+                                               :disabled="busy">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-readnest-primary/30 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-readnest-primary"></div>
+                                    </label>
+                                </div>
+
+                                <p x-show="message" x-text="message" x-cloak
+                                   :class="error ? 'text-red-600' : 'text-green-600'"
+                                   class="text-sm mt-3"></p>
+
+                                <p x-show="!vapidPublicKey" x-cloak class="text-sm text-amber-700 dark:text-amber-300 mt-3">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>サーバー側の設定が未完了のため通知を有効化できません。管理者にお問い合わせください。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- API連携設定 -->
                     <div x-show="activeTab === 'api'" x-transition class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">API連携設定</h3>
@@ -869,6 +915,11 @@ ob_start();
         </div>
     </div>
 </div>
+
+<script>
+window.READNEST_CSRF_TOKEN = <?php echo json_encode(getCSRFToken(), JSON_UNESCAPED_SLASHES); ?>;
+</script>
+<script src="/js/push-subscription.js?v=<?php echo date('YmdHis'); ?>"></script>
 
 <?php
 $d_content = ob_get_clean();

@@ -1,0 +1,12 @@
+{
+    "name": "readnest/readnest",
+    "description": "ReadNest dependencies (Web Push)",
+    "require": {
+        "php": ">=7.4",
+        "minishlink/web-push": "^8.0"
+    },
+    "config": {
+        "vendor-dir": "vendor",
+        "optimize-autoloader": true
+    }
+}

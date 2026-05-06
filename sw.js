@@ -6,7 +6,7 @@
 //   - HTML ナビゲーション                   : Network First → /offline.html
 // 外部解析スクリプト (GTM/gtag/Tailwind CDN等) はキャッシュ対象外（passthrough）。
 
-const VERSION = 'v1.0.2';
+const VERSION = 'v1.1.0';
 
 // ナビゲーション (HTML) のネットワーク待ちタイムアウト (ms)
 // この時間を超えてもサーバーが応答しなければキャッシュ済みHTMLを返す
@@ -232,4 +232,44 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// Push 通知の受信
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (e) {
+    payload = { title: 'ReadNest', body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'ReadNest';
+  const options = {
+    body: payload.body || '',
+    icon: payload.icon || '/img/logo.png',
+    badge: payload.badge || '/img/logo.png',
+    tag: payload.tag || 'readnest-notification',
+    data: { url: payload.url || '/' },
+    requireInteraction: false,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 通知クリック時の挙動: 既存タブにフォーカス、無ければ新規で開く
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(targetUrl).catch(() => {});
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(targetUrl);
+    })
+  );
 });

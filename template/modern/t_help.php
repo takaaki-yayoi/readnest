@@ -2222,6 +2222,51 @@ ob_start();
                         </div>
                     </div>
 
+                    <!-- 記録忘れリマインダー NEW! -->
+                    <div class="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg p-6 relative">
+                        <span class="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-fire text-orange-500 mr-3"></i>
+                            記録忘れリマインダー（push通知）
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            連続記録（ストリーク）が継続中で、その日の記録がまだない場合に、夜21時頃にやさしくお知らせします。
+                            記録忘れによるストリーク途切れを防ぎます。
+                        </p>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100">主な機能:</h4>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                <li><strong>送信条件：</strong>昨日まで連続記録があり、本日まだ未記録の場合のみ</li>
+                                <li><strong>送信時刻：</strong>毎日21:00頃に1回</li>
+                                <li><strong>対応端末：</strong>PCのChrome/Edge/Firefox、Androidのブラウザ、iPhone（PWAインストール時のみ）</li>
+                                <li><strong>1ユーザー複数端末対応：</strong>PCとスマホ両方で受信可能</li>
+                            </ul>
+
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">設定方法:</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                                <li><a href="/account.php" class="text-readnest-primary hover:underline">アカウント設定</a> → 「通知設定」タブ</li>
+                                <li>「記録忘れリマインダー」のトグルをON</li>
+                                <li>ブラウザの通知許可ダイアログで「許可」を選択</li>
+                                <li>「通知を有効にしました」と表示されれば完了</li>
+                            </ol>
+
+                            <div class="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded text-sm">
+                                <p class="text-blue-800 dark:text-blue-300">
+                                    <i class="fas fa-mobile-alt mr-1"></i>
+                                    <strong class="dark:text-gray-200">iPhoneの場合：</strong>iOS 16.4以上で、ReadNestを<strong>ホーム画面に追加（PWAインストール）</strong>した状態でのみ通知を受け取れます。Safariのブラウザタブからは受信できません。
+                                </p>
+                            </div>
+
+                            <div class="mt-2 p-3 bg-orange-100 dark:bg-orange-900/30 rounded text-sm">
+                                <p class="text-orange-800 dark:text-orange-300">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    <strong class="dark:text-gray-200">ヒント：</strong>記録は1ページでもOK。読書中の本を開いて進捗を更新するだけでストリークが維持できます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ダークモード対応 -->
                     <div class="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600">
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🌙 ダークモード対応</h3>

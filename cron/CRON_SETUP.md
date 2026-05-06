@@ -79,6 +79,19 @@
 - **影響**: ユーザーエンゲージメントの向上
 - **注意**: b_notificationsテーブルが必要
 
+### 10. 読書ストリーク維持リマインダー（重要度：中）
+```bash
+# 毎日21:00 JST に実行
+0 21 * * * /usr/bin/php /home/icotfeels/readnest.jp/public_html/cron/send_streak_reminders.php
+```
+- **目的**: ストリーク継続中で本日未記録のユーザーにpush通知でリマインド
+- **影響**: 連続記録の維持率向上、リテンション改善
+- **前提**:
+  - `migrations/004_push_notifications.sql` を適用済み
+  - `composer install` 実行済み（`minishlink/web-push`）
+  - `php scripts/generate_vapid_keys.php` で発行した VAPID 鍵を `config.php` に設定済み
+  - ユーザーがアカウント設定の「通知設定」でリマインダーを有効化済み
+
 ## cron設定方法
 
 ### 1. crontabを編集

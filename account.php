@@ -11,6 +11,7 @@ require_once('modern_config.php');
 
 // フォームヘルパーを読み込み
 require_once(dirname(__FILE__) . '/library/form_helpers.php');
+require_once(dirname(__FILE__) . '/library/csrf.php');
 
 // checkPasswordById関数が定義されていない場合の緊急対処
 if (!function_exists('checkPasswordById')) {
@@ -48,6 +49,10 @@ $x_connected = !empty($user_info['x_oauth_token']) && !empty($user_info['x_oauth
 $x_screen_name = $user_info['x_screen_name'] ?? '';
 $x_post_enabled = $user_info['x_post_enabled'] ?? 0;
 $x_post_events = $user_info['x_post_events'] ?? 13;
+
+// 通知設定
+$streak_reminder_enabled = !empty($user_info['streak_reminder_enabled']) ? 1 : 0;
+$vapid_public_key = defined('VAPID_PUBLIC_KEY') ? VAPID_PUBLIC_KEY : '';
 
 // ページタイトル設定
 $d_site_title = "アカウント設定 - ReadNest";

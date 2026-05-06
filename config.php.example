@@ -81,6 +81,19 @@ define('GOOGLE_BOOKS_API_KEY', getenv('GOOGLE_BOOKS_API_KEY') ?: '');
  */
 define('AMAZON_ASSOCIATE_TAG', getenv('AMAZON_ASSOCIATE_TAG') ?: '');
 
+/**
+ * Web Push (VAPID) — push通知署名用
+ *
+ * 生成方法: composer install 後に
+ *   php scripts/generate_vapid_keys.php
+ * を実行し、出力された3定数を config.php に貼り付ける。
+ *
+ * 鍵を再生成すると既存の購読が全て無効になるため運用開始後は再生成しないこと。
+ */
+define('VAPID_SUBJECT', getenv('VAPID_SUBJECT') ?: 'mailto:admin@readnest.jp');
+define('VAPID_PUBLIC_KEY', getenv('VAPID_PUBLIC_KEY') ?: '');
+define('VAPID_PRIVATE_KEY', getenv('VAPID_PRIVATE_KEY') ?: '');
+
 // ========================================
 // アプリケーション設定
 // ========================================
