@@ -268,6 +268,35 @@ if(!defined('CONFIG')) {
             }
         }
 
+        /* === ページ遷移プログレスバー（PWA で URL バーのプログレスが消える対策） === */
+        #pwa-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0;
+            background: linear-gradient(to right, #1a4d3e, #38a182);
+            box-shadow: 0 0 8px rgba(56, 161, 130, 0.5);
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+        #pwa-progress-bar.active {
+            opacity: 1;
+            animation: pwa-progress-loading 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        @keyframes pwa-progress-loading {
+            0%   { width: 0%;  }
+            40%  { width: 60%; }
+            70%  { width: 85%; }
+            100% { width: 95%; }
+        }
+        /* iOS ノッチ対応: ノッチ下に出す */
+        @media (display-mode: standalone) {
+            #pwa-progress-bar { top: env(safe-area-inset-top); }
+        }
+
         /* === SW 更新通知トースト === */
         #pwa-update-toast {
             position: fixed;
@@ -1232,6 +1261,68 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         echo displaySQLLog();
     }
     ?>
+
+    <!-- PWA: ページ遷移プログレスバー -->
+    <script>
+        (function() {
+            var bar = document.createElement('div');
+            bar.id = 'pwa-progress-bar';
+            document.body.appendChild(bar);
+
+            var showTimer = null;
+            var failsafeTimer = null;
+
+            function showProgress() {
+                if (showTimer || bar.classList.contains('active')) return;
+                // 100ms 待ってから表示（瞬時に終わるナビゲーションでチカチカしないように）
+                showTimer = setTimeout(function() {
+                    bar.classList.add('active');
+                    showTimer = null;
+                    // 30秒経っても遷移しない場合の保険
+                    failsafeTimer = setTimeout(hideProgress, 30000);
+                }, 100);
+            }
+            function hideProgress() {
+                if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+                if (failsafeTimer) { clearTimeout(failsafeTimer); failsafeTimer = null; }
+                bar.classList.remove('active');
+            }
+
+            // 内部リンククリックで表示
+            document.addEventListener('click', function(e) {
+                if (e.defaultPrevented) return;
+                if (e.button !== 0) return; // 左クリックのみ
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; // 別タブ等
+                var link = e.target.closest && e.target.closest('a[href]');
+                if (!link) return;
+                if (link.target === '_blank') return;
+                if (link.hasAttribute('download')) return;
+                var href = link.getAttribute('href');
+                if (!href || href.charAt(0) === '#') return;
+                if (/^(javascript|mailto|tel|sms):/i.test(href)) return;
+                try {
+                    var url = new URL(href, location.href);
+                    if (url.origin !== location.origin) return;
+                    // 同じページ内のフラグメント遷移は除外
+                    if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
+                } catch (err) { return; }
+                showProgress();
+            });
+
+            // フォーム送信で表示
+            document.addEventListener('submit', function(e) {
+                if (e.defaultPrevented) return;
+                var form = e.target;
+                if (form.target === '_blank') return;
+                showProgress();
+            });
+
+            // bfcache から復帰した時は確実に隠す
+            window.addEventListener('pageshow', hideProgress);
+            // ページ離脱開始時に念のため隠す
+            window.addEventListener('pagehide', hideProgress);
+        })();
+    </script>
 
     <!-- PWA: Service Worker 登録 + 更新通知トースト -->
     <script>
