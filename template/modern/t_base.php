@@ -1360,7 +1360,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
                     .then(function(registration) {
                         registration.addEventListener('updatefound', function() {
                             var newWorker = registration.installing;
