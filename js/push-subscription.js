@@ -20,7 +20,7 @@ async function getOrRegisterSW() {
   if (!('serviceWorker' in navigator)) return null;
   const reg = await navigator.serviceWorker.getRegistration('/');
   if (reg) return reg;
-  return await navigator.serviceWorker.register('/sw.js');
+  return await navigator.serviceWorker.register('/sw-v2.js');
 }
 
 async function postJson(url, payload) {

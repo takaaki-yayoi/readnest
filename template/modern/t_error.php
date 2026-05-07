@@ -96,7 +96,7 @@ ob_start();
 // エラー報告の自動送信（オプション）
 if ('serviceWorker' in navigator) {
     // Service Worker を使用してオフライン対応
-    navigator.serviceWorker.register('/sw.js').catch(function(error) {
+    navigator.serviceWorker.register('/sw-v2.js').catch(function(error) {
         console.log('Service Worker registration failed:', error);
     });
 }
