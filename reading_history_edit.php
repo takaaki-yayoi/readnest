@@ -268,18 +268,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             if ($book['total_page'] > 0 && $latest_event['page'] >= $book['total_page']) {
                                 $new_status = READING_FINISH;  // 読了
                             } elseif ($latest_event['page'] > 0) {
-                                // 現在のステータスが「読了」または「昔読んだ」でない場合のみ「読書中」に更新
-                                if (!in_array($book['status'], [READING_FINISH, READ_BEFORE])) {
+                                // 「昔読んだ」以外は「読書中」に更新（読了→読書中への降格を含む）
+                                if ($book['status'] != READ_BEFORE) {
                                     $new_status = READING_NOW;  // 読書中
                                 }
                             }
-                            
+
+                            // 読了→読書中への降格時は読了日もクリア
+                            $demoting_from_finish = ($book['status'] == READING_FINISH && $new_status == READING_NOW);
+
                             if ($new_status !== null) {
+                                $extra_set = $demoting_from_finish ? ', finished_date = NULL' : '';
                                 $update_sql = "
-                                    UPDATE b_book_list 
+                                    UPDATE b_book_list
                                     SET current_page = ?,
                                         update_date = ?,
-                                        status = ?
+                                        status = ?{$extra_set}
                                     WHERE book_id = ? AND user_id = ?
                                 ";
                                 $g_db->query($update_sql, [
@@ -291,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                 ]);
                             } else {
                                 $update_sql = "
-                                    UPDATE b_book_list 
+                                    UPDATE b_book_list
                                     SET current_page = ?,
                                         update_date = ?
                                     WHERE book_id = ? AND user_id = ?
@@ -305,19 +309,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             }
                         } else {
                             // 読書記録がすべて削除された場合
-                            // ステータスが「読書中」の場合は「未読」に戻す
+                            // 読書中→未読、読了→読書中（読了日クリア）、昔読んだ→保護
                             if ($book['status'] == READING_NOW) {
                                 $update_sql = "
-                                    UPDATE b_book_list 
+                                    UPDATE b_book_list
                                     SET current_page = 0,
                                         status = ?
                                     WHERE book_id = ? AND user_id = ?
                                 ";
                                 $g_db->query($update_sql, [NOT_STARTED, $book_id, $mine_user_id]);
-                            } else {
-                                // 読了済みの本は読了のまま、ページ数だけリセット
+                            } elseif ($book['status'] == READING_FINISH) {
                                 $update_sql = "
-                                    UPDATE b_book_list 
+                                    UPDATE b_book_list
+                                    SET current_page = 0,
+                                        status = ?,
+                                        finished_date = NULL
+                                    WHERE book_id = ? AND user_id = ?
+                                ";
+                                $g_db->query($update_sql, [READING_NOW, $book_id, $mine_user_id]);
+                            } else {
+                                // 昔読んだ: 状態を保護、ページのみリセット
+                                $update_sql = "
+                                    UPDATE b_book_list
                                     SET current_page = 0
                                     WHERE book_id = ? AND user_id = ?
                                 ";
