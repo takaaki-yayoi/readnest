@@ -6,7 +6,7 @@
 //   - HTML ナビゲーション                   : Network First → /offline.html
 // 外部解析スクリプト (GTM/gtag/Tailwind CDN等) はキャッシュ対象外（passthrough）。
 
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.2.0';
 
 // ナビゲーション (HTML) のネットワーク待ちタイムアウト (ms)
 // この時間を超えてもサーバーが応答しなければキャッシュ済みHTMLを返す
