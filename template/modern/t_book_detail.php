@@ -1338,16 +1338,60 @@ ob_start();
                                                         <h3 class="text-sm font-semibold text-blue-800">
                                                             <i class="fas fa-bookmark mr-1"></i>進捗を更新
                                                         </h3>
-                                                        <form action="" method="post" class="flex-shrink-0">
-                                                            <?php csrfFieldTag(); ?>
-                                                            <input type="hidden" name="action" value="mark_as_finished">
-                                                            <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
-                                                            <button type="submit" 
-                                                                    class="bg-green-500 text-white py-2 px-3 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-                                                                    onclick="return confirm('この本を読了しますか？');">
+                                                        <div x-data="{ showFinishModal: false }" class="flex-shrink-0">
+                                                            <button type="button"
+                                                                    @click="showFinishModal = true; $nextTick(() => $refs.finishMemo && $refs.finishMemo.focus())"
+                                                                    class="bg-green-500 text-white py-2 px-3 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium">
                                                                 <i class="fas fa-check-circle mr-2"></i>読み終わった
                                                             </button>
-                                                        </form>
+
+                                                            <!-- 読了モーダル: 余韻メモ入力 -->
+                                                            <div x-show="showFinishModal"
+                                                                 x-cloak
+                                                                 x-transition.opacity
+                                                                 @keydown.escape.window="showFinishModal = false"
+                                                                 @click.self="showFinishModal = false"
+                                                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                                                                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+                                                                    <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
+                                                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>読了の記録
+                                                                    </h3>
+                                                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                                                        読み終えた今の気持ちを一言だけ残しますか？（任意・後から編集できます）
+                                                                    </p>
+                                                                    <form action="" method="post">
+                                                                        <?php csrfFieldTag(); ?>
+                                                                        <input type="hidden" name="action" value="mark_as_finished">
+                                                                        <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
+                                                                        <textarea name="memo"
+                                                                                  x-ref="finishMemo"
+                                                                                  rows="3"
+                                                                                  maxlength="2000"
+                                                                                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                                                  placeholder="例: 一気に読めた。終盤の展開が予想外で..."><?php echo html($user_book_info['memo'] ?? ''); ?></textarea>
+                                                                        <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+                                                                            <button type="button"
+                                                                                    @click="showFinishModal = false"
+                                                                                    class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
+                                                                                キャンセル
+                                                                            </button>
+                                                                            <button type="submit"
+                                                                                    name="memo_action"
+                                                                                    value="skip"
+                                                                                    class="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                                                                                スキップして読了
+                                                                            </button>
+                                                                            <button type="submit"
+                                                                                    name="memo_action"
+                                                                                    value="save"
+                                                                                    class="px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">
+                                                                                <i class="fas fa-check mr-1"></i>感想付きで読了
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     
                                                     <div class="mt-3">

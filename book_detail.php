@@ -128,13 +128,20 @@ if (checkLogin()) {
         if ($current_book && !DB::isError($current_book)) {
             // 読了日を今日に設定
             $finished_date = date('Y-m-d');
-            
+
+            // 読了モーダルから受け取った余韻メモ
+            // memo_action=save の場合のみPOST値を採用、それ以外（skip/未指定）は既存memoを保持
+            $memo_action = $_POST['memo_action'] ?? 'skip';
+            $finish_memo = ($memo_action === 'save')
+                ? sanitizeInput($_POST['memo'] ?? '')
+                : ($current_book['memo'] ?? '');
+
             // ステータスを読了に更新
-            updateBook($mine_user_id, (int)$_POST['book_id'], READING_FINISH, 
-                      $current_book['rating'] ?? 0, 
-                      $current_book['memo'] ?? '', 
+            updateBook($mine_user_id, (int)$_POST['book_id'], READING_FINISH,
+                      $current_book['rating'] ?? 0,
+                      $finish_memo,
                       $finished_date);
-            
+
             // 成功メッセージをセッションに保存
             $_SESSION['progress_updated'] = true;
             $_SESSION['progress_page'] = $current_book['total_page'] ?? 0;
