@@ -82,7 +82,7 @@
 ### 10. 読書ストリーク維持リマインダー（重要度：中）
 ```bash
 # 毎日21:00 JST に実行
-0 21 * * * /usr/bin/php /home/icotfeels/readnest.jp/public_html/cron/send_streak_reminders.php
+0 21 * * * /usr/bin/php8.2 /home/icotfeels/readnest.jp/public_html/cron/send_streak_reminders.php
 ```
 - **目的**: ストリーク継続中で本日未記録のユーザーにpush通知でリマインド
 - **影響**: 連続記録の維持率向上、リテンション改善
@@ -91,6 +91,20 @@
   - `composer install` 実行済み（`minishlink/web-push`）
   - `php scripts/generate_vapid_keys.php` で発行した VAPID 鍵を `config.php` に設定済み
   - ユーザーがアカウント設定の「通知設定」でリマインダーを有効化済み
+
+### 11. ストリーク節目祝い通知（重要度：中）
+```bash
+# 毎日22:00 JST に実行
+0 22 * * * /usr/bin/php8.2 /home/icotfeels/readnest.jp/public_html/cron/send_streak_milestones.php
+```
+- **目的**: 7/14/30/50/100/200/365/500/1000日達成した日にお祝いpush通知を送信
+- **影響**: ポジティブ強化による継続意欲向上
+- **前提**: 10と同じ。初回実行時に `b_streak_milestone_log` テーブルが自動作成される
+
+### 注意: PHP CLIバージョン
+push通知（10, 11）は `minishlink/web-push` が GMP 拡張を必要とするため、
+GMPが有効な PHP 8.2+ で実行する必要があります。エックスサーバーでは
+`/usr/bin/php8.2` を使ってください。`/usr/bin/php`（多くの場合 8.0）はGMPが無効。
 
 ## cron設定方法
 

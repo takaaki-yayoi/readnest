@@ -800,11 +800,17 @@ ob_start();
                                 <div class="flex items-start justify-between gap-4">
                                     <div class="flex-1">
                                         <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                                            <i class="fas fa-fire text-orange-500 mr-2"></i>記録忘れリマインダー
+                                            <i class="fas fa-bell text-readnest-primary mr-2"></i>Push通知を受け取る
                                         </h4>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                                            ストリーク（連続記録）が継続中で、その日の記録がまだない場合に、夜21時頃にやさしくお知らせします。
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                            ONにすると以下のpush通知を受け取れます。すべて控えめな頻度で送信します。
                                         </p>
+                                        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-1">
+                                            <li><i class="fas fa-fire text-orange-500 mr-1.5"></i><strong>記録忘れリマインダー</strong>：ストリーク継続中で当日未記録の夜21時</li>
+                                            <li><i class="fas fa-book text-yellow-500 mr-1.5"></i><strong>新刊通知</strong>：お気に入り作家の新刊が見つかった時</li>
+                                            <li><i class="fas fa-chart-bar text-blue-500 mr-1.5"></i><strong>月間レポート</strong>：毎月1日朝、前月の振り返り</li>
+                                            <li><i class="fas fa-trophy text-purple-500 mr-1.5"></i><strong>ストリーク節目祝い</strong>：7日 / 30日 / 100日 / 365日 等を達成した夜</li>
+                                        </ul>
                                     </div>
                                     <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                         <input type="checkbox" class="sr-only peer"

@@ -18,6 +18,7 @@ require_once(dirname(__DIR__) . '/config.php');
 require_once(dirname(__DIR__) . '/library/database.php');
 require_once(dirname(__DIR__) . '/library/notification_helpers.php');
 require_once(dirname(__DIR__) . '/library/monthly_report_generator.php');
+require_once(dirname(__DIR__) . '/library/push_helper.php');
 
 // データベース接続
 $g_db = DB_Connect();
@@ -83,6 +84,13 @@ try {
 
             if ($result) {
                 $success_count++;
+                $books_finished = (int)($report_data['statistics']['books_finished'] ?? 0);
+                sendPushIfOptedIn((int)$user_id, [
+                    'title' => "📊 {$target_year}年{$target_month}月の読書レポート",
+                    'body' => "先月は{$books_finished}冊読了しました。振り返りを見る",
+                    'url' => '/monthly_report.php?year=' . $target_year . '&month=' . $target_month,
+                    'tag' => 'monthly-report-' . $target_year . $target_month,
+                ]);
             } else {
                 // 重複の場合もfalseが返るので、スキップとしてカウント
                 $skip_count++;

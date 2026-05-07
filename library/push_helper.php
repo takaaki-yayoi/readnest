@@ -113,3 +113,26 @@ function userHasPushSubscription(int $user_id): bool
     );
     return !DB::isError($count) && (int)$count > 0;
 }
+
+/**
+ * オプトイン済みユーザーへのみ通知送信
+ *
+ * b_user.streak_reminder_enabled = 1 のユーザーにのみ送る。
+ * このフラグはストリークリマインダーだけでなく、push通知全般のON/OFFスイッチとして使う。
+ *
+ * @return int 送信成功端末数
+ */
+function sendPushIfOptedIn(int $user_id, array $payload): int
+{
+    global $g_db;
+
+    $enabled = $g_db->getOne(
+        "SELECT streak_reminder_enabled FROM b_user WHERE user_id = ?",
+        [$user_id]
+    );
+    if (DB::isError($enabled) || empty($enabled)) {
+        return 0;
+    }
+
+    return sendPushToUser($user_id, $payload);
+}

@@ -17,6 +17,7 @@ require_once(dirname(__DIR__) . '/config.php');
 require_once(dirname(__DIR__) . '/library/database.php');
 require_once(dirname(__DIR__) . '/library/notification_helpers.php');
 require_once(dirname(__DIR__) . '/library/google_books_api.php');
+require_once(dirname(__DIR__) . '/library/push_helper.php');
 
 $g_db = DB_Connect();
 if (!$g_db || DB::isError($g_db)) {
@@ -184,7 +185,15 @@ foreach ($all_fav_authors as $author_row) {
                                 ]
                             ]
                         );
-                        if ($notif_id) $notifications_sent++;
+                        if ($notif_id) {
+                            $notifications_sent++;
+                            sendPushIfOptedIn((int)$fan['user_id'], [
+                                'title' => "📚 {$author_name}の新刊",
+                                'body' => "『{$work['title']}』が見つかりました",
+                                'url' => '/new_releases.php',
+                                'tag' => 'new-release-' . $notif_id,
+                            ]);
+                        }
                     }
                 }
             }
