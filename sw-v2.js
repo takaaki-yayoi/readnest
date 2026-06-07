@@ -6,11 +6,8 @@
 //   - HTML ナビゲーション                   : Network First → /offline.html
 // 外部解析スクリプト (GTM/gtag/Tailwind CDN等) はキャッシュ対象外（passthrough）。
 
-const VERSION = 'v1.2.0';
+const VERSION = 'v1.4.0';
 
-// ナビゲーション (HTML) のネットワーク待ちタイムアウト (ms)
-// この時間を超えてもサーバーが応答しなければキャッシュ済みHTMLを返す
-const NAV_TIMEOUT_MS = 3000;
 const STATIC_CACHE = `readnest-static-${VERSION}`;
 const IMAGE_CACHE = `readnest-images-${VERSION}`;
 const API_CACHE = `readnest-api-${VERSION}`;
@@ -64,6 +61,13 @@ self.addEventListener('activate', (event) => {
         keys.filter((key) => key.startsWith('readnest-') && !ALL_CACHES.includes(key))
             .map((key) => caches.delete(key))
       ))
+      // Navigation Preload: SW 起動と並行してナビゲーションの取得を先行開始し、
+      // 初回（キャッシュ無し）ページの体感速度を改善する
+      .then(() => {
+        if (self.registration.navigationPreload) {
+          return self.registration.navigationPreload.enable();
+        }
+      })
       .then(() => self.clients.claim())
   );
 });
@@ -103,7 +107,7 @@ self.addEventListener('fetch', (event) => {
 
   // 3. HTML ナビゲーション
   if (request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html')) {
-    event.respondWith(navigationHandler(request));
+    event.respondWith(navigationHandler(event));
     return;
   }
 
@@ -177,43 +181,54 @@ async function staleWhileRevalidate(request, cacheName, maxEntries) {
   return cached || fetchPromise;
 }
 
-async function navigationHandler(request) {
+// ナビゲーション応答をキャッシュして良いか判定する。
+// 過去の白画面の原因は、PHP fatal 等で途中で切れた「空・不完全なHTML」を
+// 200 として保存し配信し続けていたこと。完全な HTML だけを保存対象にする。
+async function isCompleteHtmlResponse(response) {
+  // status 200 の自オリジン (basic) かつリダイレクト結果でないもののみ
+  if (!response || response.status !== 200 || response.type !== 'basic' || response.redirected) {
+    return false;
+  }
+  try {
+    const text = await response.clone().text();
+    // 終端タグがあれば完全なページとみなす（途中で切れた応答は弾く）
+    return /<\/html\s*>/i.test(text);
+  } catch (err) {
+    return false;
+  }
+}
+
+async function navigationHandler(event) {
+  const request = event.request;
   const cache = await caches.open(HTML_CACHE);
-
-  // ネットワーク取得とキャッシュ更新
-  const networkPromise = fetch(request).then((response) => {
-    if (response && response.status === 200) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  });
-
   const cached = await cache.match(request);
 
-  // キャッシュがある場合: ネットワークと NAV_TIMEOUT_MS を競争させる
-  // サーバーが遅い時は古いキャッシュを返して体感速度を維持（裏で取得は継続）
-  if (cached) {
-    let timeoutId;
-    const timeoutPromise = new Promise((resolve) => {
-      timeoutId = setTimeout(() => resolve(cached), NAV_TIMEOUT_MS);
-    });
+  // ネットワーク取得（Navigation Preload があれば再利用）＋ 完全なら裏でキャッシュ更新
+  const networkUpdate = (async () => {
     try {
-      const winner = await Promise.race([networkPromise, timeoutPromise]);
-      clearTimeout(timeoutId);
-      return winner;
+      const preload = await event.preloadResponse;
+      const response = preload || await fetch(request);
+      if (await isCompleteHtmlResponse(response)) {
+        await cache.put(request, response.clone());
+      }
+      return response;
     } catch (err) {
-      clearTimeout(timeoutId);
-      return cached;
+      return null;
     }
+  })();
+
+  // キャッシュがあれば即表示（SWR）。更新は裏で継続。
+  // → モバイルでもタップ直後に前回の内容が瞬時に出るため白画面が出ない。
+  if (cached) {
+    event.waitUntil(networkUpdate);
+    return cached;
   }
 
-  // 初回訪問でキャッシュなし: ネットワーク完了まで待つ。失敗時はオフラインページ
-  try {
-    return await networkPromise;
-  } catch (err) {
-    const offline = await caches.match('/offline.html');
-    return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
-  }
+  // 初回（キャッシュ無し）: ネットワークを待つ。失敗時はオフラインページ。
+  const response = await networkUpdate;
+  if (response) return response;
+  const offline = await caches.match('/offline.html');
+  return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
 }
 
 async function trimCache(cacheName, maxEntries) {

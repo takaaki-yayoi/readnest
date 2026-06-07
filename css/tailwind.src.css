@@ -1,0 +1,5 @@
+/* Tailwind 入力ファイル。ここから本番用の /css/tailwind.css をビルドする。
+   ビルド: npm run build:css （tailwind.config.js を参照） */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

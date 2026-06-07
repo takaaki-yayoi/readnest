@@ -3,6 +3,23 @@ if(!defined('CONFIG')) {
   error_log('direct access detected. file:' . __FILE__ . ' line:' . __LINE__ . ' ip:' . $_SERVER['REMOTE_ADDR'] . ' agent:' . $_SERVER['HTTP_USER_AGENT']);
   die('reference for this file is not allowed.');
 }
+
+// 静的アセットのバージョン文字列。
+// ファイル更新時のみ変化するため（time() と違い）ブラウザ/Service Worker の
+// キャッシュが効き、毎回の再ダウンロードを防ぐ。
+if (!function_exists('asset_ver')) {
+    function asset_ver($rel) {
+        $path = (defined('BASEDIR') ? BASEDIR : dirname(dirname(__DIR__))) . $rel;
+        $mtime = @filemtime($path);
+        return $mtime ? (string)$mtime : date('Ymd');
+    }
+}
+
+// グラフライブラリ(Chart.js/moment)を読み込む必要があるか。
+// 本文にインラインの new Chart() を含むページだけ true（取りこぼし防止のため自動判定）。
+// 個別ページが明示的に $g_load_charts = true を設定した場合も読み込む。
+$g_need_charts = !empty($g_load_charts)
+    || (isset($d_content) && stripos($d_content, 'new Chart') !== false);
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -13,7 +30,6 @@ if(!defined('CONFIG')) {
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
     <!-- 主要 CDN への先読み接続: DNS解決+TLSハンドシェイクを早める -->
-    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://www.googletagmanager.com">
@@ -130,9 +146,13 @@ if(!defined('CONFIG')) {
         })();
     </script>
     
-    <!-- Tailwind CSS (CDN for development, replace with compiled CSS in production) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS: 本番は事前ビルドした静的CSSを使用（実行時コンパイルを排除しモバイルを高速化）。
+         再ビルド: npm run build:css ／ 設定: tailwind.config.js -->
+    <link rel="stylesheet" href="/css/tailwind.css?v=<?php echo asset_ver('/css/tailwind.css'); ?>">
     <link rel="stylesheet" href="/template/modern/css/modern-styles.css">
+    <!-- 旧: Tailwind Play CDN（開発用・実行時コンパイルで重い）。緊急フォールバック用に保持。
+         戻す場合は下記2ブロックのコメントを解除し、上の tailwind.css の link を外すこと。
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class', // クラスベースのダークモード
@@ -151,28 +171,12 @@ if(!defined('CONFIG')) {
                         'readnest-beige': '#f5f1e8',
                         'readnest-accent': '#38a182',
                         'book-primary': {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            200: '#bbf7d0',
-                            300: '#86efac',
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
+                            50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac', 400: '#4ade80',
+                            500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d',
                         },
                         'book-secondary': {
-                            50: '#fef3c7',
-                            100: '#fee8a0',
-                            200: '#fdd458',
-                            300: '#fcbf24',
-                            400: '#f59e0b',
-                            500: '#d97706',
-                            600: '#b45309',
-                            700: '#92400e',
-                            800: '#713f12',
-                            900: '#5a3517',
+                            50: '#fef3c7', 100: '#fee8a0', 200: '#fdd458', 300: '#fcbf24', 400: '#f59e0b',
+                            500: '#d97706', 600: '#b45309', 700: '#92400e', 800: '#713f12', 900: '#5a3517',
                         },
                         'book-accent': '#901808',
                     }
@@ -180,13 +184,15 @@ if(!defined('CONFIG')) {
             }
         }
     </script>
+    -->
+
     
     <!-- Custom CSS -->
     <link href="/css/modern.css" rel="stylesheet">
     
     <!-- AI Assistant CSS -->
     <?php if (isset($_SESSION['AUTH_USER'])): ?>
-    <link href="/css/ai_assistant.css?v=<?php echo time(); ?>" rel="stylesheet">
+    <link href="/css/ai_assistant.css?v=<?php echo asset_ver('/css/ai_assistant.css'); ?>" rel="stylesheet">
     <?php endif; ?>
     
     <!-- Font Awesome for icons -->
@@ -361,11 +367,13 @@ if(!defined('CONFIG')) {
     <!-- Alpine.js for lightweight interactivity -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Chart.js for modern graphs -->
+    <?php if ($g_need_charts): ?>
+    <!-- Chart.js for modern graphs（グラフを描画するページでのみ読み込む）-->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Moment.js and Chart.js date adapter for time scale -->
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+    <?php endif; ?>
     
     
     <?php if (isset($d_additional_head)) echo $d_additional_head; ?>
@@ -1099,8 +1107,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- Custom JavaScript -->
     <script src="/js/common-utils.js"></script>
     <script src="/js/modern.js"></script>
-    <script src="/js/onboarding.js?v=<?php echo date('YmdHis'); ?>"></script>
-    <script src="/js/like.js?v=<?php echo date('YmdHis'); ?>"></script>
+    <script src="/js/onboarding.js?v=<?php echo asset_ver('/js/onboarding.js'); ?>"></script>
+    <script src="/js/like.js?v=<?php echo asset_ver('/js/like.js'); ?>"></script>
     
     <!-- AI Assistant -->
     <?php if (isset($_SESSION['AUTH_USER'])): ?>
@@ -1110,12 +1118,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         // 初回ログインフラグをJavaScriptに渡す
         window.isFirstLogin = <?php echo isset($GLOBALS['is_first_login']) && $GLOBALS['is_first_login'] ? 'true' : 'false'; ?>;
     </script>
-    <script src="/js/ai_assistant.js?v=<?php echo date('YmdHis'); ?>"></script>
+    <script src="/js/ai_assistant.js?v=<?php echo asset_ver('/js/ai_assistant.js'); ?>"></script>
     <?php endif; ?>
     
     <!-- AI Search Enhancement -->
     <?php if (basename($_SERVER['SCRIPT_NAME']) === 'add_book.php'): ?>
-    <script src="/js/ai_search.js?v=<?php echo date('YmdHis'); ?>"></script>
+    <script src="/js/ai_search.js?v=<?php echo asset_ver('/js/ai_search.js'); ?>"></script>
     <?php endif; ?>
     
     

@@ -1,0 +1,13 @@
+{
+  "name": "readnest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ReadNest 本番用 Tailwind CSS ビルド設定",
+  "scripts": {
+    "build:css": "npx -y tailwindcss@3.4.17 -i ./css/tailwind.src.css -o ./css/tailwind.css --minify",
+    "watch:css": "npx -y tailwindcss@3.4.17 -i ./css/tailwind.src.css -o ./css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}
