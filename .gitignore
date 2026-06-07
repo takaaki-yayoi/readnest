@@ -144,3 +144,6 @@ personal_notes/
 .env.ftp
 local_settings.php
 development.php
+
+# Claude Code 一時 worktree（過去セッションの作業コピー）
+.claude/worktrees/
