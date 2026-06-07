@@ -5,7 +5,8 @@
  * 毎月1日に前月のレポート通知を全アクティブユーザーに送信
  *
  * crontab:
- * 0 9 1 * * cd /path/to/readnest && php cron/generate_monthly_notifications.php >> /var/log/readnest/monthly_notifications.log 2>&1
+ * 0 9 1 * * cd /path/to/readnest && php cron/generate_monthly_notifications.php >> logs/monthly_notifications.log 2>&1
+ *   ※ logs/ ディレクトリは書き込み可にしておくこと。/var/log/ は共用ホスティングでは使えない。
  */
 
 // CLIでの実行を確認

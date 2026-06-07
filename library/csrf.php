@@ -18,10 +18,12 @@ if (!function_exists('generateCSRFToken')) {
         }
         
         // 既存のトークンがあれば再利用（同一セッション内）
+        // タイムスタンプをスライドさせ、アクティブな閲覧中は失効しないようにする
         if (isset($_SESSION['csrf_token']) && !empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token_time'] = time();
             return $_SESSION['csrf_token'];
         }
-        
+
         // 新しいトークンを生成
         $token = bin2hex(random_bytes(32));
         $_SESSION['csrf_token'] = $token;
@@ -39,7 +41,7 @@ if (!function_exists('generateCSRFToken')) {
  * @return bool 検証成功ならtrue
  */
 if (!function_exists('verifyCSRFToken')) {
-    function verifyCSRFToken(?string $token, int $expiry = 3600): bool {
+    function verifyCSRFToken(?string $token, int $expiry = 7200): bool {
         // セッション開始の前にセッション名を設定
         if (session_status() === PHP_SESSION_NONE) {
             ini_set('session.name', 'DOKUSHO');

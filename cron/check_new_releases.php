@@ -6,7 +6,8 @@
  * 1回の実行で最大20作家をチェック（API負荷軽減のため）。
  *
  * crontab:
- * 0 6 * * * cd /path/to/readnest && php cron/check_new_releases.php >> /var/log/readnest/new_releases.log 2>&1
+ * 0 6 * * * cd /path/to/readnest && php cron/check_new_releases.php >> logs/new_releases.log 2>&1
+ *   ※ logs/ ディレクトリは書き込み可にしておくこと。/var/log/ は共用ホスティングでは使えない。
  */
 
 if (php_sapi_name() !== 'cli') {

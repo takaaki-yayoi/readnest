@@ -12,7 +12,8 @@
  *   - opted-in（streak_reminder_enabled = 1）
  *
  * crontab（22:00 JST に実行。ほとんどの記録が終わっている時刻）:
- * 0 22 * * * cd /path/to/readnest && /usr/bin/php8.2 cron/send_streak_milestones.php >> /var/log/readnest/streak_milestones.log 2>&1
+ * 0 22 * * * cd /path/to/readnest && /usr/bin/php8.2 cron/send_streak_milestones.php >> logs/streak_milestones.log 2>&1
+ *   ※ logs/ ディレクトリは書き込み可にしておくこと。/var/log/ は共用ホスティングでは使えない。
  */
 
 if (php_sapi_name() !== 'cli') {

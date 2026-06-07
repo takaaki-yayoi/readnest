@@ -179,6 +179,65 @@ ob_start();
         border-top-color: rgba(0, 0, 0, 0.9);
     }
 }
+
+/* 日付セルのツールチップ */
+.day-number {
+    position: relative;
+}
+
+.day-tooltip {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .day-number {
+        cursor: default;
+    }
+
+    .day-number .day-tooltip {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        width: max-content;
+        max-width: 200px;
+        margin-top: 4px;
+        padding: 6px 10px;
+        background: rgba(17, 24, 39, 0.95);
+        color: #fff;
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 1.5;
+        text-align: left;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .day-number:hover .day-tooltip {
+        opacity: 1;
+    }
+
+    .day-tooltip-date {
+        display: block;
+        margin-bottom: 3px;
+        font-weight: 600;
+        color: #fcd34d;
+    }
+
+    .day-tooltip-book {
+        display: block;
+    }
+
+    .day-tooltip-book::before {
+        content: '・';
+        margin-right: 1px;
+    }
+}
 </style>
 
 <!-- ヘッダーセクション -->
@@ -560,8 +619,16 @@ ob_start();
                         <td class="relative h-20 xs:h-24 sm:h-28 md:h-32 border-r dark:border-gray-600 last:border-r-0 landscape:h-16">
                             <?php if ($day_info): ?>
                             <div class="p-0.5 sm:p-1 md:p-2 h-full <?php echo $day_info['is_today'] ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''; ?>">
-                                <div class="text-xs sm:text-sm md:text-base <?php echo $day_info['is_future'] ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'; ?> <?php echo $day_info['has_reading'] ? 'font-semibold' : ''; ?>">
+                                <div class="text-xs sm:text-sm md:text-base <?php echo $day_info['is_future'] ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'; ?> <?php echo $day_info['has_reading'] ? 'font-semibold' : ''; ?><?php echo ($day_info['has_reading'] && !empty($day_info['books'])) ? ' day-number' : ''; ?>">
                                     <?php echo $day_info['day']; ?>
+                                    <?php if ($day_info['has_reading'] && !empty($day_info['books'])): ?>
+                                    <span class="day-tooltip">
+                                        <span class="day-tooltip-date"><?php echo date('n月j日', strtotime($day_info['date'])); ?></span>
+                                        <?php foreach ($day_info['books'] as $tooltip_book): ?>
+                                        <span class="day-tooltip-book"><?php echo html($tooltip_book['name']); ?></span>
+                                        <?php endforeach; ?>
+                                    </span>
+                                    <?php endif; ?>
                                 </div>
                                 
                                 <?php if ($day_info['has_reading'] && !empty($day_info['books'])): ?>
@@ -732,6 +799,7 @@ ob_start();
                     'has_reading' => isset($heatmap_data[$date_str]),
                     'book_count' => $day_data['book_count'] ?? 0,
                     'event_count' => $day_data['event_count'] ?? 0,
+                    'book_names' => $day_data['book_names'] ?? [],
                     'is_today' => $date_str === date('Y-m-d'),
                     'is_future' => $current_date > new DateTime()
                 ];
@@ -951,10 +1019,18 @@ ob_start();
                                      data-date="<?php echo $day['date']; ?>"
                                      data-books="<?php echo $day['book_count']; ?>">
                                     <!-- ツールチップ -->
-                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                                        <?php echo date('n月j日', strtotime($day['date'])); ?>
-                                        <?php if ($day['book_count'] > 0): ?>
-                                        <br><?php echo $day['book_count']; ?>冊
+                                    <?php $hm_names = $day['book_names']; $hm_shown = array_slice($hm_names, 0, 5); ?>
+                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-left <?php echo !empty($hm_names) ? 'w-40' : 'whitespace-nowrap'; ?>">
+                                        <span class="font-semibold text-amber-300"><?php echo date('n月j日', strtotime($day['date'])); ?></span>
+                                        <?php if (!empty($hm_names)): ?>
+                                            <?php foreach ($hm_shown as $hm_name): ?>
+                                            <span class="block truncate">・<?php echo html($hm_name); ?></span>
+                                            <?php endforeach; ?>
+                                            <?php if (count($hm_names) > 5): ?>
+                                            <span class="block text-gray-400">他<?php echo count($hm_names) - 5; ?>冊</span>
+                                            <?php endif; ?>
+                                        <?php elseif ($day['book_count'] > 0): ?>
+                                            <br><?php echo $day['book_count']; ?>冊
                                         <?php endif; ?>
                                     </div>
                                 </div>

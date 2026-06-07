@@ -1475,13 +1475,15 @@ if ($login_flag) {
     $end_date = date('Y-m-d 23:59:59', strtotime('last day of ' . $current_year . '-' . $current_month));
     
     $reading_days_sql = "
-        SELECT 
+        SELECT
             DATE(be.event_date) as reading_date,
             COUNT(DISTINCT be.book_id) as book_count,
-            COUNT(*) as event_count
+            COUNT(*) as event_count,
+            GROUP_CONCAT(DISTINCT bl.name ORDER BY be.event_date DESC SEPARATOR '|||') as book_names
         FROM b_book_event be
-        WHERE be.user_id = ? 
-        AND be.event_date >= ? 
+        INNER JOIN b_book_list bl ON be.book_id = bl.book_id AND be.user_id = bl.user_id
+        WHERE be.user_id = ?
+        AND be.event_date >= ?
         AND be.event_date <= ?
         AND be.event IN (?, ?, ?)
         GROUP BY DATE(be.event_date)
@@ -1497,7 +1499,8 @@ if ($login_flag) {
     foreach ($reading_days as $day) {
         $reading_map[$day['reading_date']] = [
             'event_count' => $day['event_count'],
-            'book_count' => $day['book_count']
+            'book_count' => $day['book_count'],
+            'book_names' => !empty($day['book_names']) ? explode('|||', $day['book_names']) : []
         ];
     }
     

@@ -10,7 +10,8 @@
  *   - 本日未送信（重複防止）
  *
  * crontab（21:00 JST に実行）:
- * 0 21 * * * cd /path/to/readnest && php cron/send_streak_reminders.php >> /var/log/readnest/streak_reminders.log 2>&1
+ * 0 21 * * * cd /path/to/readnest && /usr/bin/php8.2 cron/send_streak_reminders.php >> logs/streak_reminders.log 2>&1
+ *   ※ logs/ ディレクトリは書き込み可にしておくこと。/var/log/ は共用ホスティングでは使えない。
  */
 
 if (php_sapi_name() !== 'cli') {

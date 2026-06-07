@@ -1069,7 +1069,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                                         $is_future = strtotime($date) > time();
                                         $book_count = isset($reading_map[$date]) ? $reading_map[$date]['book_count'] : 0;
                                         
-                                        $cell_class = 'w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-xs lg:text-sm relative group cursor-pointer mx-auto ';
+                                        $cell_class = 'w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-xs lg:text-sm relative group mx-auto ';
                                         
                                         // 読書量に応じて色の濃淡を設定
                                         if ($is_today) {
@@ -1104,18 +1104,34 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                                             $cell_class .= 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 ';
                                         }
                                         
-                                        echo '<div class="' . $cell_class . '">';
+                                        if ($has_reading) {
+                                            echo '<a href="/reading_calendar.php" class="' . $cell_class . 'cursor-pointer transition-transform hover:scale-110">';
+                                        } else {
+                                            echo '<div class="' . $cell_class . '">';
+                                        }
                                         echo $current_date;
                                         
                                         // ツールチップ
                                         if ($has_reading) {
-                                            echo '<div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">';
-                                            echo date('n月j日', strtotime($date)) . ' - ' . $book_count . '冊';
+                                            $day_book_names = $reading_map[$date]['book_names'] ?? [];
+                                            $tooltip_width = !empty($day_book_names) ? 'w-40' : 'whitespace-nowrap';
+                                            echo '<div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-left ' . $tooltip_width . '">';
+                                            echo '<span class="font-semibold text-amber-300">' . date('n月j日', strtotime($date)) . '</span>';
+                                            if (!empty($day_book_names)) {
+                                                foreach (array_slice($day_book_names, 0, 5) as $tooltip_book_name) {
+                                                    echo '<span class="block truncate">・' . html($tooltip_book_name) . '</span>';
+                                                }
+                                                if (count($day_book_names) > 5) {
+                                                    echo '<span class="block text-gray-400">他' . (count($day_book_names) - 5) . '冊</span>';
+                                                }
+                                            } else {
+                                                echo ' - ' . $book_count . '冊';
+                                            }
                                             echo '</div>';
                                         }
                                         
-                                        echo '</div>';
-                                        
+                                        echo $has_reading ? '</a>' : '</div>';
+
                                         $current_date++;
                                     }
                                     

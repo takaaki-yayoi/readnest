@@ -111,7 +111,7 @@ foreach ($reading_days as $day) {
     $book_images = explode('|||', $day['book_images'] ?? '');
     
     $books = [];
-    for ($i = 0; $i < min(3, count($book_ids ?? [])); $i++) { // 最大3冊まで
+    for ($i = 0; $i < count($book_ids ?? []); $i++) { // その日に読んだ全ての本
         if (isset($book_ids[$i])) {
             $books[] = [
                 'id' => $book_ids[$i],
@@ -175,29 +175,32 @@ function getYearlyReadingData($user_id, $year) {
     global $g_db;
     
     $sql = "
-        SELECT 
-            DATE(event_date) as reading_date,
-            COUNT(DISTINCT book_id) as book_count,
-            COUNT(*) as event_count
-        FROM b_book_event
-        WHERE user_id = ?
-        AND YEAR(event_date) = ?
-        AND event IN (?, ?, ?)
-        GROUP BY DATE(event_date)
+        SELECT
+            DATE(be.event_date) as reading_date,
+            COUNT(DISTINCT be.book_id) as book_count,
+            COUNT(*) as event_count,
+            GROUP_CONCAT(DISTINCT bl.name ORDER BY be.event_date DESC SEPARATOR '|||') as book_names
+        FROM b_book_event be
+        INNER JOIN b_book_list bl ON be.book_id = bl.book_id AND be.user_id = bl.user_id
+        WHERE be.user_id = ?
+        AND YEAR(be.event_date) = ?
+        AND be.event IN (?, ?, ?)
+        GROUP BY DATE(be.event_date)
         ORDER BY reading_date
     ";
-    
-    $result = $g_db->getAll($sql, 
-        [$user_id, $year, READING_NOW, READING_FINISH, 4], 
+
+    $result = $g_db->getAll($sql,
+        [$user_id, $year, READING_NOW, READING_FINISH, 4],
         DB_FETCHMODE_ASSOC
     );
-    
+
     // 日付をキーとした配列に変換
     $data = [];
     foreach ($result as $row) {
         $data[$row['reading_date']] = [
             'book_count' => $row['book_count'],
-            'event_count' => $row['event_count']
+            'event_count' => $row['event_count'],
+            'book_names' => !empty($row['book_names']) ? explode('|||', $row['book_names']) : []
         ];
     }
     
