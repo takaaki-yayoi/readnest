@@ -6,7 +6,7 @@
 //   - HTML ナビゲーション                   : Network First → /offline.html
 // 外部解析スクリプト (GTM/gtag/Tailwind CDN等) はキャッシュ対象外（passthrough）。
 
-const VERSION = 'v1.4.0';
+const VERSION = 'v1.5.0';
 
 const STATIC_CACHE = `readnest-static-${VERSION}`;
 const IMAGE_CACHE = `readnest-images-${VERSION}`;
@@ -45,6 +45,9 @@ const BYPASS_HOSTS = [
 // 画像キャッシュの上限（簡易LRU）
 const IMAGE_CACHE_MAX_ENTRIES = 200;
 const API_CACHE_MAX_ENTRIES = 50;
+// HTMLキャッシュの上限。POST後リダイレクトのキャッシュバスティング(?_cb=...)で
+// ユニークURLが増え続けるため上限を設けて古いものから破棄する。
+const HTML_CACHE_MAX_ENTRIES = 60;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -203,6 +206,14 @@ async function navigationHandler(event) {
   const cache = await caches.open(HTML_CACHE);
   const cached = await cache.match(request);
 
+  // 明示的なリロード（location.reload() は cache:'reload'、強制再読込は 'no-cache'）や
+  // no-store 指定時は、古いキャッシュを返さずネットワークの最新応答を優先する。
+  // → PWAで読書進捗を追加した直後の location.reload() で古いHTMLが表示され、
+  //   「画面が更新されない」とユーザーが再送信して重複レコードが生じる問題への対策。
+  const bypassCache = request.cache === 'reload'
+    || request.cache === 'no-store'
+    || request.cache === 'no-cache';
+
   // ネットワーク取得（Navigation Preload があれば再利用）＋ 完全なら裏でキャッシュ更新
   const networkUpdate = (async () => {
     try {
@@ -210,6 +221,7 @@ async function navigationHandler(event) {
       const response = preload || await fetch(request);
       if (await isCompleteHtmlResponse(response)) {
         await cache.put(request, response.clone());
+        await trimCache(HTML_CACHE, HTML_CACHE_MAX_ENTRIES);
       }
       return response;
     } catch (err) {
@@ -217,7 +229,16 @@ async function navigationHandler(event) {
     }
   })();
 
-  // キャッシュがあれば即表示（SWR）。更新は裏で継続。
+  // リロード時: ネットワークを待って最新を表示。失敗時のみキャッシュ→オフラインに退避。
+  if (bypassCache) {
+    const fresh = await networkUpdate;
+    if (fresh) return fresh;
+    if (cached) return cached;
+    const offline = await caches.match('/offline.html');
+    return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
+  }
+
+  // 通常ナビゲーション: キャッシュがあれば即表示（SWR）。更新は裏で継続。
   // → モバイルでもタップ直後に前回の内容が瞬時に出るため白画面が出ない。
   if (cached) {
     event.waitUntil(networkUpdate);

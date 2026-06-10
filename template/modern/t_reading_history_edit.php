@@ -292,31 +292,47 @@ const csrfToken = '<?php echo html($_SESSION['csrf_token']); ?>';
 // 新規進捗追加
 document.getElementById('add-progress-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
+    // 二重送信防止: 送信中はボタンを無効化（重複レコード対策）
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn && submitBtn.disabled) {
+        return;
+    }
+    if (submitBtn) {
+        submitBtn.disabled = true;
+    }
+
     const formData = new FormData(this);
     formData.append('action', 'add_progress');
-    
+
     // 時刻が未入力の場合はデフォルト値を設定
     if (!formData.get('event_time')) {
         formData.set('event_time', '12:00');
     }
-    
+
     try {
         const response = await fetch('', {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             alert(result.message);
+            // 成功時はリロード完了までボタンを無効のままにし、再送信を防ぐ
             location.reload();
         } else {
             alert(result.error || 'エラーが発生しました');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
         }
     } catch (error) {
         alert('通信エラーが発生しました');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+        }
     }
 });
 
