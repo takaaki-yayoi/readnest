@@ -6,7 +6,7 @@
 //   - HTML ナビゲーション                   : Network First → /offline.html
 // 外部解析スクリプト (GTM/gtag/Tailwind CDN等) はキャッシュ対象外（passthrough）。
 
-const VERSION = 'v1.5.0';
+const VERSION = 'v1.6.0';
 
 const STATIC_CACHE = `readnest-static-${VERSION}`;
 const IMAGE_CACHE = `readnest-images-${VERSION}`;
@@ -45,8 +45,7 @@ const BYPASS_HOSTS = [
 // 画像キャッシュの上限（簡易LRU）
 const IMAGE_CACHE_MAX_ENTRIES = 200;
 const API_CACHE_MAX_ENTRIES = 50;
-// HTMLキャッシュの上限。POST後リダイレクトのキャッシュバスティング(?_cb=...)で
-// ユニークURLが増え続けるため上限を設けて古いものから破棄する。
+// HTMLキャッシュの上限（オフライン用フォールバックなので最近見たページ分で十分）。
 const HTML_CACHE_MAX_ENTRIES = 60;
 
 self.addEventListener('install', (event) => {
@@ -201,55 +200,41 @@ async function isCompleteHtmlResponse(response) {
   }
 }
 
+// Network-First 戦略。
+// 本棚・ホーム・本詳細などログイン後の動的ページは、更新後も古い内容が
+// 表示されないよう常にネットワークの最新HTMLを返す。キャッシュはオフライン等
+// ネットワーク失敗時のフォールバックに限定する。
+// 白画面対策（不完全HTMLを配信し続ける問題）は isCompleteHtmlResponse で担保。
 async function navigationHandler(event) {
   const request = event.request;
-  const cache = await caches.open(HTML_CACHE);
-  const cached = await cache.match(request);
 
-  // 明示的なリロード（location.reload() は cache:'reload'、強制再読込は 'no-cache'）や
-  // no-store 指定時は、古いキャッシュを返さずネットワークの最新応答を優先する。
-  // → PWAで読書進捗を追加した直後の location.reload() で古いHTMLが表示され、
-  //   「画面が更新されない」とユーザーが再送信して重複レコードが生じる問題への対策。
-  const bypassCache = request.cache === 'reload'
-    || request.cache === 'no-store'
-    || request.cache === 'no-cache';
+  try {
+    // Navigation Preload があればそれを、無ければ通常 fetch（どちらも最新取得）
+    const preload = await event.preloadResponse;
+    const response = preload || await fetch(request);
 
-  // ネットワーク取得（Navigation Preload があれば再利用）＋ 完全なら裏でキャッシュ更新
-  const networkUpdate = (async () => {
-    try {
-      const preload = await event.preloadResponse;
-      const response = preload || await fetch(request);
-      if (await isCompleteHtmlResponse(response)) {
-        await cache.put(request, response.clone());
-        await trimCache(HTML_CACHE, HTML_CACHE_MAX_ENTRIES);
-      }
-      return response;
-    } catch (err) {
-      return null;
+    // 完全なHTMLのみ、応答返却をブロックせず裏でキャッシュを更新する。
+    // （PHP fatal 等で途中で切れた不完全な応答はキャッシュしない）
+    if (response && response.ok) {
+      const forCheck = response.clone();
+      const forCache = response.clone();
+      event.waitUntil((async () => {
+        if (await isCompleteHtmlResponse(forCheck)) {
+          const cache = await caches.open(HTML_CACHE);
+          await cache.put(request, forCache);
+          await trimCache(HTML_CACHE, HTML_CACHE_MAX_ENTRIES);
+        }
+      })());
     }
-  })();
-
-  // リロード時: ネットワークを待って最新を表示。失敗時のみキャッシュ→オフラインに退避。
-  if (bypassCache) {
-    const fresh = await networkUpdate;
-    if (fresh) return fresh;
+    return response;
+  } catch (err) {
+    // ネットワーク失敗（オフライン等）時のみキャッシュ → オフラインページに退避
+    const cache = await caches.open(HTML_CACHE);
+    const cached = await cache.match(request);
     if (cached) return cached;
     const offline = await caches.match('/offline.html');
     return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
   }
-
-  // 通常ナビゲーション: キャッシュがあれば即表示（SWR）。更新は裏で継続。
-  // → モバイルでもタップ直後に前回の内容が瞬時に出るため白画面が出ない。
-  if (cached) {
-    event.waitUntil(networkUpdate);
-    return cached;
-  }
-
-  // 初回（キャッシュ無し）: ネットワークを待つ。失敗時はオフラインページ。
-  const response = await networkUpdate;
-  if (response) return response;
-  const offline = await caches.match('/offline.html');
-  return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
 }
 
 async function trimCache(cacheName, maxEntries) {

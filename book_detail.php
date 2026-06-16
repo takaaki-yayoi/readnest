@@ -53,26 +53,6 @@ require_once(__DIR__ . '/library/review_embedding_generator.php');
 // ジャンル判定ライブラリを読み込み（一時無効化）
 // require_once(__DIR__ . '/library/genre_detector.php');
 
-/**
- * POST処理後、同じURLへリダイレクトする（PRGパターン）。
- *
- * PWAのService Worker(SWR戦略)がキャッシュ済みの古いHTMLを返すと、
- * 進捗追加などの結果が画面に反映されず、ユーザーが再送信して重複レコードが発生する。
- * リダイレクト後のGETナビゲーションは cache:'reload' を持たずSWのリロード判定に乗らないため、
- * キャッシュキーを変えるワンタイムのクエリ(_cb)を付与して必ず最新HTMLを取得させる。
- * （bookshelf.php の ?t=time() と同じ方式）
- */
-function redirectAfterPost(): void {
-    // REQUEST_URI のパス部分 + 既存のGETパラメータ（book_id等）を保持し、
-    // 古い _cb を取り除いた上で新しい _cb を付与する（多重付与・URL肥大を防止）。
-    $path = strtok($_SERVER['REQUEST_URI'], '?');
-    $params = $_GET;
-    unset($params['_cb']);
-    $params['_cb'] = time();
-    header('Location: ' . $path . '?' . http_build_query($params));
-    exit;
-}
-
 $login_flag = false;
 $book = [];
 $reviews = [];
@@ -116,7 +96,8 @@ if (checkLogin()) {
         }
         
         // リダイレクトして再読み込みを防ぐ
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     // 進捗更新処理（モダンテンプレート用）
@@ -132,7 +113,8 @@ if (checkLogin()) {
         }
         
         // リダイレクトして再読み込みを防ぐ
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     // 読了マーク処理
@@ -165,7 +147,8 @@ if (checkLogin()) {
             $_SESSION['progress_page'] = $current_book['total_page'] ?? 0;
         }
         
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
 
     // コメント投稿処理（無効化）
@@ -210,7 +193,8 @@ if (checkLogin()) {
             }
         }
 
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
 
     // 著者更新処理
@@ -238,13 +222,15 @@ if (checkLogin()) {
             }
         }
 
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
 
     // 購入済み処理
     if (isset($_POST['book_id']) && isset($_POST['action']) && $_POST['action'] === 'bought') {
         boughtBook($mine_user_id, (int)$_POST['book_id']);
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     // ページ更新処理（createEvent()をコール）
@@ -259,7 +245,8 @@ if (checkLogin()) {
             $_SESSION['progress_page'] = $current_page;
         }
         
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     // レビュー更新処理（updateBook()をコール - ステータスは変更しない）
@@ -331,7 +318,8 @@ if (checkLogin()) {
             error_log("User ID: " . $mine_user_id . ", Book ID: " . $_POST['book_id']);
         }
         
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     // タグ更新処理
@@ -349,7 +337,8 @@ if (checkLogin()) {
             updateTag($mine_user_id, $post_book_id, $tags_array);
         }
         
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     // 読書状況更新処理（統合版 - 既存の互換性のために残す）
@@ -427,7 +416,8 @@ if (checkLogin()) {
             error_log("User ID: " . $mine_user_id . ", Book ID: " . $_POST['book_id']);
         }
         
-        redirectAfterPost();
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
     
     
