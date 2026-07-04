@@ -8,17 +8,36 @@ class AuthorInfoFetcher {
     private $cache;
     private $db;
     private $openai_api_key;
-    
+
+    // Wikipedia APIはUser-Agentポリシーにより、UA無し/汎用UAのリクエストを403で拒否する
+    // https://meta.wikimedia.org/wiki/User-Agent_policy
+    const HTTP_USER_AGENT = 'ReadNest/1.0 (https://readnest.jp; takaakiyayoi@gmail.com)';
+
     public function __construct() {
         global $g_db;
         $this->db = $g_db;
-        
+
         // キャッシュシステムを初期化
         require_once(dirname(__FILE__) . '/cache.php');
         $this->cache = getCache();
-        
+
         // OpenAI APIキー（config.phpから取得）
         $this->openai_api_key = defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '';
+    }
+
+    /**
+     * Wikipedia API等へGETリクエストを送る（User-Agent必須）
+     * UAを付けないとWikipediaは403を返すため、必ずこのメソッド経由で取得する
+     */
+    private function httpGet($url) {
+        $context = stream_context_create([
+            'http' => [
+                'method'  => 'GET',
+                'header'  => 'User-Agent: ' . self::HTTP_USER_AGENT . "\r\n",
+                'timeout' => 10
+            ]
+        ]);
+        return @file_get_contents($url, false, $context);
     }
     
     /**
@@ -124,7 +143,7 @@ class AuthorInfoFetcher {
             ];
             
             $search_url = $api_url . '?' . http_build_query($search_params);
-            $search_result = @file_get_contents($search_url);
+            $search_result = $this->httpGet($search_url);
             
             if (!$search_result) {
                 continue;
@@ -153,7 +172,7 @@ class AuthorInfoFetcher {
             ];
             
             $content_url = $api_url . '?' . http_build_query($content_params);
-            $content_result = @file_get_contents($content_url);
+            $content_result = $this->httpGet($content_url);
             
             if (!$content_result) {
                 continue;
@@ -178,7 +197,7 @@ class AuthorInfoFetcher {
             ];
             
             $infobox_url = $api_url . '?' . http_build_query($infobox_params);
-            $infobox_result = @file_get_contents($infobox_url);
+            $infobox_result = $this->httpGet($infobox_url);
             
             $birth_date = null;
             $death_date = null;

@@ -18,6 +18,12 @@ function error_handler($errno, $errstr, $errfile, $errline) {
     return true;
   }
 
+  // @演算子で抑制されたエラー / error_reporting対象外のエラーは無視する
+  // （@file_get_contents 等、呼び出し側で失敗を処理しているケースをログ肥大させない）
+  if (!(error_reporting() & $errno)) {
+    return true;
+  }
+
   $errlev = array(
     E_USER_ERROR=>'FATAL',
     E_ERROR=>'FATAL',
@@ -29,35 +35,43 @@ function error_handler($errno, $errstr, $errfile, $errline) {
     E_USER_DEPRECATED=>'DEPRECATED',
     E_STRICT=>'STRICT',
   );
-  
+
+  // 致命的エラーかどうか（詳細コンテキストの出力可否を決める）
+  $isFatal = ($errno === E_USER_ERROR || $errno === E_ERROR);
+
   ob_start();
   debug_print_backtrace();
   $trace = ob_get_clean();
-  
+
   if(empty($_SESSION)) {
     $_SESSION = array();
   }
-  
+
   // エラータイプを取得（未定義の場合はUNKNOWNとする）
   $errorType = isset($errlev[$errno]) ? $errlev[$errno] : 'UNKNOWN(' . $errno . ')';
-  
-  $msg = 'DATE: ' . date('Y-m-d H:i:s') . PHP_EOL . 
-         'TYPE: ' . $errorType . PHP_EOL . 
-         'FILE: ' . $errfile . PHP_EOL . 
-         'LINE: ' . $errline . PHP_EOL . 
-         'ERROR: ' . $errstr . PHP_EOL . 
+
+  $msg = 'DATE: ' . date('Y-m-d H:i:s') . PHP_EOL .
+         'TYPE: ' . $errorType . PHP_EOL .
+         'FILE: ' . $errfile . PHP_EOL .
+         'LINE: ' . $errline . PHP_EOL .
+         'ERROR: ' . $errstr . PHP_EOL .
+         'URI: ' . ($_SERVER['REQUEST_URI'] ?? '') . PHP_EOL .
          '-----------------------------------------' . PHP_EOL .
-         $trace . PHP_EOL . 
-         '-------------$_GET-----------------------' . PHP_EOL . 
-         print_r($_GET, true) . PHP_EOL . 
-         '-------------$_POST---------------------------' . PHP_EOL .
-         print_r($_POST, true) . PHP_EOL . 
-         '-------------$_COOKIE----------------------------' . PHP_EOL .
-         print_r($_COOKIE, true) . PHP_EOL . 
-         '-------------$_SESSION----------------------------' . PHP_EOL .
-         print_r($_SESSION, true) . PHP_EOL . 
-         '-------------$_SERVER----------------------------' . PHP_EOL .
-         print_r($_SERVER, true) . PHP_EOL;
+         $trace . PHP_EOL;
+
+  // スーパーグローバルの全ダンプは肥大化の主因のため、致命的エラー時のみ付与する
+  if ($isFatal) {
+    $msg .= '-------------$_GET-----------------------' . PHP_EOL .
+            print_r($_GET, true) . PHP_EOL .
+            '-------------$_POST---------------------------' . PHP_EOL .
+            print_r($_POST, true) . PHP_EOL .
+            '-------------$_COOKIE----------------------------' . PHP_EOL .
+            print_r($_COOKIE, true) . PHP_EOL .
+            '-------------$_SESSION----------------------------' . PHP_EOL .
+            print_r($_SESSION, true) . PHP_EOL .
+            '-------------$_SERVER----------------------------' . PHP_EOL .
+            print_r($_SERVER, true) . PHP_EOL;
+  }
 
   // ローカル環境とプロダクション環境で異なるログパス
   $logPath = '/home/icotfeels/readnest.jp/log/dokusho_error_log.txt';
