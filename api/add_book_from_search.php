@@ -82,8 +82,12 @@ if (strpos($asin, 'ai_') === 0 || strpos($asin, 'SAMPLE') === 0) {
 global $g_db;
 
 // 既に本棚にあるかチェック
-$existing = is_bookmarked($user_id, $asin);
-if ($existing) {
+// is_bookmarked_finished()の戻り値:
+//   false      : 未登録 → 追加可能
+//   book_id    : 未読/読書中のエントリあり → ブロック
+//   array      : 既存エントリが全て読了済み → 再読として別エントリ追加を許可
+$existing = is_bookmarked_finished($user_id, $asin);
+if ($existing && !is_array($existing)) {
     ob_end_clean();
     http_response_code(409);
     echo json_encode(['success' => false, 'error' => 'この本は既に本棚にあります', 'book_id' => $existing]);

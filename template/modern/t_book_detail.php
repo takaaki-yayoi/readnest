@@ -1148,9 +1148,17 @@ ob_start();
                                                         </span>
                                                     </div>
                                                     <?php endif; ?>
+
+                                                    <?php if (!empty($finished_count) && $finished_count >= 1): ?>
+                                                    <div class="flex items-center mt-2">
+                                                        <span class="inline-flex items-center text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                                                            <i class="fas fa-book mr-1"></i>通算<?php echo html($finished_count); ?>回読了
+                                                        </span>
+                                                    </div>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <?php endif; ?>
-                                                
+
                                                 <!-- 読書履歴一覧 -->
                                                 <?php if (!empty($reading_progress)): ?>
                                                 <div class="mt-3 bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-300 dark:border-blue-600">
@@ -1435,9 +1443,52 @@ ob_start();
                                                             </div>
                                                         </form>
                                                     </div>
+                                                    <?php else: ?>
+                                                    <!-- 読了済み: 再読を開始する -->
+                                                    <div x-data="{ showRereadModal: false }">
+                                                        <button type="button"
+                                                                @click="showRereadModal = true"
+                                                                class="w-full bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 py-2 px-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
+                                                            <i class="fas fa-redo mr-2"></i>再読する
+                                                        </button>
+
+                                                        <!-- 再読確認モーダル -->
+                                                        <div x-show="showRereadModal"
+                                                             x-cloak
+                                                             x-transition.opacity
+                                                             @keydown.escape.window="showRereadModal = false"
+                                                             @click.self="showRereadModal = false"
+                                                             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                                                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+                                                                <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
+                                                                    <i class="fas fa-redo text-blue-500 mr-2"></i>再読を始める
+                                                                </h3>
+                                                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                                                    新しい読書記録として追加し、進捗をゼロから記録します。<br>
+                                                                    今回の読了記録・レビュー・読書履歴はそのまま残ります。
+                                                                </p>
+                                                                <form action="" method="post">
+                                                                    <?php csrfFieldTag(); ?>
+                                                                    <input type="hidden" name="action" value="start_reread">
+                                                                    <input type="hidden" name="book_id" value="<?php echo html($book['book_id']); ?>">
+                                                                    <div class="flex flex-wrap items-center justify-end gap-2">
+                                                                        <button type="button"
+                                                                                @click="showRereadModal = false"
+                                                                                class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
+                                                                            キャンセル
+                                                                        </button>
+                                                                        <button type="submit"
+                                                                                class="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium">
+                                                                            <i class="fas fa-redo mr-1"></i>再読を始める
+                                                                        </button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                     <?php endif; ?>
                                                 </div>
-                                                
+
                                     </div>
                                 </div>
                                 <?php endif; ?>

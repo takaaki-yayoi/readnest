@@ -146,7 +146,47 @@ if (checkLogin()) {
             $_SESSION['progress_updated'] = true;
             $_SESSION['progress_page'] = $current_book['total_page'] ?? 0;
         }
-        
+
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
+    // 再読開始処理（読了済みの本を新しい読書エントリとして別途追加）
+    if (isset($_POST['book_id']) && isset($_POST['action']) && $_POST['action'] === 'start_reread') {
+        requireCSRFToken();
+
+        $src_book_id = (int)$_POST['book_id'];
+
+        // 対象の本を取得し、所有権を確認
+        $sql = "SELECT * FROM b_book_list WHERE user_id = ? AND book_id = ?";
+        $src_book = $g_db->getRow($sql, [$mine_user_id, $src_book_id]);
+
+        if ($src_book && !DB::isError($src_book)) {
+            // 書誌情報を引き継いで新しい読書エントリを作成
+            // memo・ratingは引き継がず、新しい読書として「読んでいるところ」から開始
+            $new_book_id = createBook(
+                $mine_user_id,
+                $src_book['name'],
+                $src_book['amazon_id'],
+                $src_book['isbn'],
+                $src_book['author'],
+                '',                              // memo（新しい読書のため空）
+                (int)$src_book['total_page'],
+                READING_NOW,                     // ステータス: 読んでいるところ
+                $src_book['detail_url'],
+                $src_book['image_url'],
+                null,                            // finished_date
+                null                             // categories
+            );
+
+            if ($new_book_id) {
+                // 新しいエントリの詳細ページへ遷移
+                header('Location: https://readnest.jp/book/' . $new_book_id);
+                exit;
+            }
+        }
+
+        // 失敗時は元のページへ戻す
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
     }
@@ -728,10 +768,17 @@ $user_book_info = null;
 $is_in_bookshelf = false;
 $is_book_owner = false; // 表示している本の所有者かどうか
 $is_favorite = false;
+// この本（同じamazon_id）をユーザーが通算何回読了したか
+$finished_count = 0;
 
 if ($login_flag) {
     // 表示している本の所有者かどうかをチェック
     $is_book_owner = (!empty($book['user_id']) && $book['user_id'] == $mine_user_id);
+
+    // 通算読了回数を取得（別エントリの再読分も合算）
+    if (!empty($amazon_id)) {
+        $finished_count = getFinishedNumber($mine_user_id, $amazon_id);
+    }
     
     // ユーザーの本棚における本の詳細情報を取得
     try {

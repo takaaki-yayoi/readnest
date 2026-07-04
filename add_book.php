@@ -348,16 +348,41 @@ function generateBookList(array $books, int $user_id, string $keyword, int $page
             $image_part = "<img src=\"/img/no-image-book.png\" alt=\"{$product_name}\" class=\"w-full h-48 object-contain rounded-lg\" loading=\"lazy\">";
         }
         
-        // 本棚にあるかチェック
-        $bookmarked_result = is_bookmarked($user_id, $asin);
-        
+        // 本棚にあるかチェック（読了済みなら再読として追加可能）
+        // is_bookmarked_finished()の戻り値:
+        //   false   : 未登録
+        //   book_id : 未読/読書中のエントリあり（追加不可）
+        //   array   : 既存が全て読了済み（再読として別エントリ追加可能）
+        $bookmark_state = is_bookmarked_finished($user_id, $asin);
+
         // タイトルのリンク先を決定
-        if ($bookmarked_result) {
-            $title_link = "/book/{$bookmarked_result}";
+        if ($bookmark_state && !is_array($bookmark_state)) {
+            // 未読/読書中のエントリが存在 → 本棚へのリンクのみ
+            $existing_book_id = (int)$bookmark_state;
+            $title_link = "/book/{$existing_book_id}";
             $title_target = "";
             $title_icon = "";
-            $add_button = "<a href=\"/book/{$bookmarked_result}\" class=\"btn bg-gray-100 text-gray-600 w-full\"><i class=\"fas fa-check mr-2\"></i>本棚にあります</a>";
+            $add_button = "<a href=\"/book/{$existing_book_id}\" class=\"btn bg-gray-100 text-gray-600 w-full\"><i class=\"fas fa-check mr-2\"></i>本棚にあります</a>";
+        } else if (is_array($bookmark_state)) {
+            // 既存エントリが全て読了済み → 詳細ページと同じ「再読する」導線を出す
+            // （start_reread: 書誌をコピーした新しい読書エントリ=READING_NOWを作成し新詳細へ遷移）
+            $last_entry = end($bookmark_state);
+            $existing_book_id = (int)($last_entry['book_id'] ?? 0);
+            $title_link = "/book/{$existing_book_id}";
+            $title_target = "";
+            $title_icon = "";
+            $add_button =
+                "<a href=\"/book/{$existing_book_id}\" class=\"inline-flex items-center text-xs text-green-700 hover:underline mb-2\"><i class=\"fas fa-check-circle mr-1\"></i>読了済み・記録を見る</a>" .
+                "<form action=\"/book/{$existing_book_id}\" method=\"post\">" .
+                    csrfField() .
+                    "<input type=\"hidden\" name=\"action\" value=\"start_reread\">" .
+                    "<input type=\"hidden\" name=\"book_id\" value=\"{$existing_book_id}\">" .
+                    "<button type=\"submit\" class=\"btn bg-white border border-blue-300 text-blue-700 w-full hover:bg-blue-50 transition-colors\" onclick=\"return confirm('「{$product_name}」の再読を記録しますか？（新しい読書記録として追加します）')\">" .
+                        "<i class=\"fas fa-redo mr-2\"></i>再読する" .
+                    "</button>" .
+                "</form>";
         } else {
+            // 未登録 → 通常の追加フォーム
             $title_link = $amazon_link;
             $title_target = "target=\"_blank\" rel=\"noopener noreferrer\"";
             $title_icon = "<i class=\"fas fa-external-link-alt ml-1 text-xs opacity-60\"></i>";

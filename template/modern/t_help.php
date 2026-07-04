@@ -857,7 +857,54 @@ ob_start();
                             </div>
                         </div>
                     </div>
-                    
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-redo text-readnest-primary mr-2"></i>
+                            再読の記録
+                        </h3>
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                一度読み終えた本をもう一度読むときは、「再読」として新しい読書記録を追加できます。前回の読了記録・レビュー・読書履歴はそのまま残り、今回の進捗を最初から記録できます。
+                            </p>
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <i class="fas fa-redo text-blue-600 dark:text-blue-400 mt-1 mr-3"></i>
+                                    <div class="dark:text-gray-300">
+                                        <strong class="text-gray-900 dark:text-gray-100">詳細ページから再読する</strong>
+                                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                                            読了済みの本の詳細ページで「再読する」ボタンをクリックすると、新しい読書記録（読んでいるところ）が作成され、進捗の記録を再開できます。
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-search text-indigo-600 dark:text-indigo-400 mt-1 mr-3"></i>
+                                    <div class="dark:text-gray-300">
+                                        <strong class="text-gray-900 dark:text-gray-100">検索結果から再読する</strong>
+                                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                                            「本を追加」で読了済みの本を検索すると、「再読する」ボタンが表示されます。ここからも同じように再読の記録を始められます。
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-layer-group text-purple-600 dark:text-purple-400 mt-1 mr-3"></i>
+                                    <div class="dark:text-gray-300">
+                                        <strong class="text-gray-900 dark:text-gray-100">読了回数のカウント</strong>
+                                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                                            再読は前回とは別の記録として保存されるため、同じ本を何回読み終えたかがカウントされ、詳細ページに「通算◯回読了」と表示されます。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded text-sm">
+                                <p class="text-blue-800 dark:text-blue-300">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    <strong>ヒント：</strong>まだ読み終えていない読書中の記録がある本は、二重登録を防ぐため再読ボタンは表示されません。今の1冊を読み終えてから再読を始めましょう。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                             レビューの管理
