@@ -337,7 +337,57 @@ ob_start();
         </div>
     </div>
     <?php endif; ?>
-    
+
+    <!-- 再読サマリー（再読データがある場合のみ表示） -->
+    <?php if (!empty($stats['reread_book_count'])): ?>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">🔁 再読</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="text-center">
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">複数回読んだ本</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-gray-200"><?php echo number_format($stats['reread_book_count']); ?><span class="text-base font-medium">冊</span></p>
+            </div>
+            <div class="text-center">
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">通算再読回数</p>
+                <p class="text-3xl font-bold text-gray-800 dark:text-gray-200"><?php echo number_format($stats['total_reread_count']); ?><span class="text-base font-medium">回</span></p>
+            </div>
+        </div>
+
+        <?php if (!empty($stats['reread_ranking'])): ?>
+        <div class="border-t border-gray-100 dark:border-gray-700 mt-4 pt-4">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">よく再読している本</p>
+            <ul class="space-y-3">
+                <?php foreach ($stats['reread_ranking'] as $i => $book): ?>
+                <?php
+                    if (!empty($book['image_url']) && strpos($book['image_url'], 'noimage') === false) {
+                        $rrImage = $book['image_url'];
+                    } else if (!empty($book['amazon_id'])) {
+                        $rrImage = "https://images-fe.ssl-images-amazon.com/images/P/{$book['amazon_id']}.09.LZZZZZZZ";
+                    } else {
+                        $rrImage = '/img/no-image-book.png';
+                    }
+                ?>
+                <li class="flex items-center">
+                    <span class="w-5 flex-shrink-0 text-sm font-semibold text-gray-400"><?php echo $i + 1; ?></span>
+                    <a href="/book_detail.php?book_id=<?php echo urlencode($book['book_id']); ?>"
+                       class="flex items-center flex-1 min-w-0 group"
+                       title="<?php echo html($book['name']); ?>">
+                        <img src="<?php echo html($rrImage); ?>"
+                             alt="<?php echo html($book['name']); ?>"
+                             class="w-8 h-11 object-cover rounded shadow-sm flex-shrink-0"
+                             loading="lazy" decoding="async"
+                             onerror="this.onerror=null; this.src='/img/no-image-book.png';">
+                        <span class="ml-3 text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-purple-600"><?php echo html($book['name']); ?></span>
+                    </a>
+                    <span class="ml-2 flex-shrink-0 text-sm font-semibold text-gray-600 dark:text-gray-400"><?php echo number_format($book['count']); ?>回</span>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <!-- AIクラスタサマリー -->
     <?php if (!empty($clusters)): ?>
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">

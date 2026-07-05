@@ -92,7 +92,10 @@ if ($view_mode === 'overview') {
             'daily_pages' => [],
             'daily_books' => [],
             'cumulative_pages' => [],
-            'cumulative_books' => []
+            'cumulative_books' => [],
+            'reread_book_count' => 0,
+            'total_reread_count' => 0,
+            'reread_ranking' => []
         ];
         
         // 全体の統計（全期間）
@@ -292,7 +295,50 @@ if ($view_mode === 'overview') {
                 $stats['rating_distribution'][$row['rating']] = (int)$row['count'];
             }
         }
-        
+
+        // 再読統計（通算読了回数）
+        // 再読は同じ amazon_id の別行として残るため、amazon_id ごとに
+        // 読了/既読（status 3,4）の行数を数える = その本の通算読了回数
+        $reread_sql = "SELECT amazon_id,
+                              COUNT(*) as finish_count,
+                              MAX(book_id) as book_id,
+                              MAX(name) as name,
+                              MAX(image_url) as image_url
+                       FROM b_book_list
+                       WHERE user_id = ?
+                       AND status IN (" . READING_FINISH . ", " . READ_BEFORE . ")
+                       AND amazon_id IS NOT NULL
+                       AND amazon_id != ''
+                       GROUP BY amazon_id";
+        $reread_rows = $g_db->getAll($reread_sql, [$user_id], DB_FETCHMODE_ASSOC);
+        if (!DB::isError($reread_rows) && !empty($reread_rows)) {
+            $unique_titles = count($reread_rows);
+            $total_finish_rows = 0;
+            $reread_books = [];
+            foreach ($reread_rows as $row) {
+                $finish_count = (int)$row['finish_count'];
+                $total_finish_rows += $finish_count;
+                if ($finish_count >= 2) {
+                    $reread_books[] = [
+                        'amazon_id' => $row['amazon_id'],
+                        'book_id'   => $row['book_id'],
+                        'name'      => $row['name'],
+                        'image_url' => $row['image_url'],
+                        'count'     => $finish_count,
+                    ];
+                }
+            }
+            // 複数回読んだ本の冊数
+            $stats['reread_book_count'] = count($reread_books);
+            // 通算再読回数 = 読了行の合計 - ユニーク書籍数（初読を除いた再読分）
+            $stats['total_reread_count'] = max(0, $total_finish_rows - $unique_titles);
+            // よく再読している本のランキング（回数降順、上位5件）
+            usort($reread_books, function ($a, $b) {
+                return $b['count'] <=> $a['count'];
+            });
+            $stats['reread_ranking'] = array_slice($reread_books, 0, 5);
+        }
+
         return $stats;
     }
     
