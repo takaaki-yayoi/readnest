@@ -2555,13 +2555,13 @@ ob_start();
                 </h2>
                 
                 <div class="space-y-8">
-                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6">
-                        <p class="text-yellow-800 dark:text-yellow-300 font-medium mb-2">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            自動投稿機能は現在停止しています
+                    <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+                        <p class="text-blue-800 dark:text-blue-300 font-medium mb-2">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            読書記録をXに自動投稿できます
                         </p>
-                        <p class="text-sm text-yellow-700 dark:text-yellow-400">
-                            X APIの利用コスト上昇に伴い、読書記録の自動投稿機能を一時停止しています。代わりに、レポートや読了画面からワンクリックでXにシェアできる「Xでシェア」ボタンをご利用ください。
+                        <p class="text-sm text-blue-700 dark:text-blue-300">
+                            Xアカウントを連携すると、本を読み終わったときやレビューを投稿したときなどに、読書記録を自動でXにシェアできます。投稿するイベントはアカウント設定で選べます。自動投稿を使わず、好きなタイミングで手動シェアすることもできます。
                         </p>
                     </div>
 
@@ -2595,10 +2595,10 @@ ob_start();
                     </div>
 
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🔄 自動投稿の今後について</h3>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🔗 自動投稿を使うには</h3>
                         <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
                             <p class="text-sm text-gray-700 dark:text-gray-300">
-                                自動投稿機能はサービスの収益化が進んだ段階で再開を検討しています。アカウント設定の「X連携設定」タブはそのまま残しており、過去に連携済みのトークンは保持されます。
+                                <a href="/account.php" class="text-readnest-primary hover:underline">アカウント設定</a>の「X連携設定」からXアカウントを連携し、「読書記録の自動投稿を有効にする」をオンにしてください。投稿するイベント（読みたい／読み始め／読書進捗／読了／レビュー）は個別に選べます。連携はいつでも解除でき、過去に連携済みのトークンは保持されます。
                             </p>
                         </div>
                     </div>

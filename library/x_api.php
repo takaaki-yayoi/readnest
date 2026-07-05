@@ -8,6 +8,36 @@
 require_once dirname(__DIR__) . '/config/x_api.php';
 require_once 'database.php';
 require_once 'x_oauth_v2.php';
+require_once 'x_post_log.php';
+
+/**
+ * ツイートを投稿し、結果を x_post_log に記録する共通ラッパ。
+ * $poster は XOAuthV2 または XApiClient（どちらも postTweet($text) を持つ）。
+ *
+ * @param object $poster postTweet($text) を持つオブジェクト
+ * @param string $tweet_text 投稿本文
+ * @param array  $ctx ['user_id','book_id','event_type','event_bit','target','has_url']
+ * @return bool 投稿成功なら true
+ */
+function xPostTweetLogged($poster, $tweet_text, array $ctx) {
+    $log_id = xPostLogInsert(
+        $ctx['user_id'],
+        $ctx['book_id'] ?? null,
+        $ctx['event_type'],
+        $ctx['event_bit'] ?? 0,
+        $ctx['target'] ?? 'user',
+        !empty($ctx['has_url'])
+    );
+
+    $result = $poster->postTweet($tweet_text);
+    $ok = xPostSucceeded($result);
+
+    $http_code = (is_array($result) && isset($result['http_code'])) ? $result['http_code'] : ($ok ? 201 : null);
+    $error = (is_array($result) && isset($result['error'])) ? $result['error'] : null;
+    xPostLogUpdate($log_id, $ok ? 'success' : 'failed', xExtractTweetId($result), $http_code, $error);
+
+    return $ok;
+}
 
 /**
  * Xの文字数カウント方式に基づいてツイートの長さを計算
@@ -125,8 +155,30 @@ class XApiClient {
 }
 
 /**
+ * 指定ユーザーが自動X投稿の対象かどうかを判定する。
+ * - X_AUTO_POST_ENABLED が false なら全員対象外（完全停止）
+ * - X_AUTO_POST_USER_WHITELIST が空でなければ、そのリストの user_id のみ対象
+ *   （クレジット消費テストのため特定ユーザーに限定する用途）
+ *
+ * @param int $user_id User ID
+ * @return bool 対象なら true
+ */
+function isXAutoPostAllowedForUser($user_id) {
+    if (!defined('X_AUTO_POST_ENABLED') || !X_AUTO_POST_ENABLED) {
+        return false;
+    }
+    if (defined('X_AUTO_POST_USER_WHITELIST') && X_AUTO_POST_USER_WHITELIST !== '') {
+        $whitelist = array_map('trim', explode(',', (string)X_AUTO_POST_USER_WHITELIST));
+        if (!in_array((string)$user_id, $whitelist, true)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Post reading event to X for users with public diaries
- * 
+ *
  * @param int $user_id User ID
  * @param int $book_id Book ID
  * @param int $event_type Event type (READING_NOW, READING_FINISH)
@@ -137,15 +189,25 @@ class XApiClient {
 function postReadingEventToX($user_id, $book_id, $event_type, $rating = 0, $review_text = '') {
     global $g_db;
 
-    // 自動投稿は停止中（X APIクレジット枯渇のため）。手動シェアボタンを案内する運用に切替。
-    // 収益化等で復活する場合は X_AUTO_POST_ENABLED を true に戻す。
-    if (!defined('X_AUTO_POST_ENABLED') || !X_AUTO_POST_ENABLED) {
+    // 自動投稿は X_AUTO_POST_ENABLED と X_AUTO_POST_USER_WHITELIST で制御。
+    // クレジット消費検証のため現在は特定ユーザーのみ対象（config/x_api.php 参照）。
+    if (!isXAutoPostAllowedForUser($user_id)) {
         return false;
     }
 
     // X投稿抑制フラグをチェック
     if (isset($_SESSION['suppress_x_post']) && $_SESSION['suppress_x_post'] === true) {
         unset($_SESSION['suppress_x_post']); // フラグをクリア
+        return false;
+    }
+
+    // 月間予算の安全弁：当月コスト推定が上限を超えていたら投稿しない
+    if (xBudgetExceeded()) {
+        error_log('[X API] Monthly budget exceeded, skipping post for user ' . $user_id);
+        xAlertAdmin('budget', 'X投稿を月間予算超過で停止',
+            "当月のX投稿コスト推定が上限（\$" . X_MONTHLY_BUDGET_USD . "）を超えたため、自動投稿をスキップしました。\n"
+            . "推定消費: \$" . round(xMonthlySpendUsd(), 2) . "\n"
+            . "config/x_api.php の X_MONTHLY_BUDGET_USD で上限を調整できます。");
         return false;
     }
 
@@ -297,27 +359,34 @@ function postReadingEventToX($user_id, $book_id, $event_type, $rating = 0, $revi
             return false;
     }
     
-    // Add book URL if space available
+    // 書籍URLはコストが約13倍。X_URL_EVENTS で許可されたイベントのみ付与する。
+    $event_bit = xEventBitFor($event_type);
+    $attach_url = xShouldAttachUrl($event_bit);
     $book_url = 'https://readnest.jp/book/' . $book_id;
-    
-    // 文字数を計算（日本語の文字数カウント）
-    $tweet_length = calculateTweetLength($tweet_text);
-    $url_addition_length = 1 + 23; // スペース + 短縮URL
-    
-    // Add book URL if space permits
-    if ($tweet_length + $url_addition_length <= 280) {
-        $tweet_text .= ' ' . $book_url;
+
+    if ($attach_url) {
+        // 文字数を計算（日本語の文字数カウント）
+        $tweet_length = calculateTweetLength($tweet_text);
+        $url_addition_length = 1 + 23; // スペース + 短縮URL
+        if ($tweet_length + $url_addition_length <= 280) {
+            $tweet_text .= ' ' . $book_url;
+        } else {
+            // URLが入らない場合は、テキストを短縮
+            $max_text_length = 280 - $url_addition_length;
+            $tweet_text = truncateTweetText($tweet_text, $max_text_length);
+            $tweet_text .= ' ' . $book_url;
+        }
     } else {
-        // URLが入らない場合は、テキストを短縮
-        $max_text_length = 280 - $url_addition_length;
-        $tweet_text = truncateTweetText($tweet_text, $max_text_length);
-        $tweet_text .= ' ' . $book_url;
+        // URLなし（低コスト）。280文字を超える場合のみ短縮する。
+        if (calculateTweetLength($tweet_text) > 280) {
+            $tweet_text = truncateTweetText($tweet_text, 280);
+        }
     }
-    
+
     // Post to both accounts if user has X connection
     $success_user = false;
     $success_dokusho = false;
-    
+
     if (!empty($user_info['x_oauth_token']) && !empty($user_info['x_oauth_token_secret'])) {
         // First post to user's own X account
         $oauth = new XOAuthV2(
@@ -326,11 +395,17 @@ function postReadingEventToX($user_id, $book_id, $event_type, $rating = 0, $revi
             $user_info['x_oauth_token'],
             $user_info['x_oauth_token_secret']
         );
-        $result = $oauth->postTweet($tweet_text);
-        
-        if ($result) {
+        $success_user = xPostTweetLogged($oauth, $tweet_text, [
+            'user_id'    => $user_id,
+            'book_id'    => $book_id,
+            'event_type' => $event_type,
+            'event_bit'  => $event_bit,
+            'target'     => 'user',
+            'has_url'    => $attach_url,
+        ]);
+
+        if ($success_user) {
             error_log('[X API] Successfully posted to user\'s X account @' . $user_info['x_screen_name'] . ' for user ' . $user_id . ', book ' . $book_id);
-            $success_user = true;
         } else {
             error_log('[X API] Failed to post to user\'s X account. User: ' . $user_id);
         }
@@ -357,32 +432,48 @@ function postReadingEventToX($user_id, $book_id, $event_type, $rating = 0, $revi
             $dokusho_text = str_replace(['」を', '」の'], ['」（' . $author . '）を', '」（' . $author . '）の'], $dokusho_text);
         }
         
-        // Add URL if space permits
-        if ($dokusho_text && mb_strlen($dokusho_text) + mb_strlen(' ' . $book_url) <= X_POST_MAX_LENGTH) {
+        // Add URL if space permits（URL付与は $attach_url に従う）
+        if ($attach_url && $dokusho_text && mb_strlen($dokusho_text) + mb_strlen(' ' . $book_url) <= X_POST_MAX_LENGTH) {
             $dokusho_text .= ' ' . $book_url;
         }
-        
-        if ($dokusho_text) {
+
+        // @dokusho（readnest共有アカウント）への投稿は X_POST_TO_DOKUSHO で制御。
+        if ($dokusho_text && defined('X_POST_TO_DOKUSHO') && X_POST_TO_DOKUSHO) {
             $client = new XApiClient();
-            $dokusho_result = $client->postTweet($dokusho_text);
-            
-            if ($dokusho_result) {
+            $success_dokusho = xPostTweetLogged($client, $dokusho_text, [
+                'user_id'    => $user_id,
+                'book_id'    => $book_id,
+                'event_type' => $event_type,
+                'event_bit'  => $event_bit,
+                'target'     => 'dokusho',
+                'has_url'    => $attach_url,
+            ]);
+            if ($success_dokusho) {
                 error_log('[X API] Successfully posted to @dokusho for user ' . $user_id . ', book ' . $book_id);
-                $success_dokusho = true;
             } else {
                 error_log('[X API] Failed to post to @dokusho. User: ' . $user_id);
             }
         }
-        
+
         // Return true if at least one post succeeded
         return $success_user || $success_dokusho;
-        
+
     } else {
         // User has no X connection - post only to @dokusho account
+        // @dokusho（readnest共有アカウント）への投稿は X_POST_TO_DOKUSHO で制御。
+        if (!defined('X_POST_TO_DOKUSHO') || !X_POST_TO_DOKUSHO) {
+            return false;
+        }
         $client = new XApiClient();
-        $result = $client->postTweet($tweet_text);
-        
-        if ($result) {
+        $ok = xPostTweetLogged($client, $tweet_text, [
+            'user_id'    => $user_id,
+            'book_id'    => $book_id,
+            'event_type' => $event_type,
+            'event_bit'  => $event_bit,
+            'target'     => 'dokusho',
+            'has_url'    => $attach_url,
+        ]);
+        if ($ok) {
             error_log('[X API] Successfully posted to @dokusho for user ' . $user_id . ', book ' . $book_id);
             return true;
         } else {
@@ -426,9 +517,18 @@ function postReviewToX($user_id, $book_id, $rating, $review_text = '') {
 function postReadingProgressToX($user_id, $book_id, $current_page, $total_page = 0, $memo = '') {
     global $g_db;
 
-    // 自動投稿は停止中（X APIクレジット枯渇のため）。手動シェアボタンを案内する運用に切替。
-    // 収益化等で復活する場合は X_AUTO_POST_ENABLED を true に戻す。
-    if (!defined('X_AUTO_POST_ENABLED') || !X_AUTO_POST_ENABLED) {
+    // 自動投稿は X_AUTO_POST_ENABLED と X_AUTO_POST_USER_WHITELIST で制御。
+    // クレジット消費検証のため現在は特定ユーザーのみ対象（config/x_api.php 参照）。
+    if (!isXAutoPostAllowedForUser($user_id)) {
+        return false;
+    }
+
+    // 月間予算の安全弁：当月コスト推定が上限を超えていたら投稿しない
+    if (xBudgetExceeded()) {
+        error_log('[X API] Monthly budget exceeded, skipping progress post for user ' . $user_id);
+        xAlertAdmin('budget', 'X投稿を月間予算超過で停止',
+            "当月のX投稿コスト推定が上限（\$" . X_MONTHLY_BUDGET_USD . "）を超えたため、自動投稿をスキップしました。\n"
+            . "推定消費: \$" . round(xMonthlySpendUsd(), 2));
         return false;
     }
 
@@ -498,16 +598,19 @@ function postReadingProgressToX($user_id, $book_id, $current_page, $total_page =
         $tweet_text = str_replace('」を', '」（' . $author . '）を', $tweet_text);
     }
     
-    // Add book URL if space permits
+    // 書籍URLはコストが約13倍。X_URL_EVENTS で許可されたイベントのみ付与する。
+    // 進捗投稿は既定でURLなし（低コスト）。
+    $event_bit = xEventBitFor('progress');
+    $attach_url = xShouldAttachUrl($event_bit);
     $book_url = 'https://readnest.jp/book/' . $book_id;
-    if (mb_strlen($tweet_text) + mb_strlen(' ' . $book_url) <= X_POST_MAX_LENGTH) {
+    if ($attach_url && mb_strlen($tweet_text) + mb_strlen(' ' . $book_url) <= X_POST_MAX_LENGTH) {
         $tweet_text .= ' ' . $book_url;
     }
-    
+
     // Post to both accounts if user has X connection
     $success_user = false;
     $success_dokusho = false;
-    
+
     if (!empty($user_info['x_oauth_token']) && !empty($user_info['x_oauth_token_secret'])) {
         // First check if progress posting is enabled for user's account
         if ($user_info['x_post_enabled'] && ($user_info['x_post_events'] & X_EVENT_READING_PROGRESS)) {
@@ -518,11 +621,17 @@ function postReadingProgressToX($user_id, $book_id, $current_page, $total_page =
                 $user_info['x_oauth_token'],
                 $user_info['x_oauth_token_secret']
             );
-            $result = $oauth->postTweet($tweet_text);
-            
-            if ($result) {
+            $success_user = xPostTweetLogged($oauth, $tweet_text, [
+                'user_id'    => $user_id,
+                'book_id'    => $book_id,
+                'event_type' => 'progress',
+                'event_bit'  => $event_bit,
+                'target'     => 'user',
+                'has_url'    => $attach_url,
+            ]);
+
+            if ($success_user) {
                 error_log('[X API] Successfully posted progress to user\'s X account @' . $user_info['x_screen_name']);
-                $success_user = true;
             } else {
                 error_log('[X API] Failed to post progress to user\'s X account. User: ' . $user_id);
             }
@@ -549,30 +658,48 @@ function postReadingProgressToX($user_id, $book_id, $current_page, $total_page =
             }
         }
         
-        // Add URL if space permits
-        if (mb_strlen($dokusho_text) + mb_strlen(' ' . $book_url) <= X_POST_MAX_LENGTH) {
+        // Add URL if space permits（URL付与は $attach_url に従う）
+        if ($attach_url && mb_strlen($dokusho_text) + mb_strlen(' ' . $book_url) <= X_POST_MAX_LENGTH) {
             $dokusho_text .= ' ' . $book_url;
         }
-        
-        $client = new XApiClient();
-        $dokusho_result = $client->postTweet($dokusho_text);
-        
-        if ($dokusho_result) {
-            error_log('[X API] Successfully posted progress to @dokusho for user ' . $user_id);
-            $success_dokusho = true;
-        } else {
-            error_log('[X API] Failed to post progress to @dokusho. User: ' . $user_id);
+
+        // @dokusho（readnest共有アカウント）への投稿は X_POST_TO_DOKUSHO で制御。
+        if (defined('X_POST_TO_DOKUSHO') && X_POST_TO_DOKUSHO) {
+            $client = new XApiClient();
+            $success_dokusho = xPostTweetLogged($client, $dokusho_text, [
+                'user_id'    => $user_id,
+                'book_id'    => $book_id,
+                'event_type' => 'progress',
+                'event_bit'  => $event_bit,
+                'target'     => 'dokusho',
+                'has_url'    => $attach_url,
+            ]);
+            if ($success_dokusho) {
+                error_log('[X API] Successfully posted progress to @dokusho for user ' . $user_id);
+            } else {
+                error_log('[X API] Failed to post progress to @dokusho. User: ' . $user_id);
+            }
         }
-        
+
         // Return true if at least one post succeeded
         return $success_user || $success_dokusho;
-        
+
     } else {
         // User has no X connection - post only to @dokusho account
+        // @dokusho（readnest共有アカウント）への投稿は X_POST_TO_DOKUSHO で制御。
+        if (!defined('X_POST_TO_DOKUSHO') || !X_POST_TO_DOKUSHO) {
+            return false;
+        }
         $client = new XApiClient();
-        $result = $client->postTweet($tweet_text);
-        
-        if ($result) {
+        $ok = xPostTweetLogged($client, $tweet_text, [
+            'user_id'    => $user_id,
+            'book_id'    => $book_id,
+            'event_type' => 'progress',
+            'event_bit'  => $event_bit,
+            'target'     => 'dokusho',
+            'has_url'    => $attach_url,
+        ]);
+        if ($ok) {
             error_log('[X API] Successfully posted progress to @dokusho for user ' . $user_id);
             return true;
         } else {
