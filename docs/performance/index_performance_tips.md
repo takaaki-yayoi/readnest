@@ -103,12 +103,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 ## 5. データベース接続プーリング
 
-### 改善案
+> **⚠️ この案は採用しないこと（2026-07-19 撤回）**
+>
+> 下記の永続接続は実際に `config.php` に適用されていたが、以下の障害を起こしたため無効化した。
+>
+> - **`SQLSTATE[HY000] 2006 MySQL server has gone away` が頻発。**
+>   PHP-FPM のワーカーが保持し続けた接続を MySQL 側が `wait_timeout` で切った後も
+>   PHP が「生きている」とみなして再利用するため、リクエストの**最初のクエリ**が落ちる。
+>   `book_entity.php` の `getBooksWithAsin()` に集中して見えたが、
+>   そのページで最初に走るクエリだったというだけで、原因はそこではない。
+> - **アイドル接続が `max_connections` を圧迫し、数十秒のストールを誘発。**
+>   実測でトップページの TTFB が 83 秒に達し、Service Worker 側にタイムアウトが
+>   無いため PWA が白画面になっていた。
+>
+> readnest は共有ホスティング上で Unix ソケット接続しているため、
+> 永続接続で節約できる接続コストは 1ms 程度しかなく、リスクに見合わない。
+> 再度有効化を検討する場合は、最低限 2006 検知時の再接続リトライを
+> `DB_PDO` に実装してからにすること。
+
+### 改善案（撤回済み・参考）
 ```php
 // persistent connection を使用
 $dsn = 'mysql:host=localhost;dbname=readnest_db;charset=utf8';
 $options = [
-    PDO::ATTR_PERSISTENT => true, // 永続接続
+    PDO::ATTR_PERSISTENT => true, // 永続接続 ← 使わない（上記参照）
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 ];
 ```
