@@ -780,18 +780,24 @@ function getBookInformationForIphone($book_id) {
 
 
 // get bookshelf statistics
-function getBookshelfStat($user_id) {
+// $has_error の意味は getBookshelfNum() と同じ（参照渡しの出力用引数）。
+function getBookshelfStat($user_id, &$has_error = false) {
   global $g_db;
   // $g_db is already a DB_PDO instance
-  
+
+  $has_error = false;
+
   $select_sql = 'select count(*) from b_book_list where user_id=? and (status=? or status=?)';
 
   if(defined('DEBUG')) { d($select_sql); }
   $result = $g_db->getOne($select_sql, array($user_id, READING_FINISH, READ_BEFORE));
   if(DB::isError($result)) {
     trigger_error($result->getMessage());
+    // DB_Error をそのまま返さない（理由は getBookshelfNum() のコメント参照）
+    $has_error = true;
+    $result = 0;
   }
-  
+
   $read_book_num = $result;
 
   $select_sql = 'select sum(total_page) from b_book_list where user_id=? and (status=? or status=?)';
@@ -800,22 +806,29 @@ function getBookshelfStat($user_id) {
   $result = $g_db->getOne($select_sql, array($user_id, READING_FINISH, READ_BEFORE));
   if(DB::isError($result)) {
     trigger_error($result->getMessage());
+    $has_error = true;
+    $result = 0;
   }
 
-  $read_page_num = $result;
+  // sum() は該当行が無いと NULL を返すため、数値に寄せておく
+  $read_page_num = $result === null ? 0 : $result;
 
   return array($read_book_num, $read_page_num);
 }
 
 
 // get bookshelf number
-function getBookshelfNum($user_id) {
+// $has_error は参照渡しの出力用引数。1件でもクエリが失敗すると true になる。
+// 呼び出し側がこの結果をキャッシュしてよいか判断するために使う（既存の
+// 呼び出し側は引数を渡さなくてよいので互換性は壊れない）。
+function getBookshelfNum($user_id, &$has_error = false) {
   global $g_db;
   // $g_db is already a DB_PDO instance
 
   $flag_array = array(BUY_SOMEDAY, NOT_STARTED, READING_NOW, READING_FINISH, READ_BEFORE);
   $return_array = array();
-  
+  $has_error = false;
+
   $select_sql = 'select count(*) from b_book_list where user_id=? and status=?';
 
   for($i = 0; $i < count($flag_array); $i++) {
@@ -823,11 +836,17 @@ function getBookshelfNum($user_id) {
     $result = $g_db->getOne($select_sql, array($user_id, $flag_array[$i]));
     if(DB::isError($result)) {
       trigger_error($result->getMessage());
+      // DB_Error オブジェクトをそのまま返すと、呼び出し側が数値として
+      // 扱った時点で致命的エラーになる（number_format() に DB_Error を
+      // 渡して TypeError で落ちる事故が実際に発生した）。
+      // 件数は 0 に落として、失敗した事実は $has_error で伝える。
+      $has_error = true;
+      $result = 0;
     }
-    
+
     $return_array[$flag_array[$i]] = $result;
   }
-  
+
   return $return_array;
 }
 

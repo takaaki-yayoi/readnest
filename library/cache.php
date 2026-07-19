@@ -36,8 +36,20 @@ class SimpleCache {
             return false;
         }
         
-        $data = unserialize($content);
-        
+        // 壊れたキャッシュファイルを明示的に扱う。
+        // 以前は unserialize() が false を返しても素通りし、$data['expires'] への
+        // アクセスで「Trying to access array offset on value of type bool」を
+        // 出していた（cache.php:42）。書き込みが非アトミックだったため、
+        // 同時書き込みで内容が混ざったファイルが実際に発生していた。
+        if ($content === '') {
+            return false;
+        }
+        $data = @unserialize($content);
+        if (!is_array($data) || !array_key_exists('expires', $data) || !array_key_exists('value', $data)) {
+            @unlink($filename);
+            return false;
+        }
+
         // 有効期限チェック
         if ($data['expires'] < time()) {
             // ファイルが存在する場合のみ削除
@@ -46,7 +58,7 @@ class SimpleCache {
             }
             return false;
         }
-        
+
         return $data['value'];
     }
 
@@ -66,8 +78,25 @@ class SimpleCache {
             'expires' => time() + $ttl,
             'value' => $value
         ];
-        
-        return file_put_contents($filename, serialize($data)) !== false;
+
+        // アトミックに書き込む（一時ファイル → rename）。
+        // 以前は file_put_contents() で対象ファイルへ直接書いていたため、
+        // 同時書き込みで内容が混ざり unserialize() が失敗する破損が発生していた。
+        // 破損したファイルは get() 側でミス扱いになるため、全リクエストが
+        // 一斉にDBへ流れる（スタンピード）誘因にもなっていた。
+        // LOCK_EX ではなく rename を使うのは、読み手がロックを取らない以上
+        // 「途中まで書かれたファイルを読ませない」ことが本質だから。
+        // rename(2) は同一ファイルシステム上でアトミック。
+        $tmp = $filename . '.' . getmypid() . '.tmp';
+        if (file_put_contents($tmp, serialize($data)) === false) {
+            @unlink($tmp);
+            return false;
+        }
+        if (!@rename($tmp, $filename)) {
+            @unlink($tmp);
+            return false;
+        }
+        return true;
     }
 
     /**

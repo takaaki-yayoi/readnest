@@ -199,8 +199,20 @@ class AdaptiveCache {
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        
-        file_put_contents($this->stats_file, json_encode($stats));
+
+        // アトミックに書き込む（一時ファイル → rename）。
+        // このファイルはキャッシュの get()/set() のたびに全体が書き戻されるため
+        // システム中で最も書き込み競合が激しい。非アトミックなままだと
+        // 壊れたJSONが量産される（loadStats() 側は ?: [] で吸収するので
+        // 表面化しないが、統計が無言でリセットされ続けることになる）。
+        $tmp = $this->stats_file . '.' . getmypid() . '.tmp';
+        if (file_put_contents($tmp, json_encode($stats)) === false) {
+            @unlink($tmp);
+            return;
+        }
+        if (!@rename($tmp, $this->stats_file)) {
+            @unlink($tmp);
+        }
     }
     
     /**

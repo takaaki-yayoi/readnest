@@ -104,18 +104,46 @@ $cover_filter = $_GET['cover_filter'] ?? ''; // 'no_cover' for books without cov
 $statsCacheKey = 'bookshelf_stats_' . md5((string)$user_id);
 $statsCacheTime = 600; // 10分キャッシュ
 
+// 過去に書き込まれた「DB_Error を含むキャッシュ」がまだ残っている可能性が
+// あるため、中身が数値として使える形かを検証してから採用する。
+// 壊れていれば捨てて、下の else 相当の経路で取り直す。
 $cachedStats = $cache->get($statsCacheKey);
-if ($cachedStats !== false) {
+$cachedStatsUsable = false;
+if ($cachedStats !== false && isset($cachedStats['bookshelf_stats'], $cachedStats['read_stats'])
+    && is_array($cachedStats['bookshelf_stats']) && is_array($cachedStats['read_stats'])) {
+    $cachedStatsUsable = true;
+    foreach ($cachedStats['bookshelf_stats'] as $v) {
+        if (!is_numeric($v)) { $cachedStatsUsable = false; break; }
+    }
+    if ($cachedStatsUsable) {
+        foreach ($cachedStats['read_stats'] as $v) {
+            if (!is_numeric($v)) { $cachedStatsUsable = false; break; }
+        }
+    }
+}
+
+if ($cachedStatsUsable) {
     $bookshelf_stats = $cachedStats['bookshelf_stats'];
     $read_stats = $cachedStats['read_stats'];
 } else {
-    $bookshelf_stats = getBookshelfNum($user_id);
-    $read_stats = getBookshelfStat($user_id);
-    
-    $cache->set($statsCacheKey, [
-        'bookshelf_stats' => $bookshelf_stats,
-        'read_stats' => $read_stats
-    ], $statsCacheTime);
+    if ($cachedStats !== false) {
+        // 壊れたエントリは明示的に捨てる（TTL切れを待たない）
+        $cache->delete($statsCacheKey);
+    }
+    $stats_has_error = false;
+    $read_has_error = false;
+    $bookshelf_stats = getBookshelfNum($user_id, $stats_has_error);
+    $read_stats = getBookshelfStat($user_id, $read_has_error);
+
+    // DBクエリが失敗した結果はキャッシュしない。
+    // 以前はエラー時の値をそのまま10分間キャッシュしていたため、DBが一瞬
+    // 不調になるとDB復旧後も本棚が壊れたままになっていた。
+    if (!$stats_has_error && !$read_has_error) {
+        $cache->set($statsCacheKey, [
+            'bookshelf_stats' => $bookshelf_stats,
+            'read_stats' => $read_stats
+        ], $statsCacheTime);
+    }
 }
 
 // ユーザーレベル情報を取得
