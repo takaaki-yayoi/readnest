@@ -140,6 +140,20 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
         Header set Expires "0"
         Header set Service-Worker-Allowed "/"
     </FilesMatch>
+
+    # PWA 起動シェル（manifest の start_url）だけは上の .html ルールの例外として
+    # キャッシュさせる。ここが毎回ネットワーク待ちになると「起動直後の白画面を
+    # 消す」という目的そのものが達成できないため。
+    # 中身は / へリダイレクトするだけの静的HTMLなので、多少古くても実害がない。
+    # ※ このファイル名は端末の start_url として焼き付くのでリネーム不可。
+    <FilesMatch "^pwa-boot\.html$">
+        <IfModule mod_expires.c>
+            ExpiresActive Off
+        </IfModule>
+        Header set Cache-Control "public, max-age=86400"
+        Header unset Pragma
+        Header unset Expires
+    </FilesMatch>
 </IfModule>
 
 # ETagの削除（CDN使用時の問題を防ぐ）

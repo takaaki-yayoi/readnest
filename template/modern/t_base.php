@@ -29,6 +29,11 @@ $g_need_charts = !empty($g_load_charts)
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
+    <!-- 背景色だけ最初にインラインで塗る。外部CSS(tailwind.css等)の到着を待つ間、
+         PWA 起動時に画面が真っ白に見えるのを防ぐ。色は body の
+         bg-readnest-beige / dark:bg-gray-900 と同一。 -->
+    <style>html{background-color:#f5f1e8}html.dark{background-color:#111827}</style>
+
     <!-- 主要 CDN への先読み接続: DNS解決+TLSハンドシェイクを早める -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -123,7 +128,7 @@ $g_need_charts = !empty($g_load_charts)
     <link rel="apple-touch-startup-image" media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/img/icons/splash/splash-1488x2266-v20260507.png">
 
     <!-- PWA: Web App Manifest -->
-    <link rel="manifest" href="/manifest.json?v=20260507">
+    <link rel="manifest" href="/manifest.json?v=20260816">
 
     <!-- テーマカラー -->
     <meta name="theme-color" content="#1a4d3e">
@@ -195,8 +200,12 @@ $g_need_charts = !empty($g_load_charts)
     <link href="/css/ai_assistant.css?v=<?php echo asset_ver('/css/ai_assistant.css'); ?>" rel="stylesheet">
     <?php endif; ?>
     
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome for icons
+         外部CDNのため render-blocking にすると初回描画が DNS+TLS 分だけ遅れる。
+         media="print" で読み込み時はブロックさせず、到着後に media を all に戻して適用する
+         （アイコンだけ僅かに遅れて表示される）。 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all';this.onload=null;">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     
     <!-- Alpine.js x-cloak support and Dark Mode Styles -->
     <style>

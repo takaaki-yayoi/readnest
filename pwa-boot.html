@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<!--
+  /pwa-boot.html — PWA 起動シェル
+  ---------------------------------------------------------------------------
+  目的:
+    PWA をコールドスタートすると、iOS はスプラッシュ画像を「WebView が動き出した
+    瞬間」に消してしまう。その後 start_url の HTML が届くまで（ログイン済みの
+    トップページは DB クエリが多く数秒かかる）画面は真っ白のままで、ユーザーには
+    何の進捗も見えない。t_base.php の #pwa-progress-bar は HTML 到着後にしか
+    動けないため、この区間を原理的にカバーできない。
+
+  仕組み:
+    manifest.json の start_url をこのファイルにしてある。ここは PHP も DB も
+    使わない静的 HTML で、ロゴは data URI としてインライン化してあるため
+    追加リクエストゼロで即座に描画できる。描画（1フレーム）を待ってから
+    location.replace('/') でトップページへ遷移する。ブラウザは遷移先の描画が
+    始まるまで現在の画面を出し続けるので、これまで真っ白だった数秒が
+    「ロゴ + プログレスバー」の読み込み画面に置き換わる。
+
+  デザイン意図:
+    背景色 #f5f1e8 とロゴは iOS スプラッシュ画像
+    (/img/icons/splash/splash-*.png) と同一。スプラッシュ → このシェルの
+    切り替わりが視覚的に無変化になり、プログレスバーだけが増えて見える。
+    ダークモードには追従しない（スプラッシュ画像が light 固定のため、
+    合わせた方がちらつかない）。
+
+  注意:
+    - iOS はインストール済み PWA の manifest を読み直さないため、start_url の
+      変更が効くのは「ホーム画面に追加し直した端末」と Android。
+    - このファイル名は manifest の start_url として端末に焼き付く。リネームすると
+      既存インストールが 404 になるので、パスは変更しないこと。
+    - .htaccess で他の .html と違い長めにキャッシュさせている（中身はリダイレクト
+      するだけなので、多少古くても実害がない）。
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a4d3e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ReadNest">
+<title>ReadNest</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        /* スプラッシュ画像と同じ背景色。切り替わりを無変化に見せる */
+        background-color: #f5f1e8;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+        overflow: hidden;
+    }
+
+    .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.75rem;
+        padding: 0 1.5rem;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    /* ロゴは data URI のマスク。追加リクエストなしで即描画される */
+    :root { --logo: url("data:image/png;base64,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"); }
+    .logo {
+        width: 132px;
+        height: 132px;
+        background-color: #1a4d3e;
+        -webkit-mask: var(--logo) center / contain no-repeat;
+        mask: var(--logo) center / contain no-repeat;
+    }
+
+    /* t_base.php の #pwa-progress-bar と同じ見た目（遷移後も連続して見える） */
+    .bar {
+        position: fixed;
+        top: env(safe-area-inset-top);
+        left: 0;
+        height: 3px;
+        width: 0;
+        background: linear-gradient(to right, #1a4d3e, #38a182);
+        box-shadow: 0 0 8px rgba(56, 161, 130, 0.5);
+        animation: boot-loading 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes boot-loading {
+        0%   { width: 0%;  }
+        40%  { width: 60%; }
+        70%  { width: 85%; }
+        100% { width: 95%; }
+    }
+
+    /* 読み込みが長引いたときだけ、そっと文言を出す */
+    .msg, .fallback {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+    .msg { color: #6b7280; }
+    .fallback {
+        color: #1a4d3e;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 0.25em;
+    }
+    .show { opacity: 1; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bar { animation: none; width: 40%; }
+    }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<div class="wrap">
+    <div class="logo" role="img" aria-label="ReadNest"></div>
+    <p class="msg" id="msg" aria-live="polite">読み込んでいます…</p>
+    <a class="fallback" id="fallback" href="/">ReadNest を開く</a>
+</div>
+
+<noscript>
+    <meta http-equiv="refresh" content="0;url=/">
+</noscript>
+
+<script>
+(function () {
+    // start_url に付与されたクエリ・ハッシュ（utm_source=homescreen 等）は引き継ぐ
+    var target = '/' + window.location.search + window.location.hash;
+
+    var moved = false;
+    function go() {
+        if (moved) return;
+        moved = true;
+        // replace: 戻る操作でこのシェルに戻ってこないようにする
+        window.location.replace(target);
+    }
+
+    // 「描画されてから遷移」させるのが肝。即座に replace すると 1 フレームも
+    // 描画されず、結局これまで通り真っ白のままになる。rAF を 2 回待つことで
+    // 最初のフレームが画面に出たことを保証する。
+    requestAnimationFrame(function () {
+        requestAnimationFrame(go);
+    });
+    // rAF が動かない環境（バックグラウンド起動など）の保険
+    setTimeout(go, 300);
+
+    // 遷移中もこのドキュメントは表示され続けるので、長引く場合だけ案内を出す
+    setTimeout(function () {
+        document.getElementById('msg').classList.add('show');
+    }, 2500);
+    setTimeout(function () {
+        document.getElementById('fallback').classList.add('show');
+    }, 8000);
+})();
+</script>
+</body>
+</html>
