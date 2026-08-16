@@ -131,9 +131,15 @@ class AuthorInfoFetcher {
      */
     private function normalizeName($name) {
         $name = (string)$name;
+        // 全角英数字・全角スペースを半角に寄せる（Ｊ．Ｒ．Ｒ． → J.R.R.）
+        if (function_exists('mb_convert_kana')) {
+            $name = mb_convert_kana($name, 'as', 'UTF-8');
+        }
         // 曖昧さ回避の括弧を落とす（例: 中村航 (小説家) → 中村航）
         $name = preg_replace('/[（(][^）)]*[）)]\s*$/u', '', $name);
-        $name = preg_replace('/[\s\x{3000}・･‐‑‒–—―\-]/u', '', $name);
+        // 区切り記号を落とす。イニシャルのピリオドと中黒が混在するため
+        // （J.R.R. トールキン と J・R・R・トールキン を同一視する）
+        $name = preg_replace('/[\s\x{3000}・･、,，\.．。\'’"＂‐‑‒–—―\-]/u', '', $name);
         return mb_strtolower(trim($name), 'UTF-8');
     }
 
@@ -178,8 +184,10 @@ class AuthorInfoFetcher {
             return false;
         }
 
-        // 人物記事に特有の言い回し（生年の括弧書き、職業名）
-        $person_patterns = '/[（(][^）)]*\d{3,4}年[^）)]*[-–—][^）)]*[）)]'
+        // 人物記事に特有の言い回し（読み仮名と生年の括弧書き、職業名）
+        // 生年の括弧は「（もりた まさる、1937年（昭和12年）12月19日 - 」のように
+        // 入れ子になるため、閉じ括弧までのマッチは要求しない。
+        $person_patterns = '/[（(][^）)]{0,40}\d{3,4}年'
             . '|は、[^。]{0,30}(作家|小説家|著述家|著者|漫画家|評論家|翻訳家|随筆家|エッセイスト|詩人|歌人|俳人|脚本家|劇作家|ジャーナリスト|編集者|研究者|学者|教授|講師|実業家|経営者|医師|弁護士|建築家|写真家|音楽家|画家|イラストレーター|俳優|声優|人物)'
             . '|\(born\s|\bis\s+an?\s+[^.]{0,40}(author|writer|novelist|journalist|professor|researcher|poet|essayist|illustrator|scholar|historian|economist)/u';
 
@@ -207,24 +215,38 @@ class AuthorInfoFetcher {
         // 1. タイトル直引き。redirects=1 でリダイレクトも解決する
         //    （例: Mark Twain → マーク・トウェイン）。
         //    完全なタイトル一致なので、解決後のタイトルが違っても信頼できる。
-        foreach ($variants as $variant) {
-            $params = [
-                'action' => 'query',
-                'format' => 'json',
-                'titles' => $variant,
-                'redirects' => 1,
-                'utf8' => 1,
-            ];
-            $result = $this->httpGet($api_url . '?' . http_build_query($params));
-            if (!$result) {
-                continue;
-            }
+        //    表記ゆれ候補は titles=A|B|C とまとめて1リクエストで引く
+        //    （Wikipedia APIは1回50タイトルまで。誤データの一括取り直しで
+        //     リクエスト数が候補数倍になるのを避けるため）。
+        $params = [
+            'action' => 'query',
+            'format' => 'json',
+            'titles' => implode('|', $variants),
+            'redirects' => 1,
+            'utf8' => 1,
+        ];
+        $result = $this->httpGet($api_url . '?' . http_build_query($params));
+        if ($result) {
             $data = json_decode($result, true);
+            $normalized_variants = array_map([$this, 'normalizeName'], $variants);
+            $fallback_pid = null;
             foreach ($data['query']['pages'] ?? [] as $pid => $page) {
                 // 存在しないページは pageid -1 で返る
-                if ((int)$pid > 0 && empty($page['missing'])) {
+                if ((int)$pid <= 0 || !empty($page['missing'])) {
+                    continue;
+                }
+                // 候補名と一致するタイトルを優先する
+                if (in_array($this->normalizeName($page['title'] ?? ''), $normalized_variants, true)) {
                     return (int)$pid;
                 }
+                if ($fallback_pid === null) {
+                    $fallback_pid = (int)$pid;
+                }
+            }
+            // タイトルが一致しない場合はリダイレクト解決の結果とみなす
+            // （Mark Twain → マーク・トウェイン）。直引きなので信頼できる。
+            if ($fallback_pid !== null) {
+                return $fallback_pid;
             }
         }
 

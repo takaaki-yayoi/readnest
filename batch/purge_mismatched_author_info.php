@@ -21,6 +21,7 @@
  *   php batch/purge_mismatched_author_info.php              # 確認のみ（既定）
  *   php batch/purge_mismatched_author_info.php --apply      # 実際に削除
  *   php batch/purge_mismatched_author_info.php --apply --refetch --limit=200
+ *   php batch/purge_mismatched_author_info.php --author='有川 真由美'  # 1名だけ試す
  *
  *   --refetch を付けると削除後にその場で取り直す。付けない場合は author.php の
  *   アクセス時に遅延取得される。クローラーが大量に来ている最中は、負荷が
@@ -45,15 +46,39 @@ if (!$g_db || DB::isError($g_db)) {
     exit("DB接続に失敗しました\n");
 }
 
-$opts    = getopt('', ['apply', 'refetch', 'limit::']);
+$opts    = getopt('', ['apply', 'refetch', 'limit::', 'author::']);
 $apply   = isset($opts['apply']);
 $refetch = isset($opts['refetch']);
 $limit   = isset($opts['limit']) ? max(1, (int)$opts['limit']) : 0;
+$only    = isset($opts['author']) ? (string)$opts['author'] : '';
+
+// --author=作家名 を付けると1名だけを対象にする。
+// 大量パージの前に、取り直しが正しく動くか（特に Wikipedia 不採用時の
+// OpenAI フォールバックが生きているか）を1件で確かめるために使う。
+if ($only !== '') {
+    $fetcher = new AuthorInfoFetcher();
+    $g_db->query("DELETE FROM b_author_info WHERE author_name = ?", [$only]);
+    getCache()->delete('author_info_' . md5($only));
+    echo "「{$only}」を削除して取り直します...\n\n";
+    $info = $fetcher->getAuthorInfo($only);
+    printf("source      : %s\n", $info['source'] ?? '(なし)');
+    printf("wikipedia   : %s\n", $info['wikipedia_url'] ?: '(なし)');
+    printf("説明文長    : %d 文字\n", mb_strlen((string)($info['description'] ?? '')));
+    printf("説明文      : %s\n", mb_substr((string)($info['description'] ?? '(空)'), 0, 200));
+    if (empty($info['description'])) {
+        echo "\n説明文が空です。Wikipedia不採用時のフォールバックが機能していません。\n";
+        echo "config.php の OPENAI_API_KEY と、fetchFromOpenAI() のモデル名を確認してください。\n";
+    }
+    exit(0);
+}
 
 /** 作家名・記事タイトルの比較用正規化（AuthorInfoFetcher と同じ規則） */
 function purgeNormalize(string $name): string {
+    if (function_exists('mb_convert_kana')) {
+        $name = mb_convert_kana($name, 'as', 'UTF-8');
+    }
     $name = preg_replace('/[（(][^）)]*[）)]\s*$/u', '', $name);
-    $name = preg_replace('/[\s\x{3000}・･‐‑‒–—―\-]/u', '', $name);
+    $name = preg_replace('/[\s\x{3000}・･、,，\.．。\'’"＂‐‑‒–—―\-]/u', '', $name);
     return mb_strtolower(trim($name), 'UTF-8');
 }
 
