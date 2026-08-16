@@ -50,6 +50,10 @@ $popular_books_sql = "
     WHERE br.author = ?
     AND bu.diary_policy = 1
     AND bu.status = 1
+    AND br.title IS NOT NULL
+    AND br.title != ''
+    AND br.asin IS NOT NULL
+    AND br.asin != ''
     GROUP BY br.asin, br.title, br.image_url
     ORDER BY reader_count DESC
     LIMIT 5

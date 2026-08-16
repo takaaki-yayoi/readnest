@@ -147,15 +147,18 @@ ob_start();
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <?php foreach ($popular_books as $book): ?>
                 <div class="text-center group">
-                    <?php if ($login_flag): ?>
-                    <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>" 
+                    <!-- 書影とタイトルは常に書籍ページへリンクする。
+                         以前はログイン時のみリンクしていたため、未ログインのクローラーからは
+                         このページの本文リンクが Amazon だけになり、サイト内の書籍ページへ
+                         辿れない行き止まりになっていた。 -->
+                    <a href="/book_entity/<?php echo rawurlencode((string)$book['asin']); ?>"
                        class="block transition-transform hover:scale-105"
-                       title="「<?php echo htmlspecialchars($book['title']); ?>」を検索">
-                    <?php endif; ?>
-                        <div class="bg-gray-50 rounded-lg p-2 mb-2 <?php echo $login_flag ? 'group-hover:bg-gray-100' : ''; ?> transition-colors">
+                       title="「<?php echo htmlspecialchars($book['title']); ?>」の詳細を見る">
+                        <div class="bg-gray-50 rounded-lg p-2 mb-2 group-hover:bg-gray-100 transition-colors">
                             <?php if (!empty($book['image_url'])): ?>
-                            <img src="<?php echo htmlspecialchars($book['image_url']); ?>" 
+                            <img src="<?php echo htmlspecialchars($book['image_url']); ?>"
                                  alt="<?php echo htmlspecialchars($book['title']); ?>"
+                                 loading="lazy"
                                  class="w-full h-32 object-contain">
                             <?php else: ?>
                             <div class="w-full h-32 bg-gray-200 rounded flex items-center justify-center">
@@ -163,36 +166,35 @@ ob_start();
                             </div>
                             <?php endif; ?>
                         </div>
-                        <p class="text-sm font-medium text-gray-900 line-clamp-2 <?php echo $login_flag ? 'group-hover:text-readnest-primary' : ''; ?> transition-colors">
+                        <p class="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-readnest-primary transition-colors">
                             <?php echo htmlspecialchars($book['title']); ?>
                         </p>
                         <p class="text-xs text-gray-500 mt-1">
                             <?php echo number_format($book['reader_count']); ?>人が読書中
                         </p>
+                    </a>
+                    <div class="mt-2 flex items-center justify-center gap-2">
                         <?php if ($login_flag): ?>
-                        <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span class="inline-flex items-center text-xs text-readnest-primary">
-                                <i class="fas fa-search mr-1"></i>検索
-                            </span>
-                        </div>
+                        <!-- ログインユーザー向けの本棚追加ショートカットは従来どおり残す -->
+                        <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>"
+                           class="inline-flex items-center px-2 py-1 bg-readnest-primary text-white text-xs rounded hover:bg-opacity-90 transition-colors"
+                           title="「<?php echo htmlspecialchars($book['title']); ?>」を検索して本棚に追加">
+                            <i class="fas fa-plus mr-1"></i>追加
+                        </a>
                         <?php endif; ?>
-                    <?php if ($login_flag): ?>
-                    </a>
-                    <?php endif; ?>
-                    <a href="<?php echo htmlspecialchars(getAmazonProductUrl($book)); ?>"
-                       target="_blank"
-                       rel="noopener noreferrer sponsored"
-                       class="mt-2 inline-flex items-center justify-center px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors">
-                        <i class="fab fa-amazon mr-1"></i>Amazon
-                    </a>
+                        <a href="<?php echo htmlspecialchars(getAmazonProductUrl($book)); ?>"
+                           target="_blank"
+                           rel="noopener noreferrer sponsored"
+                           class="inline-flex items-center justify-center px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors">
+                            <i class="fab fa-amazon mr-1"></i>Amazon
+                        </a>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>
-            <?php if ($login_flag): ?>
             <p class="text-xs text-gray-500 mt-4 text-center">
-                <i class="fas fa-info-circle mr-1"></i>本をクリックすると検索できます
+                <i class="fas fa-info-circle mr-1"></i>本をクリックすると詳細ページを開けます
             </p>
-            <?php endif; ?>
         </div>
         <?php endif; ?>
         
@@ -265,7 +267,7 @@ ob_start();
                    class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                     無料で登録
                 </a>
-                <a href="/login.php" 
+                <a href="/index.php"
                    class="bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-800 transition">
                     ログイン
                 </a>

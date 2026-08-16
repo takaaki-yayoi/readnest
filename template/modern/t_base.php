@@ -506,14 +506,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                     <i class="fas fa-bell mr-2"></i>新刊情報
                                 </a>
                                 <?php endif; ?>
-                                <a href="/popular_books.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <a href="/popular_book.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-fire mr-2"></i>人気の本
                                 </a>
                                 <a href="/ranking.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-trophy mr-2"></i>ランキング
                                 </a>
-                                <a href="/recent_reviews.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <i class="fas fa-comments mr-2"></i>最新レビュー
+                                <a href="/popular_review.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-comment-dots mr-2"></i>人気のレビュー
                                 </a>
                                 <a href="/reviews.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-list mr-2"></i>レビュー一覧

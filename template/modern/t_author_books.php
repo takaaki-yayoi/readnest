@@ -50,8 +50,9 @@ ob_start();
                     <!-- 本の画像 -->
                     <div class="flex-shrink-0">
                         <?php if (!empty($book['image_url'])): ?>
-                        <img src="<?php echo htmlspecialchars($book['image_url']); ?>" 
+                        <img src="<?php echo htmlspecialchars($book['image_url']); ?>"
                              alt="<?php echo htmlspecialchars($book['title']); ?>"
+                             loading="lazy"
                              class="w-20 h-28 object-cover rounded shadow-sm">
                         <?php else: ?>
                         <div class="w-20 h-28 bg-gray-200 rounded flex items-center justify-center">
@@ -80,8 +81,11 @@ ob_start();
                         </div>
                         
                         <div class="mt-3 flex items-center flex-wrap gap-3">
-                            <?php if (isset($_SESSION['AUTH_USER'])): ?>
-                            <a href="/book_entity/<?php echo urlencode($book['asin']); ?>"
+                            <!-- 以前はログイン時のみ表示していたため、未ログインのクローラーから
+                                 書籍ページへの内部リンクが1本も無い状態になっていた。
+                                 asin が無い本（b_book_list 由来）はリンク先が存在しないので出さない。 -->
+                            <?php if (!empty($book['asin'])): ?>
+                            <a href="/book_entity/<?php echo rawurlencode((string)$book['asin']); ?>"
                                class="text-blue-600 hover:text-blue-700 text-sm font-medium">
                                 詳細を見る <i class="fas fa-arrow-right ml-1 text-xs"></i>
                             </a>
@@ -124,7 +128,7 @@ ob_start();
             <a href="/register.php" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                 <i class="fas fa-user-plus mr-2"></i>新規登録
             </a>
-            <a href="/login.php" class="bg-blue-700 bg-opacity-50 text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-70 transition-colors">
+            <a href="/index.php" class="bg-blue-700 bg-opacity-50 text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-70 transition-colors">
                 <i class="fas fa-sign-in-alt mr-2"></i>ログイン
             </a>
         </div>
