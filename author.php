@@ -216,11 +216,21 @@ if ($login_flag) {
 $author_book_count   = (int)($stats['total_books'] ?? 0);
 $author_reader_count = (int)($stats['total_readers'] ?? 0);
 
+// 数字は「多い」ときだけ出す。
+// 作家名の表記ゆれで同一人物のページが分裂しており（サイトマップ22,364件の
+// うち3,341件・14.9%が正規化すると同一。「高千穂 遥」と「高千穂 遙」など）、
+// 分裂した側は実態より小さい数字になる。「1作品・読者1人」と出すのは
+// 薄いページだと自己申告するようなもので、CTRを上げるどころか下げる。
+// 表記ゆれの統合自体は P5 の課題。
+$author_show_counts = ($author_book_count >= 3 && $author_reader_count >= 2);
+
 // 検索結果で切られない長さに収める（日本語は全角30文字前後で打ち切られる）
-if ($author_book_count > 0) {
+if ($author_show_counts) {
     $d_site_title = $author_name . 'の作品一覧 '
         . number_format($author_book_count) . '作品・読者'
         . number_format($author_reader_count) . '人 | ReadNest';
+} elseif ($author_book_count > 0) {
+    $d_site_title = $author_name . 'の作品一覧 - 読書記録とレビュー | ReadNest';
 } else {
     $d_site_title = $author_name . ' - 作家紹介 - ReadNest';
 }
@@ -232,10 +242,15 @@ if ($author_book_count > 0) {
 // 先に短い数値情報を確定させてから残り予算で足す。
 $author_desc_limit = 118;
 
-$desc = ($author_book_count > 0)
-    ? $author_name . 'の' . number_format($author_book_count) . '作品を ReadNest の読者'
-        . number_format($author_reader_count) . '人が記録。'
-    : $author_name . 'の作品を ReadNest で探す。';
+if ($author_show_counts) {
+    $desc = $author_name . 'の' . number_format($author_book_count) . '作品を ReadNest の読者'
+        . number_format($author_reader_count) . '人が記録。';
+} elseif ($author_book_count > 0) {
+    // 数字が小さい作家は件数を出さず、書名で検索意図に当てにいく
+    $desc = $author_name . 'の作品の読書記録とレビュー。';
+} else {
+    $desc = $author_name . 'の作品を ReadNest で探す。';
+}
 
 $append = function (string $chunk) use (&$desc, $author_desc_limit): void {
     if (mb_strlen($desc . $chunk) <= $author_desc_limit) {
