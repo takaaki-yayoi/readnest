@@ -125,38 +125,145 @@ class AuthorInfoFetcher {
     /**
      * Wikipediaから作家情報を取得
      */
+    /**
+     * 作家名・記事タイトルの比較用に正規化する
+     * 半角/全角スペース、中黒、各種ハイフンを落とし、曖昧さ回避の括弧も除去する
+     */
+    private function normalizeName($name) {
+        $name = (string)$name;
+        // 曖昧さ回避の括弧を落とす（例: 中村航 (小説家) → 中村航）
+        $name = preg_replace('/[（(][^）)]*[）)]\s*$/u', '', $name);
+        $name = preg_replace('/[\s\x{3000}・･‐‑‒–—―\-]/u', '', $name);
+        return mb_strtolower(trim($name), 'UTF-8');
+    }
+
+    /**
+     * Wikipedia記法の残りかすを落とす
+     * explaintext=1 を指定しても記事冒頭のテンプレートやリンクが残ることがあり、
+     * [[テレビドラマ]] や {{JPN}} がそのままページに出ていた
+     */
+    private function stripWikiMarkup($text) {
+        $text = (string)$text;
+        // {{テンプレート}}（入れ子を数回に分けて除去）
+        for ($i = 0; $i < 3; $i++) {
+            $text = preg_replace('/\{\{[^{}]*\}\}/u', '', $text);
+        }
+        // [[記事名|表示名]] → 表示名、[[記事名]] → 記事名
+        $text = preg_replace('/\[\[(?:[^\[\]|]*\|)?([^\[\]|]*)\]\]/u', '$1', $text);
+        // 取り残した角括弧
+        $text = str_replace(['[[', ']]'], '', $text);
+        // ''' 強調 '' 斜体
+        $text = str_replace(["'''", "''"], '', $text);
+        $text = preg_replace('/[ \t\x{3000}]+/u', ' ', $text);
+        return trim($text);
+    }
+
+    /**
+     * 抜粋が「その作家本人の人物紹介」として妥当かを判定する
+     *
+     * 記事タイトル照合をすり抜けた場合の保険。作品や概念の記事（『こころ』『磁力』など）を
+     * 人物紹介として出さないよう、人物記事に特有の言い回しを要求する。
+     * 落ちた場合は OpenAI 側のフォールバックに回るので、弾きすぎても実害は小さい。
+     */
+    private function looksLikePersonBio($extract, $author_name, $page_title) {
+        if ($extract === '') {
+            return false;
+        }
+
+        // 本人の名前か、リダイレクト解決後の記事タイトルが本文に出てくること
+        $norm_extract = $this->normalizeName($extract);
+        $mentions = mb_strpos($norm_extract, $this->normalizeName($author_name)) !== false
+            || ($page_title !== '' && mb_strpos($norm_extract, $this->normalizeName($page_title)) !== false);
+        if (!$mentions) {
+            return false;
+        }
+
+        // 人物記事に特有の言い回し（生年の括弧書き、職業名）
+        $person_patterns = '/[（(][^）)]*\d{3,4}年[^）)]*[-–—][^）)]*[）)]'
+            . '|は、[^。]{0,30}(作家|小説家|著述家|著者|漫画家|評論家|翻訳家|随筆家|エッセイスト|詩人|歌人|俳人|脚本家|劇作家|ジャーナリスト|編集者|研究者|学者|教授|講師|実業家|経営者|医師|弁護士|建築家|写真家|音楽家|画家|イラストレーター|俳優|声優|人物)'
+            . '|\(born\s|\bis\s+an?\s+[^.]{0,40}(author|writer|novelist|journalist|professor|researcher|poet|essayist|illustrator|scholar|historian|economist)/u';
+
+        return (bool)preg_match($person_patterns, $extract);
+    }
+
+    /**
+     * 作家名から Wikipedia の pageid を解決する
+     *
+     * 以前は list=search（全文検索）の1位を無検証で採用していた。全文検索は本文に
+     * 名前が1回出るだけの記事も返すため、翻訳者の記事や同姓の別人、果ては「磁力」
+     * 「投資信託」といった概念記事が作家紹介として表示されていた。
+     * ここではタイトル一致を必須にする。
+     */
+    private function resolveWikipediaPageId($api_url, $author_name) {
+        // 表記ゆれの候補（search_book_by_author.php と同じ考え方）
+        $variants = array_values(array_unique(array_filter([
+            $author_name,
+            str_replace(' ', '', $author_name),
+            str_replace(' ', '・', $author_name),
+            str_replace('・', ' ', $author_name),
+            str_replace('・', '', $author_name),
+        ])));
+
+        // 1. タイトル直引き。redirects=1 でリダイレクトも解決する
+        //    （例: Mark Twain → マーク・トウェイン）。
+        //    完全なタイトル一致なので、解決後のタイトルが違っても信頼できる。
+        foreach ($variants as $variant) {
+            $params = [
+                'action' => 'query',
+                'format' => 'json',
+                'titles' => $variant,
+                'redirects' => 1,
+                'utf8' => 1,
+            ];
+            $result = $this->httpGet($api_url . '?' . http_build_query($params));
+            if (!$result) {
+                continue;
+            }
+            $data = json_decode($result, true);
+            foreach ($data['query']['pages'] ?? [] as $pid => $page) {
+                // 存在しないページは pageid -1 で返る
+                if ((int)$pid > 0 && empty($page['missing'])) {
+                    return (int)$pid;
+                }
+            }
+        }
+
+        // 2. タイトル内検索。ヒットしたタイトルが作家名と一致するものだけ採用する
+        $params = [
+            'action' => 'query',
+            'format' => 'json',
+            'list' => 'search',
+            'srsearch' => 'intitle:"' . $author_name . '"',
+            'srlimit' => 5,
+            'utf8' => 1,
+        ];
+        $result = $this->httpGet($api_url . '?' . http_build_query($params));
+        if ($result) {
+            $data = json_decode($result, true);
+            $normalized_variants = array_map([$this, 'normalizeName'], $variants);
+            foreach ($data['query']['search'] ?? [] as $hit) {
+                if (in_array($this->normalizeName($hit['title'] ?? ''), $normalized_variants, true)) {
+                    return (int)$hit['pageid'];
+                }
+            }
+        }
+
+        return null;
+    }
+
     private function fetchFromWikipedia($author_name) {
         // 日本語版Wikipediaを優先
         $languages = ['ja', 'en'];
-        
+
         foreach ($languages as $lang) {
             $api_url = "https://{$lang}.wikipedia.org/w/api.php";
-            
-            // 1. ページ検索
-            $search_params = [
-                'action' => 'query',
-                'format' => 'json',
-                'list' => 'search',
-                'srsearch' => $author_name,
-                'srlimit' => 1,
-                'utf8' => 1
-            ];
-            
-            $search_url = $api_url . '?' . http_build_query($search_params);
-            $search_result = $this->httpGet($search_url);
-            
-            if (!$search_result) {
+
+            // 1. タイトル一致で pageid を解決する（全文検索の1位を拾わない）
+            $page_id = $this->resolveWikipediaPageId($api_url, $author_name);
+            if (!$page_id) {
                 continue;
             }
-            
-            $search_data = json_decode($search_result, true);
-            if (empty($search_data['query']['search'])) {
-                continue;
-            }
-            
-            $page_title = $search_data['query']['search'][0]['title'];
-            $page_id = $search_data['query']['search'][0]['pageid'];
-            
+
             // 2. ページ内容取得
             $content_params = [
                 'action' => 'query',
@@ -180,10 +287,20 @@ class AuthorInfoFetcher {
             
             $content_data = json_decode($content_result, true);
             $page_data = $content_data['query']['pages'][$page_id] ?? null;
-            
+
             if (!$page_data) {
                 continue;
             }
+
+            // 残った Wikipedia 記法を落としてから、人物紹介として妥当か検証する。
+            // 妥当でなければこの言語版は採用せず、最終的に OpenAI 側にフォールバックする。
+            $extract = $this->stripWikiMarkup($page_data['extract'] ?? '');
+            if (!$this->looksLikePersonBio($extract, $author_name, $page_data['title'] ?? '')) {
+                error_log('AuthorInfoFetcher: rejected wikipedia article for "' . $author_name
+                    . '" (title: ' . ($page_data['title'] ?? '?') . ', lang: ' . $lang . ')');
+                continue;
+            }
+            $page_data['extract'] = $extract;
             
             // 3. Infobox情報を取得（構造化データ）
             $infobox_params = [
@@ -217,14 +334,14 @@ class AuthorInfoFetcher {
                     $death_date = $this->parseWikiDate($matches[1]);
                 }
                 if (preg_match('/\|\s*国籍\s*=\s*([^\|]+)/u', $content, $matches)) {
-                    $nationality = trim(strip_tags($matches[1]));
+                    $nationality = $this->stripWikiMarkup(strip_tags($matches[1]));
                 }
                 if (preg_match('/\|\s*ジャンル\s*=\s*([^\|]+)/u', $content, $matches)) {
-                    $genres_text = trim(strip_tags($matches[1]));
+                    $genres_text = $this->stripWikiMarkup(strip_tags($matches[1]));
                     $genres = array_map('trim', explode('、', $genres_text));
                 }
                 if (preg_match('/\|\s*代表作\s*=\s*([^\|]+)/u', $content, $matches)) {
-                    $works_text = trim(strip_tags($matches[1]));
+                    $works_text = $this->stripWikiMarkup(strip_tags($matches[1]));
                     // 『』で囲まれた作品名を抽出
                     preg_match_all('/『([^』]+)』/u', $works_text, $work_matches);
                     $notable_works = $work_matches[1] ?? [];
