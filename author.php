@@ -120,10 +120,14 @@ if ($read_stats === false) {
 
     // この作家を読む人が他に読んでいる作家。
     //
-    // 読者を絞ってから蔵書を展開する。読者数×1人あたりの蔵書数だけ行が膨らむため、
-    // ここを緩くすると人気作家でページが目に見えて遅くなる。
-    // 200人で試したところ村上春樹で TTFB 2.4秒、東野圭吾で 1.4秒だった
-    // （通常の作家ページは 0.07秒）。40人なら傾向を出すには十分。
+    // 読者を絞ってから蔵書を展開する。読者数×1人あたりの蔵書数だけ中間行が
+    // 膨らむため、緩くすると人気作家でページが目に見えて遅くなる。
+    // 本番実測: 読者200人で村上春樹 TTFB 2.4秒、40人でも最大3.2秒の外れ値が出た
+    // （集計を入れる前の作家ページは 0.07秒）。蔵書数の多い読者が1人サンプルに
+    // 入るだけで跳ねるため、読者数だけでなく展開する行自体を絞る。
+    //
+    // status = 3（読了）に限定する。「読みたい」に積んだだけの本を除くことで
+    // 多読ユーザーの行数を抑えられ、併読の指標としても実際に読んだ本の方が妥当。
     //
     // br2 の結合を外して bl2.author を直接使えばさらに速くなるが、
     // b_book_list.author は「東野 圭吾」、b_book_repository.author は「東野圭吾」と
@@ -136,9 +140,9 @@ if ($read_stats === false) {
             INNER JOIN b_book_list bl ON br.asin = bl.amazon_id
             INNER JOIN b_user bu ON bl.user_id = bu.user_id
             WHERE br.author = ? AND bu.diary_policy = 1 AND bu.status = 1
-            LIMIT 40
+            LIMIT 25
         ) r
-        INNER JOIN b_book_list bl2 ON bl2.user_id = r.user_id
+        INNER JOIN b_book_list bl2 ON bl2.user_id = r.user_id AND bl2.status = 3
         INNER JOIN b_book_repository br2 ON br2.asin = bl2.amazon_id
         WHERE br2.author IS NOT NULL AND br2.author != '' AND br2.author != '-'
           AND br2.author != ?
