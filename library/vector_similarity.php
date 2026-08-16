@@ -54,6 +54,49 @@ class VectorSimilarity {
     }
     
     /**
+     * デコード済みベクトルとJSON形式embeddingのコサイン類似度を計算
+     *
+     * cosineSimilarity() は毎回2本ともjson_decodeするため、1件の基準本を
+     * 数百件の候補と比較する用途では基準本のデコードが候補数だけ繰り返される。
+     * 基準ベクトルを事前にデコードしておく場合はこちらを使う。
+     *
+     * @param array $vec1 デコード済みのベクトル（基準本）
+     * @param string $embedding2 JSON形式のembedding（候補本）
+     * @return float 0〜1の類似度
+     */
+    public static function cosineSimilarityWithVector($vec1, $embedding2) {
+        if (!is_array($vec1) || empty($vec1)) {
+            return 0;
+        }
+
+        $vec2 = json_decode($embedding2, true);
+
+        if (!is_array($vec2) || count($vec1) !== count($vec2)) {
+            return 0;
+        }
+
+        $dotProduct = 0;
+        $magnitude1 = 0;
+        $magnitude2 = 0;
+
+        $length = count($vec1);
+        for ($i = 0; $i < $length; $i++) {
+            $dotProduct += $vec1[$i] * $vec2[$i];
+            $magnitude1 += $vec1[$i] * $vec1[$i];
+            $magnitude2 += $vec2[$i] * $vec2[$i];
+        }
+
+        $magnitude1 = sqrt($magnitude1);
+        $magnitude2 = sqrt($magnitude2);
+
+        if ($magnitude1 == 0 || $magnitude2 == 0) {
+            return 0;
+        }
+
+        return max(0, $dotProduct / ($magnitude1 * $magnitude2));
+    }
+
+    /**
      * ユークリッド距離ベースの類似度
      * @param string $embedding1 JSON形式のembedding
      * @param string $embedding2 JSON形式のembedding

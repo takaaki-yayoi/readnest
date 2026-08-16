@@ -135,11 +135,62 @@ function preCalculatePopularBooks() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ";
     
-    $g_db->query($create_table_sql);
-    
+    $create_result = $g_db->query($create_table_sql);
+    if (DB::isError($create_result)) {
+        error_log('[preCalculatePopularBooks] CREATE TABLE 失敗: ' . $create_result->getMessage());
+        return false;
+    }
+
+    // CREATE TABLE IF NOT EXISTS は既存テーブルのスキーマを更新しない。
+    // 古いスキーマで作られた環境では後から CREATE 文に足したカラム
+    // （amazon_id など）が存在せず、INSERT だけが毎回失敗して
+    // テーブルが空のままになっていた。不足カラムをここで補う。
+    $required_columns = array(
+        'title'       => 'VARCHAR(255)',
+        'image_url'   => 'VARCHAR(500)',
+        'amazon_id'   => 'VARCHAR(100)',
+        'user_count'  => 'INT',
+        'last_update' => 'DATETIME',
+    );
+
+    $existing_columns = $g_db->getAll("SHOW COLUMNS FROM b_popular_books_cache", array(), DB_FETCHMODE_ASSOC);
+    if (DB::isError($existing_columns)) {
+        error_log('[preCalculatePopularBooks] SHOW COLUMNS 失敗: ' . $existing_columns->getMessage());
+        return false;
+    }
+
+    $existing_names = array_column($existing_columns, 'Field');
+    foreach ($required_columns as $column => $definition) {
+        if (in_array($column, $existing_names, true)) {
+            continue;
+        }
+        $alter_result = $g_db->query("ALTER TABLE b_popular_books_cache ADD COLUMN {$column} {$definition}");
+        if (DB::isError($alter_result)) {
+            error_log("[preCalculatePopularBooks] ALTER TABLE ADD {$column} 失敗: " . $alter_result->getMessage());
+            return false;
+        }
+        error_log("[preCalculatePopularBooks] 不足していたカラム {$column} を追加しました");
+    }
+
+    // user_count の索引も無ければ張る（推薦候補プールが ORDER BY user_count DESC で引く）
+    $indexes = $g_db->getAll("SHOW INDEX FROM b_popular_books_cache WHERE Key_name = 'idx_user_count'", array(), DB_FETCHMODE_ASSOC);
+    if (!DB::isError($indexes) && empty($indexes)) {
+        $index_result = $g_db->query("ALTER TABLE b_popular_books_cache ADD INDEX idx_user_count (user_count DESC)");
+        if (DB::isError($index_result)) {
+            // 索引が無くても集計自体は成立するので処理は続行する
+            error_log('[preCalculatePopularBooks] idx_user_count 作成失敗: ' . $index_result->getMessage());
+        } else {
+            error_log('[preCalculatePopularBooks] idx_user_count を追加しました');
+        }
+    }
+
     // 既存のデータをクリア
-    $g_db->query("TRUNCATE TABLE b_popular_books_cache");
-    
+    $truncate_result = $g_db->query("TRUNCATE TABLE b_popular_books_cache");
+    if (DB::isError($truncate_result)) {
+        error_log('[preCalculatePopularBooks] TRUNCATE 失敗: ' . $truncate_result->getMessage());
+        return false;
+    }
+
     // 集計データを挿入
     // 元のクエリと同じロジックを使用（statusチェック追加）
     $insert_sql = "
@@ -166,8 +217,15 @@ function preCalculatePopularBooks() {
     ";
     
     $result = $g_db->query($insert_sql);
-    
-    return !DB::isError($result);
+
+    if (DB::isError($result)) {
+        // 以前はエラー内容を捨てて false を返すだけだったため、
+        // 「Failed to update popular books cache」としか分からず原因を追えなかった。
+        error_log('[preCalculatePopularBooks] INSERT 失敗: ' . $result->getMessage());
+        return false;
+    }
+
+    return true;
 }
 
 /**

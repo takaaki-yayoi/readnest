@@ -46,6 +46,16 @@ require_once(dirname(__FILE__) . '/library/favorite_functions.php');
 // AI推薦機能
 require_once(__DIR__ . '/library/vector_similarity.php');
 require_once(__DIR__ . '/library/dynamic_embedding_generator.php');
+require_once(__DIR__ . '/library/recommendation_pool.php');
+
+// 人気順プールから取るASINの件数
+if (!defined('RECOMMENDATION_POOL_SIZE')) {
+    define('RECOMMENDATION_POOL_SIZE', 600);
+}
+// 類似度計算にかける候補の総数上限（embeddingは1件30KB前後あるため上限を設ける）
+if (!defined('RECOMMENDATION_CANDIDATE_MAX')) {
+    define('RECOMMENDATION_CANDIDATE_MAX', 600);
+}
 
 // レビューembedding生成
 require_once(__DIR__ . '/library/review_embedding_generator.php');
@@ -816,18 +826,89 @@ if ($login_flag) {
 }
 
 // 関連書籍（同じ著者の他の本）
-if (!empty($book['author'])) {
-    $similar_books_data = searchBooksByAuthor($book['author'], 6);
-    if ($similar_books_data) {
-        foreach ($similar_books_data as $similar) {
-            if ($similar['book_id'] != $book_id) {
-                $similar_books[] = [
-                    'book_id' => $similar['book_id'],
-                    'title' => $similar['name'],
-                    'author' => $similar['author'],
-                    'image_url' => $similar['image_url'] ?? '/img/no-image-book.png'
+//
+// 索引の都合上、必ず b_book_repository 側から引くこと。
+// b_book_list.author には単独索引が無く（複合索引の2列目にしか現れない）、
+// bl.author を条件にすると b_book_list のフルスキャンになる。
+// b_book_repository.author には索引があるので、そちらで著者の本を引いてから
+// b_book_list.amazon_id（索引あり）へ join して読者数を数える。
+//
+// 著者未設定の本は $book['author'] が '不明な著者' になるため対象外
+if (!empty($book['author']) && $book['author'] !== '不明な著者') {
+    $current_asin = (string)($book['amazon_id'] ?? '');
+
+    // キャッシュは著者単位。現在の本の除外は取得後に行うので、
+    // 同じ著者の別の本を開いてもキャッシュを共有できる。
+    $author_cache_key = 'author_' . md5($book['author']);
+    $author_books = BookCache::getSimilarBooks($author_cache_key);
+
+    if (!is_array($author_books)) {
+        $author_books = [];
+
+        $author_books_sql = "
+            SELECT
+                br.asin,
+                MIN(br.title) AS title,
+                MIN(br.author) AS author,
+                MIN(br.image_url) AS image_url,
+                COUNT(DISTINCT bl.user_id) AS reader_count,
+                AVG(CASE WHEN bl.rating > 0 THEN bl.rating END) AS avg_rating
+            FROM b_book_repository br
+            LEFT JOIN b_book_list bl ON bl.amazon_id = br.asin
+            WHERE br.author = ?
+            GROUP BY br.asin
+            ORDER BY reader_count DESC, avg_rating DESC
+            LIMIT 12
+        ";
+
+        $author_rows = $g_db->getAll($author_books_sql, [$book['author']], DB_FETCHMODE_ASSOC);
+
+        if (!DB::isError($author_rows) && !empty($author_rows)) {
+            foreach ($author_rows as $author_row) {
+                $author_books[] = [
+                    'asin' => $author_row['asin'],
+                    'book_id' => 0,
+                    'title' => $author_row['title'],
+                    'author' => $author_row['author'],
+                    'image_url' => !empty($author_row['image_url']) ? $author_row['image_url'] : '/img/no-image-book.png',
+                    'reader_count' => (int)$author_row['reader_count'],
+                    'avg_rating' => round((float)($author_row['avg_rating'] ?? 0), 1)
                 ];
             }
+        } else {
+            // フォールバック：b_book_repository に無い著者（独自登録本など）。
+            // searchBooksByAuthor() は LIKE '%...%' でフルスキャンになるため、
+            // ここに来た場合も必ずキャッシュに載せて毎回は走らせない。
+            $similar_books_data = searchBooksByAuthor($book['author'], 12);
+            if ($similar_books_data && !DB::isError($similar_books_data)) {
+                foreach ($similar_books_data as $similar) {
+                    $author_books[] = [
+                        'asin' => (string)($similar['amazon_id'] ?? ''),
+                        'book_id' => $similar['book_id'],
+                        'title' => $similar['name'],
+                        'author' => $similar['author'],
+                        'image_url' => $similar['image_url'] ?? '/img/no-image-book.png',
+                        'reader_count' => 0,
+                        'avg_rating' => 0
+                    ];
+                }
+            }
+        }
+
+        BookCache::setSimilarBooks($author_cache_key, $author_books);
+    }
+
+    // 表示している本自身を除いて6件まで
+    foreach ($author_books as $author_book) {
+        if ($current_asin !== '' && $author_book['asin'] === $current_asin) {
+            continue;
+        }
+        if (!empty($author_book['book_id']) && (int)$author_book['book_id'] === (int)$book_id) {
+            continue;
+        }
+        $similar_books[] = $author_book;
+        if (count($similar_books) >= 6) {
+            break;
         }
     }
 }
@@ -836,16 +917,27 @@ if (!empty($book['author'])) {
 $ai_recommendations = [];
 $embedding_generated = false;
 
-// b_book_repositoryから情報を取得
+// 推薦結果はASIN単位でファイルキャッシュする（BookCacheは1時間TTL）。
+// ユーザーごとの所持本除外は表示直前に行い、キャッシュはユーザー非依存に保つ。
+$rec_cache_key = '';
 if (!empty($book['amazon_id'])) {
-    $repo_sql = "SELECT combined_embedding, description, google_categories 
-                 FROM b_book_repository 
+    $rec_cache_key = 'ai_' . preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$book['amazon_id']);
+}
+
+$cached_recommendations = ($rec_cache_key !== '') ? BookCache::getSimilarBooks($rec_cache_key) : null;
+
+if (is_array($cached_recommendations)) {
+    $ai_recommendations = $cached_recommendations;
+} elseif (!empty($book['amazon_id'])) {
+    // b_book_repositoryから情報を取得
+    $repo_sql = "SELECT combined_embedding, description, google_categories, author
+                 FROM b_book_repository
                  WHERE asin = ?";
     $repo_info = $g_db->getRow($repo_sql, [$book['amazon_id']], DB_FETCHMODE_ASSOC);
-    
+
     if (!DB::isError($repo_info) && $repo_info) {
         $book_embedding = $repo_info['combined_embedding'];
-        
+
         // embeddingがない場合は動的生成
         if (empty($book_embedding)) {
             $generator = new DynamicEmbeddingGenerator();
@@ -856,24 +948,20 @@ if (!empty($book['amazon_id'])) {
                 'description' => $repo_info['description'] ?? '',
                 'google_categories' => $repo_info['google_categories'] ?? ''
             ];
-            
+
             $book_embedding = $generator->generateBookEmbedding($book_data);
             $embedding_generated = true;
         }
-        
-        // embeddingがある場合、類似本を検索
-        if (!empty($book_embedding)) {
-            // 既に所有している本を除外するリスト
-            $exclude_asins = [$book['amazon_id']];
-            if ($login_flag) {
-                $owned_sql = "SELECT amazon_id FROM b_book_list WHERE user_id = ?";
-                $owned_result = $g_db->getAll($owned_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
-                if (!DB::isError($owned_result)) {
-                    $exclude_asins = array_merge($exclude_asins, array_column($owned_result, 'amazon_id'));
-                }
+
+        // 基準ベクトルは一度だけデコードして候補全件で使い回す
+        $book_vector = !empty($book_embedding) ? json_decode($book_embedding, true) : null;
+
+        if (!is_array($book_vector) || empty($book_vector)) {
+            if (!empty($book_embedding)) {
+                error_log('AI recommendation: failed to decode embedding for ASIN ' . $book['amazon_id']);
             }
-            
-            // 類似本を検索（カテゴリベースのフィルタリングで精度向上）
+        } else {
+            // カテゴリベースのフィルタリングで精度向上
             $book_categories_raw = $repo_info['google_categories'] ?? '';
             $book_categories = [];
             $main_category = '';
@@ -945,64 +1033,114 @@ if (!empty($book['amazon_id'])) {
                 }
             }
 
-            // 同じカテゴリの本を優先的に検索
-            if (!empty($main_category)) {
-                $candidates_sql = "
-                    SELECT
-                        br.asin,
-                        br.title,
-                        br.author,
-                        br.image_url,
-                        br.description,
-                        br.combined_embedding,
-                        br.google_categories,
-                        (SELECT COUNT(*) FROM b_book_list WHERE amazon_id = br.asin) as reader_count,
-                        (SELECT AVG(rating) FROM b_book_list WHERE amazon_id = br.asin AND rating > 0) as avg_rating
-                    FROM b_book_repository br
-                    WHERE br.combined_embedding IS NOT NULL
-                    AND br.asin NOT IN ('" . implode("','", $exclude_asins) . "')
-                    AND br.google_categories LIKE ?
-                    LIMIT 200
-                ";
-
-                $candidates = $g_db->getAll($candidates_sql, ['%' . $main_category . '%'], DB_FETCHMODE_ASSOC);
-                if (DB::isError($candidates)) {
-                    $candidates = [];
+            // 候補プールを構築する
+            //
+            // 方針: まず候補ASINを「関連の強い順」に集め、最後に1回だけ
+            // embeddingを取りに行く。embeddingは1件30KB前後あるため、
+            // 総数を上限で抑えないとメモリと転送量が跳ねる。
+            //
+            // 人気順だけを候補にしていた時期は、16.8万件のembeddingに対して
+            // 候補が585件（0.35%）しかなく、しかも多数派ジャンル（ビジネス書・
+            // 小説）で占められていた。技術書など少数派の本は、減点や閾値の
+            // 前にそもそも似た本が候補に存在せず、0件になっていた。
+            $candidate_asins = [];
+            $addCandidateAsins = function($rows, $column = 'amazon_id') use (&$candidate_asins, $book) {
+                if (DB::isError($rows) || empty($rows)) {
+                    return;
                 }
-            }
-
-            // カテゴリマッチが少ない場合は全体から追加検索
-            if (count($candidates) < 50) {
-                $fallback_sql = "
-                    SELECT
-                        br.asin,
-                        br.title,
-                        br.author,
-                        br.image_url,
-                        br.description,
-                        br.combined_embedding,
-                        br.google_categories,
-                        (SELECT COUNT(*) FROM b_book_list WHERE amazon_id = br.asin) as reader_count,
-                        (SELECT AVG(rating) FROM b_book_list WHERE amazon_id = br.asin AND rating > 0) as avg_rating
-                    FROM b_book_repository br
-                    WHERE br.combined_embedding IS NOT NULL
-                    AND br.asin NOT IN ('" . implode("','", $exclude_asins) . "')
-                    LIMIT 200
-                ";
-
-                $fallback_candidates = $g_db->getAll($fallback_sql, [], DB_FETCHMODE_ASSOC);
-                if (!DB::isError($fallback_candidates) && $fallback_candidates) {
-                    // 重複を避けて追加
-                    $existing_asins = array_column($candidates, 'asin');
-                    foreach ($fallback_candidates as $fc) {
-                        if (!in_array($fc['asin'], $existing_asins)) {
-                            $candidates[] = $fc;
-                        }
+                foreach ($rows as $row) {
+                    if (count($candidate_asins) >= RECOMMENDATION_CANDIDATE_MAX) {
+                        return;
                     }
+                    $asin = (string)($row[$column] ?? '');
+                    if ($asin === '' || $asin === $book['amazon_id']) {
+                        continue;
+                    }
+                    $candidate_asins[$asin] = true;
+                }
+            };
+
+            // 1) この本を読んでいる人が読んでいる他の本（協調フィルタリング）
+            //
+            // 少数派ジャンルの本にとっては、これが唯一まともに効く候補源。
+            // dbtの本を読んでいる人の本棚には技術書が並ぶ、という発想。
+            // 読者は公開設定のユーザーに限る（非公開ユーザーの本棚が
+            // 推薦経由で露出しないようにするため）。
+            // 読者数の多い本で爆発しないよう、参照する読者を上限で切る。
+            $co_read_sql = "
+                SELECT bl2.amazon_id, COUNT(DISTINCT bl2.user_id) AS co_count
+                FROM (
+                    SELECT DISTINCT bl1.user_id
+                    FROM b_book_list bl1
+                    INNER JOIN b_user u ON u.user_id = bl1.user_id
+                    WHERE bl1.amazon_id = ?
+                      AND u.diary_policy = 1
+                      AND u.status = 1
+                    LIMIT 50
+                ) r
+                INNER JOIN b_book_list bl2 ON bl2.user_id = r.user_id
+                WHERE bl2.amazon_id IS NOT NULL
+                  AND bl2.amazon_id != ''
+                  AND bl2.amazon_id != ?
+                GROUP BY bl2.amazon_id
+                ORDER BY co_count DESC
+                LIMIT 300
+            ";
+            $addCandidateAsins($g_db->getAll(
+                $co_read_sql,
+                [$book['amazon_id'], $book['amazon_id']],
+                DB_FETCHMODE_ASSOC
+            ));
+
+            // 2) 同じ著者の本（br.author には索引がある）
+            $candidate_author = !empty($repo_info['author']) ? $repo_info['author'] : ($book['author'] ?? '');
+            if (!empty($candidate_author) && $candidate_author !== '不明な著者') {
+                $addCandidateAsins($g_db->getAll("
+                    SELECT br.asin
+                    FROM b_book_repository br
+                    WHERE br.author = ?
+                      AND br.combined_embedding IS NOT NULL
+                    LIMIT 20
+                ", [$candidate_author], DB_FETCHMODE_ASSOC), 'asin');
+            }
+
+            // 「同じカテゴリの本を候補に引く」クエリはここにあったが削除した。
+            // b_book_repository で google_categories を持つ本は 235,985件中34件しかなく、
+            // かつ google_categories に索引が無いため、発動すると23.5万行の
+            // フルスキャンになる割に、得られる候補は他の候補源とほぼ重複していた。
+            // 下の類似度計算にあるカテゴリ一致の加点・減点はそのまま残してあるので、
+            // google_categories が埋まれば加点側は自動的に効き始める。
+
+            // 3) ReadNestで読まれている本（人気順）で残り枠を埋める
+            //    ASINリストは library/recommendation_pool.php が6時間キャッシュする
+            $addCandidateAsins(array_map(function($asin) {
+                return ['amazon_id' => $asin];
+            }, getRecommendationPoolAsins(RECOMMENDATION_POOL_SIZE)));
+
+            // 集めたASINのembeddingをまとめて取得する
+            if (!empty($candidate_asins)) {
+                $asin_list = array_keys($candidate_asins);
+                $asin_placeholders = implode(',', array_fill(0, count($asin_list), '?'));
+                $candidates_result = $g_db->getAll("
+                    SELECT
+                        br.asin,
+                        br.title,
+                        br.author,
+                        br.image_url,
+                        br.description,
+                        br.combined_embedding,
+                        br.google_categories
+                    FROM b_book_repository br
+                    WHERE br.asin IN ({$asin_placeholders})
+                      AND br.combined_embedding IS NOT NULL
+                ", $asin_list, DB_FETCHMODE_ASSOC);
+
+                if (!DB::isError($candidates_result)) {
+                    $candidates = $candidates_result;
                 }
             }
-            
-            if (!DB::isError($candidates) && $candidates) {
+
+            if (!empty($candidates)) {
                 // カテゴリ一致判定用の関数（JSON配列対応）
                 $getMainCategory = function($categories_raw) {
                     if (empty($categories_raw)) return '';
@@ -1015,10 +1153,14 @@ if (!empty($book['amazon_id'])) {
 
                 // 類似度計算
                 foreach ($candidates as $candidate) {
-                    $base_similarity = VectorSimilarity::cosineSimilarity(
-                        $book_embedding,
+                    $base_similarity = VectorSimilarity::cosineSimilarityWithVector(
+                        $book_vector,
                         $candidate['combined_embedding']
                     );
+
+                    if ($base_similarity <= 0) {
+                        continue;
+                    }
 
                     // カテゴリ一致ボーナス/ペナルティ
                     $candidate_categories_raw = $candidate['google_categories'] ?? '';
@@ -1052,14 +1194,17 @@ if (!empty($book['amazon_id'])) {
                             'image_url' => $candidate['image_url'] ?? '/img/no-image-book.png',
                             'description' => $candidate['description'] ?? '',
                             'similarity' => round($similarity * 100, 1),
-                            'reader_count' => $candidate['reader_count'] ?? 0,
-                            'avg_rating' => round((float)($candidate['avg_rating'] ?? 0), 1),
+                            'reader_count' => 0,
+                            'avg_rating' => 0,
                             'category_match' => $category_match,
                             'genre_match' => $genre_match
                         ];
                     }
                 }
-                
+
+                // embeddingは巨大なので候補プールは早めに解放する
+                unset($candidates, $candidate_asins);
+
                 // 技術書の場合、小説/ラノベを除外
                 if ($book_genre === 'tech') {
                     $ai_recommendations = array_filter($ai_recommendations, function($rec) use ($detectGenreFromTitle) {
@@ -1076,39 +1221,81 @@ if (!empty($book['amazon_id'])) {
 
                 // 上位10件に限定
                 $ai_recommendations = array_slice($ai_recommendations, 0, 10);
-                
-                // 各推薦本にReadNest内のレビュー情報を追加
-                foreach ($ai_recommendations as &$rec) {
-                    // この本がReadNest内で読まれているか確認
-                    $check_sql = "SELECT bl.book_id, bl.user_id, bl.rating, bl.memo,
-                                        u.nickname, u.diary_policy
-                                 FROM b_book_list bl
-                                 JOIN b_user u ON bl.user_id = u.user_id
-                                 WHERE bl.amazon_id = ?
-                                 AND u.diary_policy = 1
-                                 AND (bl.rating > 0 OR (bl.memo IS NOT NULL AND bl.memo != ''))
-                                 ORDER BY 
-                                    CASE WHEN bl.memo IS NOT NULL AND bl.memo != '' THEN 1 ELSE 0 END DESC,
-                                    bl.rating DESC,
-                                    bl.update_date DESC
-                                 LIMIT 1";
-                    
-                    $best_review = $g_db->getRow($check_sql, [$rec['asin']], DB_FETCHMODE_ASSOC);
-                    
-                    if (!DB::isError($best_review) && $best_review) {
-                        $rec['has_review'] = true;
-                        $rec['review_book_id'] = $best_review['book_id'];
-                        $rec['review_user_id'] = $best_review['user_id'];
-                        $rec['review_nickname'] = $best_review['nickname'];
-                        $rec['review_rating'] = $best_review['rating'];
-                        $rec['review_has_memo'] = !empty($best_review['memo']);
-                    } else {
-                        $rec['has_review'] = false;
+
+                // 読者数・平均評価は上位10件だけまとめて取得する
+                if (!empty($ai_recommendations)) {
+                    $rec_asins = array_column($ai_recommendations, 'asin');
+                    $placeholders = implode(',', array_fill(0, count($rec_asins), '?'));
+                    $stats_sql = "SELECT amazon_id,
+                                         COUNT(DISTINCT user_id) AS reader_count,
+                                         AVG(CASE WHEN rating > 0 THEN rating END) AS avg_rating
+                                  FROM b_book_list
+                                  WHERE amazon_id IN ({$placeholders})
+                                  GROUP BY amazon_id";
+                    $rec_stats_rows = $g_db->getAll($stats_sql, $rec_asins, DB_FETCHMODE_ASSOC);
+                    $rec_stats = [];
+                    if (!DB::isError($rec_stats_rows) && $rec_stats_rows) {
+                        foreach ($rec_stats_rows as $stats_row) {
+                            $rec_stats[$stats_row['amazon_id']] = $stats_row;
+                        }
                     }
+
+                    // 各推薦本にReadNest内のレビュー情報を追加
+                    foreach ($ai_recommendations as &$rec) {
+                        $rec['reader_count'] = (int)($rec_stats[$rec['asin']]['reader_count'] ?? 0);
+                        $rec['avg_rating'] = round((float)($rec_stats[$rec['asin']]['avg_rating'] ?? 0), 1);
+
+                        // この本がReadNest内で読まれているか確認
+                        $check_sql = "SELECT bl.book_id, bl.user_id, bl.rating, bl.memo,
+                                            u.nickname, u.diary_policy
+                                     FROM b_book_list bl
+                                     JOIN b_user u ON bl.user_id = u.user_id
+                                     WHERE bl.amazon_id = ?
+                                     AND u.diary_policy = 1
+                                     AND (bl.rating > 0 OR (bl.memo IS NOT NULL AND bl.memo != ''))
+                                     ORDER BY
+                                        CASE WHEN bl.memo IS NOT NULL AND bl.memo != '' THEN 1 ELSE 0 END DESC,
+                                        bl.rating DESC,
+                                        bl.update_date DESC
+                                     LIMIT 1";
+
+                        $best_review = $g_db->getRow($check_sql, [$rec['asin']], DB_FETCHMODE_ASSOC);
+
+                        if (!DB::isError($best_review) && $best_review) {
+                            $rec['has_review'] = true;
+                            $rec['review_book_id'] = $best_review['book_id'];
+                            $rec['review_user_id'] = $best_review['user_id'];
+                            $rec['review_nickname'] = $best_review['nickname'];
+                            $rec['review_rating'] = $best_review['rating'];
+                            $rec['review_has_memo'] = !empty($best_review['memo']);
+                        } else {
+                            $rec['has_review'] = false;
+                        }
+                    }
+                    unset($rec);
                 }
-                unset($rec);
             }
         }
+    }
+
+    // 結果が空でもキャッシュする（毎リクエストで全候補を再計算しないため）
+    if ($rec_cache_key !== '') {
+        BookCache::setSimilarBooks($rec_cache_key, $ai_recommendations);
+    }
+}
+
+// 所持済みの本は表示時に除外する（キャッシュをユーザー非依存に保つため）
+if ($login_flag && !empty($ai_recommendations)) {
+    $owned_sql = "SELECT DISTINCT amazon_id FROM b_book_list WHERE user_id = ?";
+    $owned_result = $g_db->getAll($owned_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
+    if (!DB::isError($owned_result) && $owned_result) {
+        $owned_asins = array_flip(array_filter(
+            array_column($owned_result, 'amazon_id'),
+            function($asin) { return $asin !== null && $asin !== ''; }
+        ));
+        $ai_recommendations = array_values(array_filter($ai_recommendations, function($rec) use ($owned_asins) {
+            return !isset($owned_asins[$rec['asin']]);
+        }));
     }
 }
 
@@ -1282,12 +1469,14 @@ $g_analytics = '<!-- Google Analytics code would go here -->';
 function searchBooksByAuthor($author, $limit = 10) {
     global $g_db;
     
-    $sql = "SELECT bl.book_id, bl.name, bl.author, bl.image_url 
-            FROM b_book_list bl 
-            WHERE bl.author LIKE ? 
+    // 注意: bl.author に単独索引が無いため、このクエリは b_book_list の
+    // フルスキャンになる。呼び出し側で必ずキャッシュすること。
+    $sql = "SELECT bl.book_id, bl.name, bl.author, bl.image_url, bl.amazon_id
+            FROM b_book_list bl
+            WHERE bl.author LIKE ?
             AND bl.status IN (2, 3)
-            GROUP BY bl.amazon_id 
-            ORDER BY bl.update_date DESC 
+            GROUP BY bl.amazon_id
+            ORDER BY bl.update_date DESC
             LIMIT ?";
     
     try {

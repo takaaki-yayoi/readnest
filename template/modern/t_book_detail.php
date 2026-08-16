@@ -1810,7 +1810,64 @@ ob_start();
             </div>
         </div>
         <?php endif; ?>
-        
+
+        <!-- 同じ著者の関連本（AI推薦が出せない場合のフォールバックも兼ねる） -->
+        <?php if (!empty($similar_books)): ?>
+        <div class="mt-8" id="similar-books">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+                    <i class="fas fa-book text-readnest-primary mr-2"></i>
+                    <?php echo html($book['author']); ?>の他の本
+                </h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <?php foreach ($similar_books as $similar): ?>
+                    <?php
+                    $similar_url = !empty($similar['asin'])
+                        ? '/book_entity/' . urlencode($similar['asin'])
+                        : '/book/' . urlencode((string)$similar['book_id']);
+                    ?>
+                    <a href="<?php echo $similar_url; ?>"
+                       class="block hover:opacity-90 transition-opacity">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow h-full">
+                            <img src="<?php echo html($similar['image_url']); ?>"
+                                 alt="<?php echo html($similar['title']); ?>"
+                                 class="w-full h-32 object-contain mb-2"
+                                 onerror="this.src='/img/no-image-book.png'">
+
+                            <h3 class="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
+                                <?php echo html($similar['title']); ?>
+                            </h3>
+
+                            <?php if (!empty($similar['reader_count'])): ?>
+                            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                <span><?php echo html($similar['reader_count']); ?>人</span>
+                                <?php if (!empty($similar['avg_rating'])): ?>
+                                <span class="flex items-center">
+                                    <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                    <?php echo html(number_format((float)$similar['avg_rating'], 1)); ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if (!empty($book['author'])): ?>
+                <div class="mt-4 text-center">
+                    <a href="/author.php?name=<?php echo urlencode($book['author']); ?>"
+                       class="inline-flex items-center text-sm text-readnest-primary hover:underline">
+                        <i class="fas fa-arrow-right mr-1"></i>
+                        <?php echo html($book['author']); ?>の作品をもっと見る
+                    </a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- コメント・読者タブセクション -->
         <div class="mt-8">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
