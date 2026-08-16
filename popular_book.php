@@ -192,6 +192,19 @@ $d_site_title = '人気の本 - ReadNest';
 $g_meta_description = 'ReadNestで人気の本をチェック。多くのユーザーが読んでいる本、高評価の本を発見しよう。';
 $g_meta_keyword = '人気の本,ベストセラー,おすすめ本,読書,ReadNest';
 
+// canonical。period（all/month/year）は表示内容が変わるので残し、ページャは自己参照にする。
+require_once('library/seo_helpers.php');
+$canonical_params = [];
+if ($period !== 'all') {
+    $canonical_params[] = 'period=' . rawurlencode($period);
+}
+if ($page > 1) {
+    $canonical_params[] = 'page=' . $page;
+}
+$canonical_url = getBaseUrl() . '/popular_book.php'
+    . ($canonical_params ? '?' . implode('&', $canonical_params) : '');
+$g_structured_tags = generateStructuredTags(['canonical_url' => $canonical_url]);
+
 // 統計情報
 $stats = [
     'total_books' => $total_count,

@@ -132,6 +132,12 @@ $d_site_title = 'みんなのレビュー - ReadNest';
 $g_meta_description = 'ReadNestユーザーによる本のレビュー一覧。様々な本の感想や評価をチェックして、次に読む本を見つけよう。';
 $g_meta_keyword = '本,レビュー,書評,感想,評価,読書,ReadNest';
 
+// canonical。sort の並び替えで内容が同じ別URLが生えるため、並び順はパラメータから外す。
+// ページャは各ページを自己参照にする（1ページ目に集約しない）。
+require_once('library/seo_helpers.php');
+$canonical_url = getBaseUrl() . '/reviews.php' . ($page > 1 ? '?page=' . $page : '');
+$g_structured_tags = generateStructuredTags(['canonical_url' => $canonical_url]);
+
 // テンプレートを使用
 include(getTemplatePath('t_reviews.php'));
 ?>

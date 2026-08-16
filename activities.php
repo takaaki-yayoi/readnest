@@ -260,6 +260,11 @@ $d_site_title = 'みんなの読書活動 - ReadNest';
 $g_meta_description = 'ReadNestユーザーの読書活動をリアルタイムで確認。誰がどんな本を読んでいるか、読書の進捗状況をチェックしよう。';
 $g_meta_keyword = '読書活動,読書記録,読書進捗,読書履歴,ReadNest';
 
+// canonical。ページャは各ページを自己参照にする。
+require_once('library/seo_helpers.php');
+$canonical_url = getBaseUrl() . '/activities.php' . ($page > 1 ? '?page=' . $page : '');
+$g_structured_tags = generateStructuredTags(['canonical_url' => $canonical_url]);
+
 // ページネーションリンクを生成
 $pagination_links = $pagination->generateLinks('/activities.php', ['type' => $activity_type]);
 
