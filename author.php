@@ -207,9 +207,76 @@ if ($login_flag) {
 }
 
 // ページメタ情報
-$d_site_title = htmlspecialchars($author_name) . ' - 作家紹介 - ReadNest';
-$g_meta_description = htmlspecialchars($author_name) . 'の作品一覧と読者数。ReadNestで人気の本を探そう。';
-$g_meta_keyword = htmlspecialchars($author_name) . ',作家,著者,本,読書,ReadNest';
+// title と description には実数を入れる。
+// GSCで作家ページは掲載順位3〜11位に対して CTR 0.3〜3% しかなく、順位ではなく
+// スニペットで負けている。Wikipediaや出版社サイトと並んだときに
+// 「ReadNestを選ぶ理由」が一言も無いのが原因なので、他が出せない数字
+// （読者数・記録数・評価）を前に出す。
+// t_base.php 側で html() を通すため、ここでは生の文字列を入れる。
+$author_book_count   = (int)($stats['total_books'] ?? 0);
+$author_reader_count = (int)($stats['total_readers'] ?? 0);
+
+// 検索結果で切られない長さに収める（日本語は全角30文字前後で打ち切られる）
+if ($author_book_count > 0) {
+    $d_site_title = $author_name . 'の作品一覧 '
+        . number_format($author_book_count) . '作品・読者'
+        . number_format($author_reader_count) . '人 | ReadNest';
+} else {
+    $d_site_title = $author_name . ' - 作家紹介 - ReadNest';
+}
+
+// 日本語の description は全角120文字前後で打ち切られる。
+// 途中で切れると尻切れのスニペットになるので、単純に mb_substr せず
+// 収まる要素だけを順に足していく。並び順は情報価値の高い順。
+// 書名は長いものがあるため（「変見自在 サダム・フセインは偉かった」など）、
+// 先に短い数値情報を確定させてから残り予算で足す。
+$author_desc_limit = 118;
+
+$desc = ($author_book_count > 0)
+    ? $author_name . 'の' . number_format($author_book_count) . '作品を ReadNest の読者'
+        . number_format($author_reader_count) . '人が記録。'
+    : $author_name . 'の作品を ReadNest で探す。';
+
+$append = function (string $chunk) use (&$desc, $author_desc_limit): void {
+    if (mb_strlen($desc . $chunk) <= $author_desc_limit) {
+        $desc .= $chunk;
+    }
+};
+
+if (!empty($read_stats['rating_count'])) {
+    $append('平均評価' . number_format((float)$read_stats['avg_rating'], 1)
+        . '（' . number_format((int)$read_stats['rating_count']) . '件）。');
+}
+
+// 代表作は読者数上位から。長い書名は途中で丸める。
+$author_top_titles = [];
+foreach ($popular_books as $pb) {
+    if (empty($pb['title'])) {
+        continue;
+    }
+    $title = (string)$pb['title'];
+    if (mb_strlen($title) > 22) {
+        $title = mb_substr($title, 0, 22) . '…';
+    }
+    $author_top_titles[] = $title;
+    if (count($author_top_titles) >= 3) {
+        break;
+    }
+}
+while (!empty($author_top_titles)) {
+    $chunk = '代表作は『' . implode('』『', $author_top_titles) . '』。';
+    if (mb_strlen($desc . $chunk) <= $author_desc_limit) {
+        $desc .= $chunk;
+        break;
+    }
+    // 入らなければ冊数を減らして再試行
+    array_pop($author_top_titles);
+}
+
+$append('評価・レビュー・読了状況を確認できます。');
+
+$g_meta_description = $desc;
+$g_meta_keyword = $author_name . ',作家,著者,作品一覧,読書記録,書評,ReadNest';
 
 // canonical。作家名のURLエンコード差（%20 と + など）で同一ページが
 // 複数URLに分裂するのを防ぐ。内部リンクは全て urlencode() なので合わせる。
