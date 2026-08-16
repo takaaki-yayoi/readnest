@@ -107,6 +107,13 @@ $d_site_title = htmlspecialchars($author_name) . ' - 作家紹介 - ReadNest';
 $g_meta_description = htmlspecialchars($author_name) . 'の作品一覧と読者数。ReadNestで人気の本を探そう。';
 $g_meta_keyword = htmlspecialchars($author_name) . ',作家,著者,本,読書,ReadNest';
 
+// canonical。作家名のURLエンコード差（%20 と + など）で同一ページが
+// 複数URLに分裂するのを防ぐ。内部リンクは全て urlencode() なので合わせる。
+require_once('library/seo_helpers.php');
+$g_structured_tags = generateStructuredTags([
+    'canonical_url' => getBaseUrl() . '/author.php?name=' . urlencode($author_name),
+]);
+
 // テンプレートを読み込み
 include(getTemplatePath('t_author.php'));
 ?>

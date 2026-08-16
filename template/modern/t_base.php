@@ -69,6 +69,12 @@ $g_need_charts = !empty($g_load_charts)
     <meta name="description" content="<?php echo html(isset($g_meta_description) ? $g_meta_description : 'ReadNest - 読書の進捉を記録し、レビューを書き、本を整理するための居心地のよい空間です。'); ?>">
     <meta name="keywords" content="<?php echo html(isset($g_meta_keyword) ? $g_meta_keyword : '読書,本,書評,レビュー,本棚,読書記録'); ?>">
 
+    <!-- Canonical URL / 構造化データ（JSON-LD）
+         各ページが library/seo_helpers.php の generateStructuredTags() で組み立てる。
+         canonical が無いと同一内容の別URL（/book/{id} と /book_detail/{id} など）が
+         重複扱いになるため、ページ側で必ず設定すること。 -->
+    <?php if (isset($g_structured_tags)) echo $g_structured_tags . "\n"; ?>
+
     <!-- CSRF Token -->
     <?php
     if (isset($_SESSION['AUTH_USER'])) {

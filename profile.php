@@ -123,8 +123,14 @@ if ($profile_accessible) {
     
     $seo_data['schema'] = [$person_schema, $breadcrumb_schema];
     
-    // SEOタグの生成
+    // SEOタグの生成（旧テンプレート用）
     $g_seo_tags = generateSEOTags($seo_data);
+
+    // canonical のみ出力（モダンテンプレート用）。
+    // Person の JSON-LD はユーザー個人ページを検索結果でリッチに見せることになり、
+    // 「サイト内公開」と「検索エンジンへの露出」の同意が別物であるため意図的に出さない。
+    // 出す場合は利用規約とアカウント設定のオプトアウトを整備してから。
+    $g_structured_tags = generateStructuredTags($seo_data, false);
 }
 
 // プロフィール写真URL

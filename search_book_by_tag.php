@@ -236,6 +236,17 @@ require_once('library/html_helper.php');
 // ページタイトル
 $page_title = h($tag) . 'のタグが付いた本一覧 - ReadNest';
 
+// canonical。このページは /tag/{tag}、/search_book_by_tag.php?tag={tag}、
+// さらにページャのリンクが相対 ?tag=..&p=N のため /tag/{tag}?tag={tag}&p=N という
+// パラメータ重複形でも到達できる。クリーンURLに寄せて重複を解消する。
+// ページャは各ページを自己参照 canonical にする（1ページ目に集約しない）。
+require_once('library/seo_helpers.php');
+$canonical_tag_url = getBaseUrl() . '/tag/' . rawurlencode($tag);
+if ($page > 1) {
+    $canonical_tag_url .= '?p=' . $page;
+}
+$g_structured_tags = generateStructuredTags(['canonical_url' => $canonical_tag_url]);
+
 // キャッシュからの取得フラグを設定
 $from_cache = false;
 if (!$from_summary && !empty($books)) {

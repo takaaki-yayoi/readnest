@@ -1266,8 +1266,12 @@ $breadcrumb_schema = generateBreadcrumbSchema([
 
 $seo_data['schema'] = [$book_schema, $breadcrumb_schema];
 
-// SEOタグの生成
+// SEOタグの生成（旧テンプレート用）
 $g_seo_tags = generateSEOTags($seo_data);
+
+// canonical + JSON-LD（モダンテンプレート用）
+// /book/{id} と /book_detail/{id} は同一スクリプトなので canonical は /book/{id} に統一される
+$g_structured_tags = generateStructuredTags($seo_data);
 
 // Analytics設定
 $g_analytics = '<!-- Google Analytics code would go here -->';

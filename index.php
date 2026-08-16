@@ -265,8 +265,11 @@ $seo_data = [
 $organization_schema = generateOrganizationSchema();
 $seo_data['schema'] = [$organization_schema];
 
-// SEOタグの生成
+// SEOタグの生成（旧テンプレート用）
 $g_seo_tags = generateSEOTags($seo_data);
+
+// canonical + JSON-LD（モダンテンプレート用）
+$g_structured_tags = generateStructuredTags($seo_data);
 
 // キャッシュライブラリを読み込み
 require_once(dirname(__FILE__) . '/library/cache.php');

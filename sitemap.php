@@ -124,7 +124,9 @@ $tags = $g_db->getAll($tag_sql);
 if (!DB::isError($tags) && $tags) {
     foreach ($tags as $tag) {
         echo '<url>' . "\n";
-        echo '  <loc>' . htmlspecialchars($base_url . '/tag/' . urlencode($tag['tag_name'])) . '</loc>' . "\n";
+        // パスセグメントなので rawurlencode（urlencode だと空白が + になり別URLになる）。
+        // search_book_by_tag.php の canonical と表記を揃えること。
+        echo '  <loc>' . htmlspecialchars($base_url . '/tag/' . rawurlencode($tag['tag_name'])) . '</loc>' . "\n";
         echo '  <changefreq>weekly</changefreq>' . "\n";
         echo '  <priority>0.5</priority>' . "\n";
         echo '</url>' . "\n";

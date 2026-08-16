@@ -188,6 +188,13 @@ $d_site_title = htmlspecialchars($author) . 'の作品一覧 - ReadNest';
 $d_meta_description = htmlspecialchars($author) . 'の作品一覧。本の評価やレビューを確認できます。';
 $d_meta_keywords = htmlspecialchars($author) . ',作品,本,読書,ReadNest';
 
+// canonical。このページは /author/{name} と /search_book_by_author.php?author={name}
+// の2つのURLで到達できるため、サイトマップと同じ後者に寄せる。
+require_once('library/seo_helpers.php');
+$g_structured_tags = generateStructuredTags([
+    'canonical_url' => getBaseUrl() . '/search_book_by_author.php?author=' . urlencode($author),
+]);
+
 // テンプレートを使用
 include(getTemplatePath('t_author_books.php'));
 ?>

@@ -430,6 +430,13 @@ $g_meta_description = htmlspecialchars($book_info['title'] ?? '') . $author_text
                       $stats['total_readers'] . '人が読書中。平均評価' . $stats['avg_rating'] . '。ReadNestで読書記録を共有しよう。';
 $g_meta_keyword = htmlspecialchars($book_info['title'] ?? '') . ',' . htmlspecialchars($book_info['author'] ?? '') . ',読書,レビュー,評価';
 
+// canonical。/book_entity/{asin} と /book_entity.php?asin={asin} の2形式で
+// 到達できるため、クリーンURL側に統一する。
+require_once('library/seo_helpers.php');
+$g_structured_tags = generateStructuredTags([
+    'canonical_url' => getBaseUrl() . '/book_entity/' . rawurlencode((string)$book_asin),
+]);
+
 // Open Graph画像
 $og_image = !empty($book_info['image_url']) ? $book_info['image_url'] : '/img/og-image.jpg';
 

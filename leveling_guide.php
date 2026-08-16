@@ -59,8 +59,11 @@ $breadcrumb_schema = generateBreadcrumbSchema([
 
 $seo_data['schema'] = [$breadcrumb_schema];
 
-// SEOタグの生成
+// SEOタグの生成（旧テンプレート用）
 $g_seo_tags = generateSEOTags($seo_data);
+
+// canonical + JSON-LD（モダンテンプレート用）
+$g_structured_tags = generateStructuredTags($seo_data);
 
 // ユーザーレベル情報を取得
 $current_level_info = null;

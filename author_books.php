@@ -18,6 +18,12 @@ $d_site_title = htmlspecialchars($author) . 'の作品一覧 - ReadNest';
 $g_meta_description = htmlspecialchars($author) . 'の作品を読んでいるユーザーの読書記録。みんなの評価やレビューを参考にしよう。';
 $g_meta_keyword = htmlspecialchars($author) . ',作品一覧,読書記録,書評';
 
+// canonical（作家名のURLエンコード差による重複を防ぐ）
+require_once('library/seo_helpers.php');
+$g_structured_tags = generateStructuredTags([
+    'canonical_url' => getBaseUrl() . '/author_books.php?author=' . urlencode($author),
+]);
+
 // 作家の本を取得（公開されている読書記録のみ）
 $sql = "
     SELECT 

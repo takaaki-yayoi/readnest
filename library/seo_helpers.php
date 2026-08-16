@@ -313,8 +313,38 @@ function generateSEOTags(array $seoData): string {
 }
 
 /**
+ * Generate canonical + structured data tags only
+ *
+ * モダンテンプレート（template/modern/t_base.php）用。
+ * t_base.php は <title> / description / keywords / OGP / Twitter カードを
+ * 既に出力しているため、generateSEOTags() をそのまま流し込むとタグが二重になる。
+ * ここでは t_base.php が出力していない canonical と JSON-LD だけを返す。
+ *
+ * 旧テンプレート（template/）は従来どおり generateSEOTags() を使う。
+ *
+ * @param array $seoData generateSEOTags() と同じ構造の配列
+ * @param bool $include_schema false にすると canonical のみ返す
+ * @return string HTML tags
+ */
+function generateStructuredTags(array $seoData, bool $include_schema = true): string {
+    $tags = [];
+
+    if (!empty($seoData['canonical_url'])) {
+        $tags[] = generateCanonicalTag($seoData['canonical_url']);
+    }
+
+    if ($include_schema && !empty($seoData['schema'])) {
+        foreach ($seoData['schema'] as $schema) {
+            $tags[] = $schema;
+        }
+    }
+
+    return implode("\n", $tags);
+}
+
+/**
  * Clean and truncate text for meta descriptions
- * 
+ *
  * @param string $text Text to clean
  * @param int $length Maximum length
  * @return string Cleaned text
