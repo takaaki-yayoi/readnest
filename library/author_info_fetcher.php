@@ -284,8 +284,13 @@ class AuthorInfoFetcher {
     }
 
     private function fetchFromWikipedia($author_name) {
-        // 日本語版Wikipediaを優先
-        $languages = ['ja', 'en'];
+        // 日本語版Wikipediaを優先。
+        // 作家名が日本語表記なら英語版は引かない。該当記事が見つかる見込みが薄く、
+        // 見つからない作家ほど全言語ぶんの往復が積み上がるため。
+        // b_author_info に無い作家はページ表示時にここが同期実行されるので、
+        // 呼び出し回数がそのまま TTFB になる（本番実測で無名作家 1.8〜2.3秒）。
+        $is_japanese_name = (bool)preg_match('/[\x{3040}-\x{30ff}\x{4e00}-\x{9fff}]/u', $author_name);
+        $languages = $is_japanese_name ? ['ja'] : ['ja', 'en'];
 
         foreach ($languages as $lang) {
             $api_url = "https://{$lang}.wikipedia.org/w/api.php";
@@ -296,17 +301,21 @@ class AuthorInfoFetcher {
                 continue;
             }
 
-            // 2. ページ内容取得
+            // 2. ページ内容と Infobox 用のウィキテキストを1リクエストで取得する。
+            //    以前は extracts と revisions を別々に引いていたが、どちらも
+            //    同じ pageids に対する prop なのでまとめられる。
             $content_params = [
                 'action' => 'query',
                 'format' => 'json',
-                'prop' => 'extracts|pageimages|info',
+                'prop' => 'extracts|pageimages|info|revisions',
                 'pageids' => $page_id,
                 'exintro' => 1,
                 'explaintext' => 1,
                 'exsentences' => 5,
                 'piprop' => 'original',
                 'inprop' => 'url',
+                'rvprop' => 'content',
+                'rvslots' => 'main',
                 'utf8' => 1
             ];
             
@@ -334,29 +343,15 @@ class AuthorInfoFetcher {
             }
             $page_data['extract'] = $extract;
             
-            // 3. Infobox情報を取得（構造化データ）
-            $infobox_params = [
-                'action' => 'query',
-                'format' => 'json',
-                'prop' => 'revisions',
-                'pageids' => $page_id,
-                'rvprop' => 'content',
-                'rvslots' => 'main',
-                'utf8' => 1
-            ];
-            
-            $infobox_url = $api_url . '?' . http_build_query($infobox_params);
-            $infobox_result = $this->httpGet($infobox_url);
-            
+            // 3. Infobox情報を解析（構造化データ）。ウィキテキストは 2. で取得済み。
             $birth_date = null;
             $death_date = null;
             $nationality = '';
             $genres = [];
             $notable_works = [];
-            
-            if ($infobox_result) {
-                $infobox_data = json_decode($infobox_result, true);
-                $content = $infobox_data['query']['pages'][$page_id]['revisions'][0]['slots']['main']['*'] ?? '';
+
+            {
+                $content = $page_data['revisions'][0]['slots']['main']['*'] ?? '';
                 
                 // 簡易的なInfobox解析
                 if (preg_match('/\|\s*生年月日\s*=\s*([^\|]+)/u', $content, $matches)) {

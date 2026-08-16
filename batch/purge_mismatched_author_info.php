@@ -24,9 +24,13 @@
  *   php batch/purge_mismatched_author_info.php --apply --refetch --limit=200
  *   php batch/purge_mismatched_author_info.php --author='有川 真由美'  # 1名だけ試す
  *
- *   --refetch を付けると削除後にその場で取り直す。付けない場合は author.php の
- *   アクセス時に遅延取得される。クローラーが大量に来ている最中は、負荷が
- *   一点に集中しないよう --refetch を少しずつ回す方が安全。
+ *   --refetch は実質必須。付けない場合、削除された作家は author.php の
+ *   アクセス時にWikipedia APIを同期で叩く。本番実測でこの取得だけで
+ *   1.5〜2.3秒かかり、サイトマップ送信済みでクローラーが22,000件超の
+ *   作家ページを巡回している状況では全件がその遅さになる。
+ *
+ *   このループは「1名削除 → その場で取り直す」を順に回すため、まだ処理して
+ *   いない作家は元のデータのまま残る。途中で止めても中途半端な状態にならない。
  */
 
 declare(strict_types=1);
@@ -191,8 +195,10 @@ foreach ($targets as $m) {
         if (!empty($info['description'])) {
             $refetched++;
         }
-        // Wikipedia / OpenAI への連投を避ける
-        usleep(300000);
+        // Wikipedia への連投を避ける。1作家あたり2リクエストを約1.5秒かけて
+        // 出しているので、これ以上の間隔は不要（呼び出しを2回にまとめる前は
+        // 最大8リクエストだった）。
+        usleep(100000);
     }
 
     if ($deleted % 100 === 0) {
