@@ -19,6 +19,7 @@
  *
  * 使い方
  *   php batch/purge_mismatched_author_info.php              # 確認のみ（既定）
+ *   php batch/purge_mismatched_author_info.php --stats      # source別の件数だけ見る
  *   php batch/purge_mismatched_author_info.php --apply      # 実際に削除
  *   php batch/purge_mismatched_author_info.php --apply --refetch --limit=200
  *   php batch/purge_mismatched_author_info.php --author='有川 真由美'  # 1名だけ試す
@@ -46,15 +47,16 @@ if (!$g_db || DB::isError($g_db)) {
     exit("DB接続に失敗しました\n");
 }
 
-$opts    = getopt('', ['apply', 'refetch', 'limit::', 'author::']);
+$opts    = getopt('', ['apply', 'refetch', 'stats', 'limit::', 'author::']);
 $apply   = isset($opts['apply']);
 $refetch = isset($opts['refetch']);
 $limit   = isset($opts['limit']) ? max(1, (int)$opts['limit']) : 0;
 $only    = isset($opts['author']) ? (string)$opts['author'] : '';
 
 // --author=作家名 を付けると1名だけを対象にする。
-// 大量パージの前に、取り直しが正しく動くか（特に Wikipedia 不採用時の
-// OpenAI フォールバックが生きているか）を1件で確かめるために使う。
+// 大量パージの前に、取り直しが正しく動くかを1件で確かめるために使う。
+// Wikipedia で一致する記事が無い作家は説明文が空になるのが正しい挙動。
+// その場合 author.php は「ReadNestでの読まれ方」（自前の集計）を表示する。
 if ($only !== '') {
     $fetcher = new AuthorInfoFetcher();
     $g_db->query("DELETE FROM b_author_info WHERE author_name = ?", [$only]);
@@ -66,8 +68,8 @@ if ($only !== '') {
     printf("説明文長    : %d 文字\n", mb_strlen((string)($info['description'] ?? '')));
     printf("説明文      : %s\n", mb_substr((string)($info['description'] ?? '(空)'), 0, 200));
     if (empty($info['description'])) {
-        echo "\n説明文が空です。Wikipedia不採用時のフォールバックが機能していません。\n";
-        echo "config.php の OPENAI_API_KEY と、fetchFromOpenAI() のモデル名を確認してください。\n";
+        echo "\n説明文は空です。Wikipediaに一致する記事が無い作家では正常な結果で、\n";
+        echo "author.php 側が自前の集計（ReadNestでの読まれ方）を表示します。\n";
     }
     exit(0);
 }
@@ -92,8 +94,31 @@ function purgeTitleFromUrl(string $url): string {
     return str_replace('_', ' ', rawurldecode($slug));
 }
 
+// --stats: source別の件数とサンプルだけを出す
+if (isset($opts['stats'])) {
+    $counts = $g_db->getAll(
+        "SELECT source, COUNT(*) AS n FROM b_author_info GROUP BY source ORDER BY n DESC",
+        null,
+        DB_FETCHMODE_ASSOC
+    );
+    echo "--- source別の件数 ---\n";
+    foreach ($counts ?: [] as $c) {
+        printf("  %-12s %d 件\n", $c['source'] ?: '(空)', (int)$c['n']);
+    }
+    $samples = $g_db->getAll(
+        "SELECT author_name, description FROM b_author_info WHERE source = 'openai' LIMIT 5",
+        null,
+        DB_FETCHMODE_ASSOC
+    );
+    echo "\n--- openai由来のサンプル ---\n";
+    foreach ($samples ?: [] as $s) {
+        printf("  %s\n    %s\n", $s['author_name'], mb_substr((string)$s['description'], 0, 120));
+    }
+    exit(0);
+}
+
 $rows = $g_db->getAll(
-    "SELECT author_name, wikipedia_url, source FROM b_author_info WHERE source = 'wikipedia'",
+    "SELECT author_name, wikipedia_url, source FROM b_author_info WHERE source IN ('wikipedia', 'openai')",
     null,
     DB_FETCHMODE_ASSOC
 );
@@ -106,7 +131,15 @@ $rows = $rows ?: [];
 $cache = getCache();
 
 $mismatched = [];
+$openai_count = 0;
 foreach ($rows as $row) {
+    // openai由来は全件対象。根拠を与えずに生成した経歴で、事実確認ができない。
+    // 例) 有川真由美に『君の膵臓をたべたい』（実際は住野よるの作品）を代表作として記載
+    if (($row['source'] ?? '') === 'openai') {
+        $mismatched[] = ['author' => (string)$row['author_name'], 'title' => '(AI生成)'];
+        $openai_count++;
+        continue;
+    }
     $title = purgeTitleFromUrl((string)($row['wikipedia_url'] ?? ''));
     // URLが無いものも、どの記事を根拠にしたか追えないので取り直す
     if ($title === '' || purgeNormalize($title) !== purgeNormalize((string)$row['author_name'])) {
@@ -116,8 +149,9 @@ foreach ($rows as $row) {
 
 $total = count($rows);
 $bad   = count($mismatched);
-printf("source=wikipedia のレコード: %d 件\n", $total);
-printf("記事タイトルが作家名と一致しない: %d 件 (%.1f%%)\n", $bad, $total ? $bad * 100 / $total : 0.0);
+printf("wikipedia / openai 由来のレコード: %d 件\n", $total);
+printf("パージ対象: %d 件 (%.1f%%)  うち AI生成 %d 件\n",
+    $bad, $total ? $bad * 100 / $total : 0.0, $openai_count);
 
 if ($bad === 0) {
     exit("パージ対象はありません\n");
