@@ -2903,7 +2903,7 @@ ob_start();
                                 AI推薦機能
                             </h3>
                             <p class="text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-4">
-                                あなたの読書傾向をAIが分析し、好みに合った本を提案する新機能です。文章スタイル、テーマ、内容の類似性を総合的に判断します。
+                                あなたの読書傾向をAIが分析し、好みに合った本を提案する機能です。本のタイトル・著者・内容紹介といった書誌情報の近さと、同じ本を読んでいる人の本棚をもとに判断します。
                             </p>
                             
                             <div class="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">

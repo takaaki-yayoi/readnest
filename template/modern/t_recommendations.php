@@ -124,7 +124,9 @@ ob_start();
                     </div>
                     <p class="text-sm text-purple-700 dark:text-purple-300 mt-3">
                         <i class="fas fa-info-circle mr-1"></i>
-                        この本の<strong>文章スタイル、テーマ、ジャンル</strong>をAIが分析し、似た特徴を持つ本を探しました
+                        <?php /* 実際に見ているのは書誌情報（タイトル・著者・あれば内容紹介）から
+                                 作ったベクトル。本文や文章スタイルは扱っていない。 */ ?>
+                        この本の<strong>書誌情報</strong>をAIが分析し、近そうな本を探しました
                     </p>
                 </div>
             </div>

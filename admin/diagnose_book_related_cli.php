@@ -297,7 +297,9 @@ echo "   候補ASINの収集:\n";
 
 $co_start = microtime(true);
 $addAsins($g_db->getAll("
-    SELECT bl2.amazon_id, COUNT(DISTINCT bl2.user_id) AS co_count
+    SELECT bl2.amazon_id,
+           COUNT(DISTINCT bl2.user_id) AS co_count,
+           MAX(bl2.update_date) AS last_update
     FROM (
         SELECT DISTINCT bl1.user_id
         FROM b_book_list bl1
@@ -308,7 +310,7 @@ $addAsins($g_db->getAll("
     INNER JOIN b_book_list bl2 ON bl2.user_id = r.user_id
     WHERE bl2.amazon_id IS NOT NULL AND bl2.amazon_id != '' AND bl2.amazon_id != ?
     GROUP BY bl2.amazon_id
-    ORDER BY co_count DESC
+    ORDER BY co_count DESC, last_update DESC, bl2.amazon_id ASC
     LIMIT 300
 ", [$target_asin, $target_asin], DB_FETCHMODE_ASSOC), 'amazon_id', '協調フィルタ');
 printf("   %-16s   （%.0f ms）\n", '', (microtime(true) - $co_start) * 1000);

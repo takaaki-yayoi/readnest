@@ -1067,8 +1067,16 @@ if (is_array($cached_recommendations)) {
             // 読者は公開設定のユーザーに限る（非公開ユーザーの本棚が
             // 推薦経由で露出しないようにするため）。
             // 読者数の多い本で爆発しないよう、参照する読者を上限で切る。
+            //
+            // 並び順に注意。読者が1人しかいない本では全候補が co_count = 1 で
+            // 同点になり、ORDER BY co_count DESC だけでは LIMIT が本棚から
+            // 毎回違う300件を拾ってしまう（同じページを開き直すと推薦が
+            // 入れ替わる）。同点は「最近更新した本」を優先し、最後に
+            // amazon_id で完全に順序を確定させる。
             $co_read_sql = "
-                SELECT bl2.amazon_id, COUNT(DISTINCT bl2.user_id) AS co_count
+                SELECT bl2.amazon_id,
+                       COUNT(DISTINCT bl2.user_id) AS co_count,
+                       MAX(bl2.update_date) AS last_update
                 FROM (
                     SELECT DISTINCT bl1.user_id
                     FROM b_book_list bl1
@@ -1083,7 +1091,7 @@ if (is_array($cached_recommendations)) {
                   AND bl2.amazon_id != ''
                   AND bl2.amazon_id != ?
                 GROUP BY bl2.amazon_id
-                ORDER BY co_count DESC
+                ORDER BY co_count DESC, last_update DESC, bl2.amazon_id ASC
                 LIMIT 300
             ";
             $addCandidateAsins($g_db->getAll(

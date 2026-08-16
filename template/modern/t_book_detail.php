@@ -1687,8 +1687,11 @@ ob_start();
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
                     <p class="text-sm text-gray-600 mb-2">
                         <i class="fas fa-info-circle mr-1"></i>
-                        「<?php echo html($book['title']); ?>」の<strong>文章スタイル、テーマ、内容</strong>を分析し、
-                        類似度の高い本を<?php echo count($ai_recommendations); ?>冊見つけました
+                        <?php /* 実際に見ているのは書誌情報（タイトル・著者・あれば内容紹介）から作った
+                                 ベクトルと、この本を読んだ人の本棚。本文や文章スタイルは扱っていない。 */ ?>
+                        「<?php echo html($book['title']); ?>」の<strong>書誌情報</strong>と、
+                        <strong>この本を読んだ人の本棚</strong>から、
+                        近そうな本を<?php echo count($ai_recommendations); ?>冊見つけました
                     </p>
                 </div>
                 
