@@ -1698,12 +1698,21 @@ ob_start();
                         <div class="relative">
                             <!-- 類似度バッジ -->
                             <div class="absolute top-2 left-2 z-10">
-                                <span class="inline-block px-2 py-1 text-xs rounded-full 
-                                             <?php echo $rec['similarity'] >= 70 ? 'bg-green-500' : ($rec['similarity'] >= 60 ? 'bg-yellow-500' : 'bg-orange-500'); ?> 
+                                <span class="inline-block px-2 py-1 text-xs rounded-full
+                                             <?php echo $rec['similarity'] >= 70 ? 'bg-green-500' : ($rec['similarity'] >= 60 ? 'bg-yellow-500' : 'bg-orange-500'); ?>
                                              text-white font-semibold">
                                     <?php echo $rec['similarity']; ?>%
                                 </span>
                             </div>
+
+                            <?php if (!empty($rec['is_owned'])): ?>
+                            <!-- 既に本棚にある本 -->
+                            <div class="absolute top-2 right-2 z-10">
+                                <span class="inline-block px-2 py-1 text-xs rounded-full bg-readnest-primary text-white font-semibold">
+                                    <i class="fas fa-check mr-1"></i>本棚
+                                </span>
+                            </div>
+                            <?php endif; ?>
                             
                             <!-- 本の画像（クリックでエンティティページ） -->
                             <a href="/book_entity/<?php echo urlencode($rec['asin']); ?>" 
@@ -1780,11 +1789,19 @@ ob_start();
                             
                             <!-- アクションボタン -->
                             <div class="flex gap-2">
+                                <?php if (!empty($rec['is_owned']) && !empty($rec['owned_book_id'])): ?>
+                                <!-- 既に本棚にある本は自分の読書ページへ -->
+                                <a href="/book/<?php echo urlencode((string)$rec['owned_book_id']); ?>"
+                                   class="flex-1 px-3 py-1.5 bg-readnest-primary text-white text-xs rounded-md hover:bg-opacity-90 transition-colors text-center font-medium">
+                                    <i class="fas fa-book-open mr-1"></i>開く
+                                </a>
+                                <?php else: ?>
                                 <!-- 追加ボタン（大きく表示） -->
-                                <a href="/add_book.php?asin=<?php echo urlencode($rec['asin']); ?>" 
+                                <a href="/add_book.php?asin=<?php echo urlencode($rec['asin']); ?>"
                                    class="flex-1 px-3 py-1.5 bg-gray-600 text-white text-xs rounded-md hover:bg-gray-700 transition-colors text-center font-medium">
                                     <i class="fas fa-plus mr-1"></i>追加
                                 </a>
+                                <?php endif; ?>
                                 
                                 <!-- Amazon検索ボタン -->
                                 <a href="https://www.amazon.co.jp/s?k=<?php echo urlencode($rec['title'] . ' ' . $rec['author']); ?>" 

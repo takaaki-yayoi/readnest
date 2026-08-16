@@ -1284,18 +1284,31 @@ if (is_array($cached_recommendations)) {
     }
 }
 
-// 所持済みの本は表示時に除外する（キャッシュをユーザー非依存に保つため）
+// 所持済みの本には印を付ける（キャッシュをユーザー非依存に保つため表示直前に行う）
+//
+// かつては所持済みを除外していたが、読者が自分ひとりだけの本では
+// 協調フィルタの候補が全て自分の本棚から来るため、除外すると必ず0件になった。
+// 読者の少ない本ほどそうなるので、除外せず「本棚にあり」として見せる。
 if ($login_flag && !empty($ai_recommendations)) {
-    $owned_sql = "SELECT DISTINCT amazon_id FROM b_book_list WHERE user_id = ?";
+    $owned_sql = "SELECT book_id, amazon_id FROM b_book_list WHERE user_id = ?";
     $owned_result = $g_db->getAll($owned_sql, [$mine_user_id], DB_FETCHMODE_ASSOC);
     if (!DB::isError($owned_result) && $owned_result) {
-        $owned_asins = array_flip(array_filter(
-            array_column($owned_result, 'amazon_id'),
-            function($asin) { return $asin !== null && $asin !== ''; }
-        ));
-        $ai_recommendations = array_values(array_filter($ai_recommendations, function($rec) use ($owned_asins) {
-            return !isset($owned_asins[$rec['asin']]);
-        }));
+        $owned_books = [];
+        foreach ($owned_result as $owned_row) {
+            $owned_asin = $owned_row['amazon_id'] ?? '';
+            if ($owned_asin === '' || isset($owned_books[$owned_asin])) {
+                continue;
+            }
+            $owned_books[$owned_asin] = (int)$owned_row['book_id'];
+        }
+
+        foreach ($ai_recommendations as &$rec) {
+            if (isset($owned_books[$rec['asin']])) {
+                $rec['is_owned'] = true;
+                $rec['owned_book_id'] = $owned_books[$rec['asin']];
+            }
+        }
+        unset($rec);
     }
 }
 
