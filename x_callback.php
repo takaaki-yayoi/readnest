@@ -16,7 +16,7 @@ require_once('library/security.php');
 
 // Check if user is logged in
 if (!checkLogin()) {
-    header('Location: /login.php');
+    header('Location: /index.php');
     exit;
 }
 

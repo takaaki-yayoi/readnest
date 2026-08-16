@@ -11,7 +11,7 @@ require_once('modern_config.php');
 // ログインチェック
 $login_flag = checkLogin();
 if (!$login_flag) {
-    header('Location: /login.php');
+    header('Location: /index.php');
     exit;
 }
 
