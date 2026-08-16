@@ -219,7 +219,9 @@ RewriteRule ^activities/?$ activities.php [L,QSA]
 RewriteRule ^reviews/?$ reviews.php [L,QSA]
 
 # サイトマップ
+# /sitemap.xml はインデックス、/sitemap-{type}-{n}.xml が各本体
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^sitemap-([a-z]+)-([0-9]+)\.xml$ sitemap.php?type=$1&p=$2 [L]
 
 # 画像の最適化（WebP対応）
 <IfModule mod_rewrite.c>
