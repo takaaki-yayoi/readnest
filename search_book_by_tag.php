@@ -234,7 +234,12 @@ if (isset($_SESSION['AUTH_USER'])) {
 require_once('library/html_helper.php');
 
 // ページタイトル
-$page_title = h($tag) . 'のタグが付いた本一覧 - ReadNest';
+// t_base.php 側で html() を通すので、ここでは生の文字列を入れる（h() を掛けると二重エスケープになる）
+$page_title = '「' . $tag . '」の本 ' . number_format((int)$total_count) . '冊 - みんなの読書記録 | ReadNest';
+$d_site_title = $page_title;
+$g_meta_description = 'ReadNestの読者が「' . $tag . '」タグを付けた本' . number_format((int)$total_count)
+    . '冊の一覧。評価・レビュー・読了状況をまとめて確認できます。';
+$g_meta_keyword = $tag . ',タグ,本,読書記録,書評,ReadNest';
 
 // canonical。このページは /tag/{tag}、/search_book_by_tag.php?tag={tag}、
 // さらにページャのリンクが相対 ?tag=..&p=N のため /tag/{tag}?tag={tag}&p=N という
@@ -371,6 +376,8 @@ ob_start();
 
 <?php
 $d_content = ob_get_clean();
+// t_base.php が読むのは $d_site_title（238行目で設定済み）。
+// $d_title はどのテンプレートも参照していないが、既存の呼び出し互換のため残す。
 $d_title = $page_title;
 
 // テンプレートを読み込み

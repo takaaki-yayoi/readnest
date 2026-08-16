@@ -129,8 +129,8 @@ if (!empty($formatted_reviews)) {
 $d_site_title = 'みんなのレビュー - ReadNest';
 
 // SEO設定
-$d_meta_description = 'ReadNestユーザーによる本のレビュー一覧。様々な本の感想や評価をチェックして、次に読む本を見つけよう。';
-$d_meta_keywords = '本,レビュー,書評,感想,評価,読書,ReadNest';
+$g_meta_description = 'ReadNestユーザーによる本のレビュー一覧。様々な本の感想や評価をチェックして、次に読む本を見つけよう。';
+$g_meta_keyword = '本,レビュー,書評,感想,評価,読書,ReadNest';
 
 // テンプレートを使用
 include(getTemplatePath('t_reviews.php'));

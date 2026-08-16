@@ -189,8 +189,8 @@ foreach ($books as &$book) {
 $d_site_title = '人気の本 - ReadNest';
 
 // SEO設定
-$d_meta_description = 'ReadNestで人気の本をチェック。多くのユーザーが読んでいる本、高評価の本を発見しよう。';
-$d_meta_keywords = '人気の本,ベストセラー,おすすめ本,読書,ReadNest';
+$g_meta_description = 'ReadNestで人気の本をチェック。多くのユーザーが読んでいる本、高評価の本を発見しよう。';
+$g_meta_keyword = '人気の本,ベストセラー,おすすめ本,読書,ReadNest';
 
 // 統計情報
 $stats = [

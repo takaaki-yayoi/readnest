@@ -257,8 +257,8 @@ if ($stats_result && count($stats_result) > 0) {
 $d_site_title = 'みんなの読書活動 - ReadNest';
 
 // SEO設定
-$d_meta_description = 'ReadNestユーザーの読書活動をリアルタイムで確認。誰がどんな本を読んでいるか、読書の進捗状況をチェックしよう。';
-$d_meta_keywords = '読書活動,読書記録,読書進捗,読書履歴,ReadNest';
+$g_meta_description = 'ReadNestユーザーの読書活動をリアルタイムで確認。誰がどんな本を読んでいるか、読書の進捗状況をチェックしよう。';
+$g_meta_keyword = '読書活動,読書記録,読書進捗,読書履歴,ReadNest';
 
 // ページネーションリンクを生成
 $pagination_links = $pagination->generateLinks('/activities.php', ['type' => $activity_type]);

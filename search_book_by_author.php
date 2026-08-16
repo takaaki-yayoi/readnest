@@ -185,8 +185,8 @@ if ($rating_count > 0) {
 
 // ページタイトル
 $d_site_title = htmlspecialchars($author) . 'の作品一覧 - ReadNest';
-$d_meta_description = htmlspecialchars($author) . 'の作品一覧。本の評価やレビューを確認できます。';
-$d_meta_keywords = htmlspecialchars($author) . ',作品,本,読書,ReadNest';
+$g_meta_description = htmlspecialchars($author) . 'の作品一覧。本の評価やレビューを確認できます。';
+$g_meta_keyword = htmlspecialchars($author) . ',作品,本,読書,ReadNest';
 
 // canonical。このページは /author/{name} と /search_book_by_author.php?author={name}
 // の2つのURLで到達できるため、サイトマップと同じ後者に寄せる。
