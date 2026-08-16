@@ -111,6 +111,67 @@ ob_start();
         </div>
         <?php endif; ?>
         
+        <!-- ReadNestでの読まれ方
+             Wikipediaに記事が無い作家ではここがページの中身になる。
+             すべて自サイトの読書記録から集計した検証可能な事実で、
+             LLMによる経歴生成（捏造を起こしていた）の置き換えにあたる。 -->
+        <?php if (!empty($read_stats['tags']) || !empty($read_stats['related_authors']) || !empty($read_stats['rating_count'])): ?>
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-chart-simple text-readnest-primary mr-2"></i>ReadNestでの読まれ方
+            </h2>
+
+            <p class="text-gray-700 mb-4">
+                <?php
+                $summary = [];
+                $summary[] = htmlspecialchars($author_name) . 'の作品は ReadNest に'
+                    . number_format((int)($stats['total_books'] ?? 0)) . '冊登録されており、'
+                    . number_format((int)($stats['total_readers'] ?? 0)) . '人が読書記録を付けています';
+                if (!empty($read_stats['rating_count'])) {
+                    $summary[] = '読者による平均評価は5段階中' . number_format($read_stats['avg_rating'], 1)
+                        . '（' . number_format($read_stats['rating_count']) . '件の評価）';
+                }
+                if (!empty($read_stats['review_count'])) {
+                    $summary[] = number_format($read_stats['review_count']) . '件のレビューが投稿されています';
+                }
+                echo implode('。', $summary) . '。';
+                ?>
+            </p>
+
+            <?php if (!empty($read_stats['tags'])): ?>
+            <div class="mb-4">
+                <h3 class="text-sm font-semibold text-gray-600 mb-2">読者が付けたタグ</h3>
+                <div class="flex flex-wrap gap-2">
+                    <?php foreach ($read_stats['tags'] as $tag): ?>
+                    <a href="/tag/<?php echo rawurlencode((string)$tag['tag_name']); ?>"
+                       class="px-3 py-1 bg-gray-100 hover:bg-readnest-primary hover:text-white rounded-full text-sm text-gray-700 transition-colors">
+                        <?php echo htmlspecialchars((string)$tag['tag_name']); ?>
+                        <span class="text-xs opacity-60"><?php echo (int)$tag['user_count']; ?></span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($read_stats['related_authors'])): ?>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-600 mb-2">
+                    <?php echo htmlspecialchars($author_name); ?>を読む人が他に読んでいる作家
+                </h3>
+                <div class="flex flex-wrap gap-2">
+                    <?php foreach ($read_stats['related_authors'] as $related): ?>
+                    <a href="/author.php?name=<?php echo urlencode((string)$related['author']); ?>"
+                       class="px-3 py-1 bg-purple-50 hover:bg-purple-600 hover:text-white rounded-full text-sm text-purple-700 transition-colors">
+                        <?php echo htmlspecialchars((string)$related['author']); ?>
+                        <span class="text-xs opacity-60"><?php echo (int)$related['reader_count']; ?>人</span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- 統計情報 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6">

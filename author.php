@@ -60,6 +60,92 @@ $popular_books_sql = "
 ";
 
 $popular_books = $g_db->getAll($popular_books_sql, [$author_name], DB_FETCHMODE_ASSOC);
+if (DB::isError($popular_books)) {
+    $popular_books = [];
+}
+
+// ReadNest自身が持つ事実だけで作る「読まれ方」データ。
+// Wikipediaに記事が無い作家（全体の約4割）ではここがページの中身になる。
+// 以前はそういう作家にLLMで経歴を書かせていたが、根拠を与えていないため
+// 実在人物の生年や代表作を捏造していた。詳細は library/author_info_fetcher.php 参照。
+require_once(dirname(__FILE__) . '/library/cache.php');
+$author_cache = getCache();
+$author_stats_key = 'author_readstats_' . md5($author_name);
+$read_stats = $author_cache->get($author_stats_key);
+
+if ($read_stats === false) {
+    $read_stats = [
+        'avg_rating' => 0.0,
+        'rating_count' => 0,
+        'review_count' => 0,
+        'tags' => [],
+        'related_authors' => [],
+    ];
+
+    // 評価とレビューの集計
+    $rating_sql = "
+        SELECT
+            AVG(CASE WHEN bl.rating > 0 THEN bl.rating END) AS avg_rating,
+            COUNT(CASE WHEN bl.rating > 0 THEN 1 END) AS rating_count,
+            COUNT(CASE WHEN bl.memo IS NOT NULL AND bl.memo != '' THEN 1 END) AS review_count
+        FROM b_book_repository br
+        INNER JOIN b_book_list bl ON br.asin = bl.amazon_id
+        INNER JOIN b_user bu ON bl.user_id = bu.user_id
+        WHERE br.author = ? AND bu.diary_policy = 1 AND bu.status = 1
+    ";
+    $row = $g_db->getRow($rating_sql, [$author_name], DB_FETCHMODE_ASSOC);
+    if (!DB::isError($row) && $row) {
+        $read_stats['avg_rating']   = round((float)($row['avg_rating'] ?? 0), 1);
+        $read_stats['rating_count'] = (int)($row['rating_count'] ?? 0);
+        $read_stats['review_count'] = (int)($row['review_count'] ?? 0);
+    }
+
+    // 読者が付けたタグ（ジャンル傾向）
+    $tag_sql = "
+        SELECT bt.tag_name, COUNT(DISTINCT bt.user_id) AS user_count
+        FROM b_book_tags bt
+        INNER JOIN b_book_list bl ON bt.book_id = bl.book_id
+        INNER JOIN b_book_repository br ON br.asin = bl.amazon_id
+        INNER JOIN b_user bu ON bl.user_id = bu.user_id
+        WHERE br.author = ? AND bu.diary_policy = 1 AND bu.status = 1
+          AND bt.tag_name IS NOT NULL AND bt.tag_name != ''
+        GROUP BY bt.tag_name
+        ORDER BY user_count DESC
+        LIMIT 8
+    ";
+    $tags = $g_db->getAll($tag_sql, [$author_name], DB_FETCHMODE_ASSOC);
+    if (!DB::isError($tags) && $tags) {
+        $read_stats['tags'] = $tags;
+    }
+
+    // この作家を読む人が他に読んでいる作家。
+    // 読者を200人までに絞ってから展開する（人気作家で自己結合が膨らむのを防ぐ）
+    $related_sql = "
+        SELECT br2.author, COUNT(DISTINCT bl2.user_id) AS reader_count
+        FROM (
+            SELECT DISTINCT bl.user_id
+            FROM b_book_repository br
+            INNER JOIN b_book_list bl ON br.asin = bl.amazon_id
+            INNER JOIN b_user bu ON bl.user_id = bu.user_id
+            WHERE br.author = ? AND bu.diary_policy = 1 AND bu.status = 1
+            LIMIT 200
+        ) r
+        INNER JOIN b_book_list bl2 ON bl2.user_id = r.user_id
+        INNER JOIN b_book_repository br2 ON br2.asin = bl2.amazon_id
+        WHERE br2.author IS NOT NULL AND br2.author != '' AND br2.author != '-'
+          AND br2.author != ?
+        GROUP BY br2.author
+        HAVING reader_count >= 2
+        ORDER BY reader_count DESC
+        LIMIT 6
+    ";
+    $related = $g_db->getAll($related_sql, [$author_name, $author_name], DB_FETCHMODE_ASSOC);
+    if (!DB::isError($related) && $related) {
+        $read_stats['related_authors'] = $related;
+    }
+
+    $author_cache->set($author_stats_key, $read_stats, 86400);
+}
 
 // ログインユーザー向け：この作家のまだ持っていない著作を取得
 $undiscovered_books = [];

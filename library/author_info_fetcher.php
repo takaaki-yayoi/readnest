@@ -109,16 +109,26 @@ class AuthorInfoFetcher {
             return $info;
         }
         
-        // 2. WikipediaにないまたはOpenAI APIキーがある場合はOpenAIから取得
-        if (!empty($this->openai_api_key)) {
-            $openai_info = $this->fetchFromOpenAI($author_name);
-            if ($openai_info && !empty($openai_info['description'])) {
-                $info = array_merge($info, $openai_info);
-                $info['source'] = 'openai';
-                return $info;
-            }
-        }
-        
+        // 2. Wikipediaで見つからない場合、以前は OpenAI に経歴を書かせていたが廃止した。
+        //
+        //    根拠を一切与えずに実在人物の生年月日・出身地・代表作を書かせていたため、
+        //    知名度の低い著者に対して事実でない経歴を生成していた。
+        //    例) 有川真由美（ビジネス書著者）に対して
+        //        「日本の小説家であり、主に恋愛小説を手がけています。1981年生まれの
+        //          作家で、神奈川県出身。代表作には『君の膵臓をたべたい』があり」
+        //        → 『君の膵臓をたべたい』は住野よるの作品。生年・出身地も出典なし。
+        //
+        //    出典リンクのある Wikipedia の誤りと違い、生成文は読者が検証できないまま
+        //    実在の個人の経歴として公開される。モデルを新しくしても、根拠を与えない
+        //    限り構造的に解決しない。
+        //
+        //    紹介文が無い作家は、author.php 側で ReadNest 自身が持つ事実
+        //    （作品数・読者数・代表作・平均評価・タグ傾向）を表示する。
+        //
+        //    fetchFromOpenAI() 自体は他用途のために残してある。経歴生成に再利用する
+        //    場合は、実際の著作リストを根拠として渡し、伝記的事実を書かせないよう
+        //    プロンプトを制約したうえで、AI生成である旨をページに明示すること。
+
         return $info;
     }
     
