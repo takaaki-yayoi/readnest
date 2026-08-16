@@ -119,7 +119,15 @@ if ($read_stats === false) {
     }
 
     // この作家を読む人が他に読んでいる作家。
-    // 読者を200人までに絞ってから展開する（人気作家で自己結合が膨らむのを防ぐ）
+    //
+    // 読者を絞ってから蔵書を展開する。読者数×1人あたりの蔵書数だけ行が膨らむため、
+    // ここを緩くすると人気作家でページが目に見えて遅くなる。
+    // 200人で試したところ村上春樹で TTFB 2.4秒、東野圭吾で 1.4秒だった
+    // （通常の作家ページは 0.07秒）。40人なら傾向を出すには十分。
+    //
+    // br2 の結合を外して bl2.author を直接使えばさらに速くなるが、
+    // b_book_list.author は「東野 圭吾」、b_book_repository.author は「東野圭吾」と
+    // 表記が異なり、リンク先の author.php が空になるため結合したままにする。
     $related_sql = "
         SELECT br2.author, COUNT(DISTINCT bl2.user_id) AS reader_count
         FROM (
@@ -128,7 +136,7 @@ if ($read_stats === false) {
             INNER JOIN b_book_list bl ON br.asin = bl.amazon_id
             INNER JOIN b_user bu ON bl.user_id = bu.user_id
             WHERE br.author = ? AND bu.diary_policy = 1 AND bu.status = 1
-            LIMIT 200
+            LIMIT 40
         ) r
         INNER JOIN b_book_list bl2 ON bl2.user_id = r.user_id
         INNER JOIN b_book_repository br2 ON br2.asin = bl2.amazon_id
@@ -144,7 +152,9 @@ if ($read_stats === false) {
         $read_stats['related_authors'] = $related;
     }
 
-    $author_cache->set($author_stats_key, $read_stats, 86400);
+    // 読書記録は日々増えるが、この集計は傾向を見せるものなので日単位の鮮度は不要。
+    // 22,000件超の作家ページをクローラーが巡回するため、再計算の頻度を下げる。
+    $author_cache->set($author_stats_key, $read_stats, 86400 * 7);
 }
 
 // ログインユーザー向け：この作家のまだ持っていない著作を取得
