@@ -108,20 +108,28 @@ function purgeTitleFromUrl(string $url): string {
 // キャッシュを消すと DB の綺麗な内容が使われ、DB にも無ければ修正済みロジックで
 // 取り直される。
 if (isset($opts['clear-cache'])) {
+    // 対象は「DBに30日以内のレコードがある作家」だけに絞る。
+    // getFromDatabase() は updated_at が30日以内の行しか返さないため、
+    // それ以外のキャッシュを消すとページ表示時に Wikipedia を同期で叩きに行き、
+    // 1件あたり1.5秒前後かかる。クローラーが巡回している最中にこれを
+    // 数万件分発生させない。DBに新しい行があるものだけを消せば、
+    // 次のアクセスは必ずDBから返るので取得は発生しない。
     $names = [];
-    foreach (['SELECT author_name AS n FROM b_author_info',
-              'SELECT author FROM b_author_stats_cache'] as $sql) {
-        $rows = $g_db->getAll($sql, null, DB_FETCHMODE_ORDERED);
-        if (!DB::isError($rows) && $rows) {
-            foreach ($rows as $r) {
-                $name = (string)$r[0];
-                if ($name !== '') {
-                    $names[$name] = true;
-                }
+    $rows = $g_db->getAll(
+        "SELECT author_name FROM b_author_info
+          WHERE updated_at > DATE_SUB(NOW(), INTERVAL 30 DAY)",
+        null,
+        DB_FETCHMODE_ORDERED
+    );
+    if (!DB::isError($rows) && $rows) {
+        foreach ($rows as $r) {
+            $name = (string)$r[0];
+            if ($name !== '') {
+                $names[$name] = true;
             }
         }
     }
-    printf("対象の作家名: %d 件\n", count($names));
+    printf("対象の作家名: %d 件（DBに30日以内のレコードがあるもののみ）\n", count($names));
     if (!$apply) {
         echo "確認のみで終了しました。実際に消すには --apply を付けてください。\n";
         exit(0);
