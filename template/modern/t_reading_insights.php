@@ -369,7 +369,7 @@ ob_start();
                 ?>
                 <li class="flex items-center">
                     <span class="w-5 flex-shrink-0 text-sm font-semibold text-gray-400"><?php echo $i + 1; ?></span>
-                    <a href="/book_detail.php?book_id=<?php echo urlencode($book['book_id']); ?>"
+                    <a href="/book/<?php echo urlencode($book['book_id']); ?>"
                        class="flex items-center flex-1 min-w-0 group"
                        title="<?php echo html($book['name']); ?>">
                         <img src="<?php echo html($rrImage); ?>"
@@ -436,7 +436,7 @@ ob_start();
                                 $bookImage = '/img/no-image-book.png';
                             }
                         ?>
-                        <a href="/book_detail.php?book_id=<?php echo urlencode($book['book_id']); ?>" 
+                        <a href="/book/<?php echo urlencode($book['book_id']); ?>" 
                            class="block group" 
                            title="<?php echo html($book['title']); ?>">
                             <div class="book-cover-wrapper rounded shadow-sm">
@@ -549,7 +549,7 @@ ob_start();
                             $bookImage = '/img/no-image-book.png';
                         }
                     ?>
-                    <a href="/book_detail.php?book_id=<?php echo urlencode($book['book_id']); ?>" 
+                    <a href="/book/<?php echo urlencode($book['book_id']); ?>" 
                        class="block group">
                         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                             <!-- 表紙画像コンテナ -->
@@ -1132,7 +1132,7 @@ function showEnhancedCategoryDetails(category) {
     let booksHtml = '';
     if (category.children && category.children.length > 0) {
         booksHtml = category.children.map(book => `
-            <a href="/book_detail.php?book_id=${book.bookId}" 
+            <a href="/book/${book.bookId}" 
                class="block border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 dark:border-gray-600">
                 <div class="flex gap-3">
                     <div class="flex-shrink-0">
@@ -1225,7 +1225,7 @@ function showCategoryBooks(category) {
                     <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             ${data.books.map(book => `
-                                <a href="/book_detail.php?book_id=${book.book_id}" 
+                                <a href="/book/${book.book_id}" 
                                    class="block border rounded-lg p-4 hover:shadow-lg transition-shadow">
                                     <div class="flex items-start gap-3">
                                         ${book.image_url ? `

@@ -307,7 +307,7 @@ if ($stats['overall']['total_reviews'] > 0) {
                             <?php foreach ($stats['errors'] as $error): ?>
                             <tr>
                                 <td class="px-4 py-2 border">
-                                    <a href="/book_detail.php?book_id=<?php echo $error['book_id']; ?>" 
+                                    <a href="/book/<?php echo $error['book_id']; ?>" 
                                        class="text-blue-600 hover:underline">
                                         <?php echo htmlspecialchars(mb_substr($error['title'], 0, 30)); ?>
                                     </a>

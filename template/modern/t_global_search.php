@@ -305,7 +305,7 @@ include(getTemplatePath('components/breadcrumb.php'));
                                                 <?php echo htmlspecialchars($book['title']); ?>
                                             </a>
                                         <?php elseif (!empty($first_asin)): ?>
-                                            <a href="/book_entity.php?asin=<?php echo urlencode($first_asin); ?>" 
+                                            <a href="/book_entity/<?php echo rawurlencode($first_asin); ?>" 
                                                class="hover:text-readnest-primary transition-colors">
                                                 <?php echo htmlspecialchars($book['title']); ?>
                                             </a>

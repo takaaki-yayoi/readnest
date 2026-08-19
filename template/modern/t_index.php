@@ -1831,7 +1831,7 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                 <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
                     <?php if (!empty($popular_tags)): ?>
                         <?php foreach ($popular_tags as $tag): ?>
-                        <a href="/search_book_by_tag.php?tag=<?php echo urlencode($tag['tag_name']); ?>" 
+                        <a href="/tag/<?php echo rawurlencode($tag['tag_name']); ?>" 
                            class="inline-block bg-purple-100 dark:bg-gray-700 text-purple-700 dark:text-gray-300 px-3 py-1 rounded-full text-xs hover:bg-purple-200 dark:hover:bg-gray-600 transition-colors">
                             <?php echo html($tag['tag_name']); ?>
                         </a>

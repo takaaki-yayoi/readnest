@@ -27,7 +27,7 @@ ob_start();
                 </li>
                 <li class="flex items-center">
                     <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                    <a href="/book_detail.php?book_id=<?php echo $book_id; ?>" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    <a href="/book/<?php echo $book_id; ?>" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                         <?php echo html($book['title']); ?>
                     </a>
                 </li>

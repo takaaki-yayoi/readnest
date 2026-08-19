@@ -179,9 +179,32 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^ %1 [L,R=301]
 
+# 旧URL（クエリ形式）からクリーンURLへの301。
+# canonical だけでは Google が旧URLを正規に選び続けることがある。実際に
+# /book_entity/4091238068 は canonical を出しているのに、Googleは
+# book_entity.php?asin=4091238068 を正規として選んでいた（URL検査で確認）。
+# 代替URL自体を消して選択の余地をなくす。
+#
+# THE_REQUEST は内部書き換えの影響を受けないので、クリーンURL経由の
+# アクセスではこの条件は成立せず、無限ループにならない。
+# クエリがそのパラメータ1つだけのときに限定し、POST は対象外にする
+# （book_detail.php は読書状態の更新を POST で受けるため）。
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{THE_REQUEST} \s/+book_detail\.php\?book_id=([0-9]+)\s
+RewriteRule ^book_detail\.php$ /book/%1? [R=301,L]
+
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{THE_REQUEST} \s/+book_entity\.php\?asin=([A-Za-z0-9_-]+)\s
+RewriteRule ^book_entity\.php$ /book_entity/%1? [R=301,L,NE]
+
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{THE_REQUEST} \s/+search_book_by_tag\.php\?tag=([^&\s]+)\s
+RewriteRule ^search_book_by_tag\.php$ /tag/%1? [R=301,L,NE]
+
 # 本の詳細ページ
+# /book_detail/{id} は /book/{id} と同一内容なので301で寄せる（canonicalも /book/{id}）
+RewriteRule ^book_detail/([0-9]+)/?$ /book/$1 [R=301,L]
 RewriteRule ^book/([0-9]+)/?$ book_detail.php?book_id=$1 [L,QSA]
-RewriteRule ^book_detail/([0-9]+)/?$ book_detail.php?book_id=$1 [L,QSA]
 
 # 本のエンティティページ（ASIN/ISBN/Google Books ID等）
 RewriteRule ^book_entity/([A-Za-z0-9_-]+)/?$ book_entity.php?asin=$1 [L,QSA]

@@ -306,7 +306,7 @@ include('layout/header.php');
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     
-                                    <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>" 
+                                    <a href="/book/<?php echo $book['book_id']; ?>" 
                                        target="_blank"
                                        class="text-gray-600 hover:bg-gray-50 p-1 rounded" 
                                        title="詳細を見る">

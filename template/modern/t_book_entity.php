@@ -453,7 +453,7 @@ ob_start();
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <?php foreach ($similar_books as $similar): ?>
             <div class="group">
-                <a href="/book_entity.php?asin=<?php echo urlencode($similar['asin']); ?>" 
+                <a href="/book_entity/<?php echo rawurlencode($similar['asin']); ?>" 
                    class="block hover:opacity-90 transition-opacity">
                     <div class="bg-gray-50 rounded-lg p-3 hover:shadow-md transition-shadow">
                         <?php if (!empty($similar['image_url'])): ?>

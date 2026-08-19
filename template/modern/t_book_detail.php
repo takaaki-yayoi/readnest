@@ -608,7 +608,7 @@ ob_start();
                                             <?php if (!empty($book_tags)): ?>
                                             <div class="flex flex-wrap gap-2 mb-3">
                                                 <?php foreach ($book_tags as $tag): ?>
-                                                <a href="/search_book_by_tag.php?tag=<?php echo urlencode($tag); ?>" 
+                                                <a href="/tag/<?php echo rawurlencode($tag); ?>" 
                                                    class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm hover:bg-blue-200 transition-colors">
                                                     <?php echo html($tag); ?>
                                                 </a>
@@ -709,7 +709,7 @@ ob_start();
                                     <?php if (!empty($book_tags)): ?>
                                     <div class="flex flex-wrap gap-2">
                                         <?php foreach ($book_tags as $tag): ?>
-                                        <a href="/search_book_by_tag.php?tag=<?php echo urlencode($tag); ?>" 
+                                        <a href="/tag/<?php echo rawurlencode($tag); ?>" 
                                            class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm hover:bg-blue-200 transition-colors">
                                             <?php echo html($tag); ?>
                                         </a>

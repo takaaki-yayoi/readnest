@@ -134,7 +134,7 @@ ob_start();
                     $font_size = calculateFontSize($tag['count'], $min_count, $max_count);
                     $color_class = calculateColor($tag['count'], $min_count, $max_count);
                     ?>
-                    <a href="/search_book_by_tag.php?tag=<?php echo urlencode($tag['tag_name']); ?>" 
+                    <a href="/tag/<?php echo rawurlencode($tag['tag_name']); ?>" 
                        class="inline-block m-2 hover:opacity-70 transition-opacity <?php echo $color_class; ?>"
                        style="font-size: <?php echo $font_size; ?>px;"
                        title="<?php echo h($tag['tag_name']); ?> (<?php echo number_format($tag['count']); ?>人が使用)">
@@ -178,7 +178,7 @@ ob_start();
                     <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
                         <div class="flex items-center">
                             <span class="text-lg font-bold text-gray-400 mr-3"><?php echo $index + 1; ?>.</span>
-                            <a href="/search_book_by_tag.php?tag=<?php echo urlencode($tag['tag_name']); ?>"
+                            <a href="/tag/<?php echo rawurlencode($tag['tag_name']); ?>"
                                class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium">
                                 <?php echo h($tag['tag_name']); ?>
                             </a>

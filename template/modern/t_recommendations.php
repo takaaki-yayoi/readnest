@@ -194,7 +194,7 @@ ob_start();
                                             : '/img/no-image-book.png';
                                 ?>
                                 <?php if (!empty($book['amazon_id'])): ?>
-                                <a href="/book_entity.php?asin=<?php echo urlencode($book['amazon_id']); ?>">
+                                <a href="/book_entity/<?php echo rawurlencode($book['amazon_id']); ?>">
                                     <img src="<?php echo htmlspecialchars($book_image); ?>" 
                                          alt="<?php echo htmlspecialchars($book['title']); ?>"
                                          class="w-20 h-28 object-cover rounded shadow-sm hover:opacity-90 transition-opacity"
@@ -218,7 +218,7 @@ ob_start();
                             <div class="flex-1 min-w-0 text-left">
                                 <h3 class="font-bold text-base mb-1 text-left text-gray-900 dark:text-gray-100">
                                     <?php if (!empty($book['amazon_id'])): ?>
-                                    <a href="/book_entity.php?asin=<?php echo urlencode($book['amazon_id']); ?>" 
+                                    <a href="/book_entity/<?php echo rawurlencode($book['amazon_id']); ?>" 
                                        class="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                                         <?php echo htmlspecialchars($book['title']); ?>
                                     </a>
@@ -350,7 +350,7 @@ ob_start();
                         <div class="flex-1 min-w-0 text-left">
                             <h3 class="font-bold text-base mb-1 text-left text-gray-900 dark:text-gray-100">
                                 <?php if (!empty($book['amazon_id'])): ?>
-                                <a href="/book_entity.php?asin=<?php echo urlencode($book['amazon_id']); ?>" 
+                                <a href="/book_entity/<?php echo rawurlencode($book['amazon_id']); ?>" 
                                    class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                                     <?php echo htmlspecialchars($book['title']); ?>
                                 </a>
@@ -457,7 +457,7 @@ ob_start();
                         <div class="flex-1 min-w-0 text-left">
                             <h3 class="font-bold text-base mb-1 text-left text-gray-900 dark:text-gray-100">
                                 <?php if (!empty($book['amazon_id'])): ?>
-                                <a href="/book_entity.php?asin=<?php echo urlencode($book['amazon_id']); ?>" 
+                                <a href="/book_entity/<?php echo rawurlencode($book['amazon_id']); ?>" 
                                    class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                                     <?php echo htmlspecialchars($book['title']); ?>
                                 </a>

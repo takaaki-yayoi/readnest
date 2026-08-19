@@ -191,7 +191,7 @@ ob_start();
                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
                         <?php foreach (array_slice($favorite_books, 0, 8) as $book): ?>
                         <div class="group relative">
-                            <a href="/book_detail.php?book_id=<?php echo html($book['book_id']); ?>" 
+                            <a href="/book/<?php echo html($book['book_id']); ?>" 
                                class="block">
                                 <div class="relative aspect-[3/4] overflow-hidden rounded-lg shadow-sm">
                                     <img src="<?php echo html(!empty($book['image_url']) && $book['image_url'] !== 'NULL' ? $book['image_url'] : '/img/no-image-book.png'); ?>" 

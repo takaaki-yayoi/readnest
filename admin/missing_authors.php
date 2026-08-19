@@ -286,7 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         <?php foreach ($books as $book): ?>
                         <tr id="book-<?php echo $book['book_id']; ?>">
                             <td class="px-4 py-3 text-sm">
-                                <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>" 
+                                <a href="/book/<?php echo $book['book_id']; ?>" 
                                    target="_blank" class="text-blue-600 hover:underline">
                                     #<?php echo $book['book_id']; ?>
                                 </a>

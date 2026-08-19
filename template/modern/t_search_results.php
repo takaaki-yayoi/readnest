@@ -152,7 +152,7 @@ if (isset($breadcrumbs)) {
                                             </p>
                                         <?php endif; ?>
                                         <div class="flex items-center flex-wrap gap-2 mt-3">
-                                            <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>"
+                                            <a href="/book/<?php echo $book['book_id']; ?>"
                                                class="inline-flex items-center px-3 py-1 bg-readnest-primary text-white text-sm rounded hover:bg-readnest-accent transition-colors">
                                                 <i class="fas fa-book-open mr-1"></i>詳細を見る
                                             </a>

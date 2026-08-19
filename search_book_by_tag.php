@@ -35,7 +35,7 @@ $offset = ($page - 1) * $per_page;
 // セキュリティ: ページ番号の上限設定
 $max_page = 100;
 if ($page > $max_page) {
-    header('Location: /search_book_by_tag.php?tag=' . urlencode($tag));
+    header('Location: /tag/' . rawurlencode($tag));
     exit;
 }
 
@@ -327,7 +327,7 @@ ob_start();
             <div class="mt-8 flex justify-center">
                 <nav class="flex space-x-2">
                     <?php if ($page > 1): ?>
-                        <a href="?tag=<?php echo urlencode($tag); ?>&p=<?php echo $page - 1; ?>" 
+                        <a href="?p=<?php echo $page - 1; ?>" 
                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded">前へ</a>
                     <?php endif; ?>
                     
@@ -340,13 +340,13 @@ ob_start();
                         <?php if ($i == $page): ?>
                             <span class="px-4 py-2 bg-readnest-primary text-white rounded"><?php echo $i; ?></span>
                         <?php else: ?>
-                            <a href="?tag=<?php echo urlencode($tag); ?>&p=<?php echo $i; ?>" 
+                            <a href="?p=<?php echo $i; ?>" 
                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"><?php echo $i; ?></a>
                         <?php endif; ?>
                     <?php endfor; ?>
                     
                     <?php if ($page < $total_pages): ?>
-                        <a href="?tag=<?php echo urlencode($tag); ?>&p=<?php echo $page + 1; ?>" 
+                        <a href="?p=<?php echo $page + 1; ?>" 
                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded">次へ</a>
                     <?php endif; ?>
                 </nav>
@@ -363,7 +363,7 @@ ob_start();
             <h2 class="text-xl font-semibold text-gray-900 mb-4">人気のタグ</h2>
             <div class="flex flex-wrap gap-2">
                 <?php foreach ($popular_tags as $popular_tag): ?>
-                    <a href="?tag=<?php echo urlencode($popular_tag['tag_name']); ?>" 
+                    <a href="/tag/<?php echo rawurlencode($popular_tag['tag_name']); ?>" 
                        class="inline-block px-4 py-2 bg-gray-100 hover:bg-readnest-primary hover:text-white rounded-full text-gray-700 transition-all duration-300">
                         <?php echo html($popular_tag['tag_name']); ?>
                         <span class="text-xs opacity-60 ml-1">(<?php echo $popular_tag['user_count']; ?>)</span>

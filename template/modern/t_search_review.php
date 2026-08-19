@@ -267,7 +267,7 @@ ob_start();
                             <?php if (!empty($tag_cloud)): ?>
                                 <div class="space-y-2">
                                     <?php foreach ($tag_cloud as $tag): ?>
-                                        <a href="/search_book_by_tag.php?tag=<?php echo urlencode($tag['tag_name']); ?>" 
+                                        <a href="/tag/<?php echo rawurlencode($tag['tag_name']); ?>" 
                                            class="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-readnest-beige dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 hover:text-readnest-primary rounded-full text-sm transition-colors mr-2 mb-2">
                                             <?php echo html($tag['tag_name']); ?>
                                             <span class="text-xs text-gray-500">(<?php echo $tag['tag_count']; ?>)</span>

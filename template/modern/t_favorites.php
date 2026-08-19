@@ -126,7 +126,7 @@ ob_start();
                  data-book-id="<?php echo $book['book_id']; ?>"
                  draggable="false">
                 <div class="relative">
-                    <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>" class="block">
+                    <a href="/book/<?php echo $book['book_id']; ?>" class="block">
                         <div class="relative w-full" style="padding-bottom: 133.33%;">
                             <img src="<?php echo html($book['image_url']); ?>" 
                                  alt="<?php echo html($book['title']); ?>" 
@@ -167,7 +167,7 @@ ob_start();
                 
                 <div class="p-3">
                     <h3 class="font-medium text-sm text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
-                        <a href="/book_detail.php?book_id=<?php echo $book['book_id']; ?>" class="hover:text-readnest-primary transition-colors">
+                        <a href="/book/<?php echo $book['book_id']; ?>" class="hover:text-readnest-primary transition-colors">
                             <?php echo html($book['title']); ?>
                         </a>
                     </h3>

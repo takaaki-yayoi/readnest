@@ -133,7 +133,7 @@ try {
             'title' => $book_info['title'],
             'author' => $book_info['author']
         ],
-        'redirect' => '/book_detail.php?book_id=' . $book_id . '&t=' . time()
+        'redirect' => '/book/' . $book_id . '?t=' . time()
     ]);
     
 } catch (Exception $e) {

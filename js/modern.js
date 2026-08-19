@@ -78,7 +78,7 @@ function displaySearchResults(results, container) {
     }
     
     const html = results.map(book => `
-        <a href="/book_detail.php?book_id=${book.book_id}" class="block p-3 hover:bg-gray-50 border-b last:border-b-0">
+        <a href="/book/${book.book_id}" class="block p-3 hover:bg-gray-50 border-b last:border-b-0">
             <div class="flex items-center">
                 <img src="${book.image_url || '/img/noimage.jpg'}" alt="${book.title}" class="w-12 h-16 object-cover rounded">
                 <div class="ml-3 flex-1">
@@ -261,7 +261,7 @@ function showBookModal(book) {
                             </div>
                             
                             <div class="mt-6">
-                                <a href="/book_detail.php?book_id=${book.book_id}" 
+                                <a href="/book/${book.book_id}" 
                                    class="btn-primary">
                                     詳細を見る
                                 </a>
