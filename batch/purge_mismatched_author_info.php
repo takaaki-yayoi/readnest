@@ -20,6 +20,7 @@
  * 使い方
  *   php batch/purge_mismatched_author_info.php              # 確認のみ（既定）
  *   php batch/purge_mismatched_author_info.php --stats      # source別の件数だけ見る
+ *   php batch/purge_mismatched_author_info.php --clear-cache --apply  # キャッシュだけ破棄
  *   php batch/purge_mismatched_author_info.php --apply      # 実際に削除
  *   php batch/purge_mismatched_author_info.php --apply --refetch --limit=200
  *   php batch/purge_mismatched_author_info.php --author='有川 真由美'  # 1名だけ試す
@@ -51,7 +52,7 @@ if (!$g_db || DB::isError($g_db)) {
     exit("DB接続に失敗しました\n");
 }
 
-$opts    = getopt('', ['apply', 'refetch', 'stats', 'limit::', 'author::']);
+$opts    = getopt('', ['apply', 'refetch', 'stats', 'clear-cache', 'limit::', 'author::']);
 $apply   = isset($opts['apply']);
 $refetch = isset($opts['refetch']);
 $limit   = isset($opts['limit']) ? max(1, (int)$opts['limit']) : 0;
@@ -96,6 +97,45 @@ function purgeTitleFromUrl(string $url): string {
     }
     $slug = substr($path, (int)strrpos($path, '/') + 1);
     return str_replace('_', ' ', rawurldecode($slug));
+}
+
+// --clear-cache: 作家情報のファイルキャッシュだけを破棄する。
+//
+// getAuthorInfo() は DB より先にファイルキャッシュ（30日TTL）を見るため、
+// DB を綺麗にしてもキャッシュが古い内容を返し続ける。実際、記法除去の修正後も
+// 美木良介の「[[俳優]]（[[映画]]…」や上田秋成の「{{JPN}}」が表示され続けていた
+// （DB側を走査すると記法を含むレコードは0件）。
+// キャッシュを消すと DB の綺麗な内容が使われ、DB にも無ければ修正済みロジックで
+// 取り直される。
+if (isset($opts['clear-cache'])) {
+    $names = [];
+    foreach (['SELECT author_name AS n FROM b_author_info',
+              'SELECT author FROM b_author_stats_cache'] as $sql) {
+        $rows = $g_db->getAll($sql, null, DB_FETCHMODE_ORDERED);
+        if (!DB::isError($rows) && $rows) {
+            foreach ($rows as $r) {
+                $name = (string)$r[0];
+                if ($name !== '') {
+                    $names[$name] = true;
+                }
+            }
+        }
+    }
+    printf("対象の作家名: %d 件\n", count($names));
+    if (!$apply) {
+        echo "確認のみで終了しました。実際に消すには --apply を付けてください。\n";
+        exit(0);
+    }
+    $cache = getCache();
+    $cleared = 0;
+    foreach (array_keys($names) as $name) {
+        if ($cache->delete('author_info_' . md5($name))) {
+            $cleared++;
+        }
+    }
+    printf("キャッシュを破棄: %d 件\n", $cleared);
+    echo "次回のページ表示でDBの内容、DBに無ければ再取得の結果が使われます。\n";
+    exit(0);
 }
 
 // --stats: source別の件数とサンプルだけを出す
