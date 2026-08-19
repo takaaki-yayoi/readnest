@@ -122,7 +122,7 @@ if (isset($opts['stats'])) {
 }
 
 $rows = $g_db->getAll(
-    "SELECT author_name, wikipedia_url, source FROM b_author_info WHERE source IN ('wikipedia', 'openai')",
+    "SELECT author_name, wikipedia_url, source, description FROM b_author_info WHERE source IN ('wikipedia', 'openai')",
     null,
     DB_FETCHMODE_ASSOC
 );
@@ -136,6 +136,7 @@ $cache = getCache();
 
 $mismatched = [];
 $openai_count = 0;
+$markup_count = 0;
 foreach ($rows as $row) {
     // openai由来は全件対象。根拠を与えずに生成した経歴で、事実確認ができない。
     // 例) 有川真由美に『君の膵臓をたべたい』（実際は住野よるの作品）を代表作として記載
@@ -144,6 +145,17 @@ foreach ($rows as $row) {
         $openai_count++;
         continue;
     }
+    // 説明文に Wikipedia 記法が残っているものも取り直す。
+    // 記法除去は取得側の修正なので、既存レコードには適用されない。
+    // 記事タイトルが正しく一致していると初回のパージ条件から漏れ、
+    // [[俳優]] や {{JPN}} を含む説明文がそのまま公開され続けていた。
+    $description = (string)($row['description'] ?? '');
+    if ($description !== '' && preg_match("/\[\[|\]\]|\{\{|'''/u", $description)) {
+        $mismatched[] = ['author' => (string)$row['author_name'], 'title' => '(記法が残存)'];
+        $markup_count++;
+        continue;
+    }
+
     $title = purgeTitleFromUrl((string)($row['wikipedia_url'] ?? ''));
     // URLが無いものも、どの記事を根拠にしたか追えないので取り直す
     if ($title === '' || purgeNormalize($title) !== purgeNormalize((string)$row['author_name'])) {
@@ -154,8 +166,8 @@ foreach ($rows as $row) {
 $total = count($rows);
 $bad   = count($mismatched);
 printf("wikipedia / openai 由来のレコード: %d 件\n", $total);
-printf("パージ対象: %d 件 (%.1f%%)  うち AI生成 %d 件\n",
-    $bad, $total ? $bad * 100 / $total : 0.0, $openai_count);
+printf("パージ対象: %d 件 (%.1f%%)  うち AI生成 %d 件 / 記法残存 %d 件\n",
+    $bad, $total ? $bad * 100 / $total : 0.0, $openai_count, $markup_count);
 
 if ($bad === 0) {
     exit("パージ対象はありません\n");
