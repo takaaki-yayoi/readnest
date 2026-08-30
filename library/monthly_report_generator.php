@@ -46,8 +46,11 @@ class MonthlyReportGenerator {
         // 日別アクティビティを取得
         $daily_activity = $this->getDailyActivity($user_id, $start_date, $end_date);
 
-        // 読了本リストを取得
-        $books = $this->getFinishedBooks($user_id, $start_date, $end_datetime);
+        // 読了本リストを取得（再読の回次を付与）
+        $books = $this->attachReadingRounds($user_id, $this->getFinishedBooks($user_id, $start_date, $end_datetime));
+
+        // この月の読了のうち再読だった冊数
+        $statistics['books_reread'] = $this->countRereadBooks($books);
 
         return [
             'year' => $year,
@@ -59,6 +62,34 @@ class MonthlyReportGenerator {
             'books' => $books,
             'has_data' => $statistics['books_finished'] > 0 || count($books) > 0
         ];
+    }
+
+    /**
+     * 読了本リストに再読の回次を付与する
+     * 再読は同じ本（amazon_id）の別エントリとして登録されるため、
+     * リスト上で初読と再読を見分けられるようにする
+     */
+    private function attachReadingRounds($user_id, array $books): array {
+        $rounds = getReadingRounds($user_id, array_column($books, 'amazon_id'));
+
+        foreach ($books as &$book) {
+            $round = $rounds[$book['book_id']] ?? null;
+            // 再読でない本（エントリが1件のみ）はnull
+            $book['read_round'] = $round['round'] ?? null;
+            $book['read_total'] = $round['total'] ?? null;
+        }
+        unset($book);
+
+        return $books;
+    }
+
+    /**
+     * 読了本リストのうち再読（2回目以降）の冊数を数える
+     */
+    private function countRereadBooks(array $books): int {
+        return count(array_filter($books, function (array $book): bool {
+            return !empty($book['read_round']) && $book['read_round'] >= 2;
+        }));
     }
 
     /**

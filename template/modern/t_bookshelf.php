@@ -264,7 +264,7 @@ if (isset($breadcrumbs)) {
                         <?php else: ?>
                             「<strong><?php echo html($search_word); ?></strong>」の検索結果
                         <?php endif; ?>
-                        （<?php echo count($books); ?>件）
+                        （<?php echo number_format($total_books); ?>件）
                     </p>
                     <div class="flex items-center gap-2">
                         <?php if ($tag_filter === 'no_tags' || $cover_filter === 'no_cover'): ?>
@@ -273,6 +273,8 @@ if (isset($breadcrumbs)) {
                         $clear_params = $_GET;
                         unset($clear_params['tag_filter']);
                         unset($clear_params['cover_filter']);
+                        // 絞り込みを外すと件数が変わるので1ページ目に戻す
+                        unset($clear_params['page']);
                         $clear_query = !empty($clear_params) ? '?' . http_build_query($clear_params) : '?';
                         ?>
                         <a href="<?php echo $clear_query; ?>"
@@ -736,10 +738,17 @@ if (isset($breadcrumbs)) {
                 
                 <div class="p-3 flex flex-col h-full">
                     <!-- ステータス -->
-                    <div class="mb-2">
+                    <div class="mb-2 flex flex-wrap items-center gap-1">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <?php echo $book['status_class']; ?>">
                             <?php echo html($book['status_label']); ?>
                         </span>
+                        <?php if (!empty($book['read_round'])): ?>
+                        <!-- 再読は同じ本の別エントリとして並ぶため、何回目かを示す -->
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
+                              title="この本を<?php echo (int)$book['read_total']; ?>回登録しています（再読）">
+                            <i class="fas fa-rotate-right mr-1"></i><?php echo (int)$book['read_round']; ?>回目
+                        </span>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- タイトル -->
@@ -836,12 +845,84 @@ if (isset($breadcrumbs)) {
             <?php endforeach; ?>
         </div>
         
-        <!-- もっと見るボタン（必要に応じて） -->
-        <?php if (count($books) >= 20): ?>
-        <div class="text-center mt-8">
-            <button class="btn bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 px-6 py-3">
-                さらに読み込む
-            </button>
+        <!-- ページネーション -->
+        <?php
+        // 現在の絞り込み条件を保ったままページ番号だけ差し替えるURLを作る
+        $build_page_url = function (int $target_page) use ($pagination_params) {
+            $params = $pagination_params;
+            $params['page'] = $target_page;
+            return '/bookshelf.php?' . http_build_query($params);
+        };
+        $range_start = $offset + 1;
+        $range_end = $offset + count($books);
+        ?>
+        <div class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            全<?php echo number_format($total_books); ?>冊中
+            <?php echo number_format($range_start); ?>〜<?php echo number_format($range_end); ?>冊目
+            <?php if ($total_pages > 1): ?>
+            （<?php echo $page; ?> / <?php echo $total_pages; ?>ページ）
+            <?php endif; ?>
+        </div>
+
+        <?php if ($total_pages > 1): ?>
+        <div class="mt-4 flex justify-center">
+            <nav class="flex items-center space-x-2">
+                <!-- 前へ -->
+                <?php if ($page > 1): ?>
+                <a href="<?php echo html($build_page_url($page - 1)); ?>"
+                   rel="prev"
+                   class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 border dark:border-gray-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <?php else: ?>
+                <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-md border dark:border-gray-600 cursor-not-allowed">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                <?php endif; ?>
+
+                <!-- ページ番号 -->
+                <?php
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                ?>
+                <?php if ($start_page > 1): ?>
+                    <a href="<?php echo html($build_page_url(1)); ?>"
+                       class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 border dark:border-gray-600">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span class="px-2 text-gray-400 dark:text-gray-500">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <?php if ($i === $page): ?>
+                        <span class="px-3 py-2 text-sm text-white bg-readnest-primary rounded-md"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="<?php echo html($build_page_url($i)); ?>"
+                           class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 border dark:border-gray-600"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span class="px-2 text-gray-400 dark:text-gray-500">...</span>
+                    <?php endif; ?>
+                    <a href="<?php echo html($build_page_url($total_pages)); ?>"
+                       class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 border dark:border-gray-600"><?php echo $total_pages; ?></a>
+                <?php endif; ?>
+
+                <!-- 次へ -->
+                <?php if ($page < $total_pages): ?>
+                <a href="<?php echo html($build_page_url($page + 1)); ?>"
+                   rel="next"
+                   class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 border dark:border-gray-600">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <?php else: ?>
+                <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-md border dark:border-gray-600 cursor-not-allowed">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+                <?php endif; ?>
+            </nav>
         </div>
         <?php endif; ?>
         <?php endif; ?>
@@ -896,29 +977,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-// 読書履歴データを準備
-const readingHistory = [
-    <?php 
-    // 読了済みの本を取得（評価とレビュー付き）
-    $finished_books = array_filter($books, function($book) {
-        return $book['status_id'] == READING_FINISH || $book['status_id'] == READ_BEFORE;
-    });
-    
-    // インデックスをリセット
-    $finished_books = array_values($finished_books);
-    
-    foreach ($finished_books as $index => $book) {
-        if ($index > 0) echo ",\n    ";
-        echo json_encode([
-            'title' => isset($book['title']) ? $book['title'] : '',
-            'author' => isset($book['author']) ? $book['author'] : '',
-            'rating' => intval(isset($book['rating']) ? $book['rating'] : 0),
-            'review' => mb_substr(isset($book['memo']) ? $book['memo'] : '', 0, 100)
-        ]);
-    }
-    ?>
-];
-
 // タグクラウドコンポーネント（現在未使用）
 <?php if (false): // 完全に無効化 ?>
 function tagCloudComponent() {

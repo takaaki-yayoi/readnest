@@ -335,7 +335,7 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
     <?php if (!empty($books)): ?>
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
-            <i class="fas fa-book mr-2 text-readnest-accent"></i>読了した本（<?php echo count($books); ?>冊）
+            <i class="fas fa-book mr-2 text-readnest-accent"></i>読了した本（<?php echo count($books); ?>冊<?php if (!empty($stats['books_reread'])): ?>／うち再読<?php echo (int)$stats['books_reread']; ?>冊<?php endif; ?>）
         </h3>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -359,6 +359,14 @@ $url_user_path = !$is_my_report ? "/{$target_user_id}" : "";
                         <div class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mt-1">
                             <?php echo html($book['author']); ?>
                         </div>
+                        <?php if (!empty($book['read_round']) && $book['read_round'] >= 2): ?>
+                        <!-- 再読（同じ本の2回目以降の読了） -->
+                        <div class="mt-1">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                <i class="fas fa-rotate-right mr-1"></i>再読<?php echo (int)$book['read_round']; ?>回目
+                            </span>
+                        </div>
+                        <?php endif; ?>
                         <?php if (!empty($book['rating']) && $book['rating'] > 0): ?>
                         <div class="text-yellow-500 text-xs mt-1">
                             <?php echo str_repeat('★', (int)$book['rating']); ?><?php echo str_repeat('☆', 5 - (int)$book['rating']); ?>

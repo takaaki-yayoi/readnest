@@ -271,17 +271,14 @@ if ($is_own_bookshelf) {
 }
 
 // ステータス別の本を取得
-function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $search_type = '', $search_word = '', $filter_year = '', $filter_month = '', $tag_filter = '', $cover_filter = '') {
+function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $search_type = '', $search_word = '', $filter_year = '', $filter_month = '', $tag_filter = '', $cover_filter = '', $limit = 0, $offset = 0) {
     global $g_star_array, $cache, $g_db, $mine_user_id;
     
     
     // 本棚データは常に最新のものを取得（キャッシュは使用しない）
     // Keep it simple: リアルタイム性が重要なため、キャッシュを無効化
-    if (!empty($search_word) || !empty($filter_year) || !empty($filter_month) || !empty($tag_filter) || !empty($cover_filter)) {
-        $books = getBookshelfWithSearch($user_id, $status, $sort, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
-    } else {
-        $books = getBookshelf($user_id, $status, $sort);
-    }
+    // 検索条件の有無にかかわらず同じ組み立てを通す（件数取得と条件を共有するため）
+    $books = getBookshelfWithSearch($user_id, $status, $sort, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter, $limit, $offset);
     $formatted_books = [];
     
     // パフォーマンス最適化：タグ表示を有効にするかどうか
@@ -321,6 +318,9 @@ function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $s
     $is_own_bookshelf = ($user_id === $mine_user_id);
     $book_ids = array_column($books, 'book_id');
     $favorite_status = $is_own_bookshelf ? getBulkFavoriteStatus($mine_user_id, $book_ids) : [];
+
+    // 再読の回次を一括取得（同じ本が並んだときに何回目かを示すため）
+    $reading_rounds = getReadingRounds($user_id, array_column($books, 'amazon_id'));
     
     foreach ($books as $book) {
         $book_id = $book['book_id'];
@@ -392,7 +392,10 @@ function getBooksByStatus($user_id, $status = '', $sort = 'update_date_desc', $s
             'create_date' => $create_date,
             'is_favorite' => $is_favorite,
             'amazon_id' => $book['amazon_id'] ?? null,
-            'isbn' => $book['isbn'] ?? null
+            'isbn' => $book['isbn'] ?? null,
+            // 再読でない本（エントリが1件のみ）はnull
+            'read_round' => $reading_rounds[$book_id]['round'] ?? null,
+            'read_total' => $reading_rounds[$book_id]['total'] ?? null
         ];
     }
 
@@ -438,40 +441,30 @@ function isInvalidCoverImage($url) {
     return false;
 }
 
-// 検索付き本棚取得関数
-function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_desc', $search_type = '', $search_word = '', $filter_year = '', $filter_month = '', $tag_filter = '', $cover_filter = '') {
-    global $g_db;
-    
-    
-    // b_book_repositoryテーブルから著者情報も取得
-    // ユーザーが編集した著者情報（bl.author）を優先
-    // 注意: bl.*とCOALESCEを併用すると上書きされないため、authorを除外してから追加
-    $sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
-            bl.image_url, bl.detail_url, bl.status, bl.rating, bl.memo,
-            bl.total_page, bl.current_page, bl.create_date, bl.update_date,
-            bl.finished_date, bl.number_of_refer, bl.memo_updated,
-            COALESCE(bl.author, br.author, '') as author
-            FROM b_book_list bl
-            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
-            WHERE bl.user_id = ?";
+// 本棚の絞り込み条件を組み立てる
+// 一覧取得（getBookshelfWithSearch）と件数取得（countBookshelfBooks）で共用し、
+// 「表示される本」と「総件数」がズレないようにする
+// 戻り値: [WHERE句（bl.user_id条件を含む）, バインドパラメータ]
+function buildBookshelfConditions($user_id, $status = '', $search_type = '', $search_word = '', $filter_year = '', $filter_month = '', $tag_filter = '', $cover_filter = '') {
+    $where = "bl.user_id = ?";
     $params = [$user_id];
-    
+
     // ステータスフィルタ
     if ($status !== '') {
         // 読了の場合は「昔読んだ」も含める
         if ($status == READING_FINISH) {
-            $sql .= " AND status IN (?, ?)";
+            $where .= " AND status IN (?, ?)";
             $params[] = READING_FINISH;
             $params[] = READ_BEFORE;
         } else {
-            $sql .= " AND status = ?";
+            $where .= " AND status = ?";
             $params[] = $status;
         }
     }
-    
+
     // 年フィルタ（読了日ベース、なければ更新日）
     if (!empty($filter_year) && is_numeric($filter_year)) {
-        $sql .= " AND (
+        $where .= " AND (
             (status IN (?, ?) AND finished_date IS NOT NULL AND YEAR(finished_date) = ?)
             OR (status IN (?, ?) AND finished_date IS NULL AND YEAR(update_date) = ?)
             OR (status NOT IN (?, ?) AND YEAR(update_date) = ?)
@@ -486,10 +479,10 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
         $params[] = READ_BEFORE;
         $params[] = $filter_year;
     }
-    
+
     // 月フィルタ（読了日ベース、なければ更新日）
     if (!empty($filter_month) && preg_match('/^\d{4}-\d{2}$/', $filter_month)) {
-        $sql .= " AND (
+        $where .= " AND (
             (status IN (?, ?) AND finished_date IS NOT NULL AND DATE_FORMAT(finished_date, '%Y-%m') = ?)
             OR (status IN (?, ?) AND finished_date IS NULL AND DATE_FORMAT(update_date, '%Y-%m') = ?)
             OR (status NOT IN (?, ?) AND DATE_FORMAT(update_date, '%Y-%m') = ?)
@@ -504,12 +497,12 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
         $params[] = READ_BEFORE;
         $params[] = $filter_month;
     }
-    
+
     // 検索条件
     if (!empty($search_word)) {
         if ($search_type === 'author') {
             // 著者検索: bl.author（ユーザー編集）とbr.author（レポジトリ）の両方を検索（曖昧検索対応）
-            $sql .= " AND (
+            $where .= " AND (
                 bl.author LIKE ?
                 OR bl.author LIKE ?
                 OR REPLACE(bl.author, ' ', '') LIKE ?
@@ -527,16 +520,16 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
             $params[] = '%' . str_replace(' ', '%', $search_word) . '%'; // スペースを%に置換
             $params[] = '%' . str_replace(' ', '', $search_word) . '%'; // スペースを削除
         } elseif ($search_type === 'title') {
-            $sql .= " AND name LIKE ?";
+            $where .= " AND name LIKE ?";
             $params[] = '%' . $search_word . '%';
         } elseif ($search_type === 'tag') {
             // タグ検索の場合はサブクエリを使用
-            $sql .= " AND book_id IN (SELECT book_id FROM b_book_tags WHERE user_id = ? AND tag_name = ?)";
+            $where .= " AND book_id IN (SELECT book_id FROM b_book_tags WHERE user_id = ? AND tag_name = ?)";
             $params[] = $user_id;
             $params[] = $search_word;
         } else {
             // デフォルトはタイトルと著者両方で検索（bl.authorとbr.authorの両方）
-            $sql .= " AND (
+            $where .= " AND (
                 name LIKE ?
                 OR bl.author LIKE ?
                 OR amazon_id IN (
@@ -549,91 +542,191 @@ function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_des
             $params[] = '%' . $search_word . '%';
         }
     }
-    
+
     // タグフィルタ
     if ($tag_filter === 'no_tags') {
         // タグがついていない本のみ
-        $sql .= " AND book_id NOT IN (SELECT DISTINCT book_id FROM b_book_tags WHERE user_id = ?)";
+        $where .= " AND book_id NOT IN (SELECT DISTINCT book_id FROM b_book_tags WHERE user_id = ?)";
         $params[] = $user_id;
     }
-    
+
     // 表紙フィルタ - 本当に表紙がない本のみ
     if ($cover_filter === 'no_cover') {
         // 確実に表紙がない本のみを取得
-        $sql .= " AND (image_url IS NULL 
+        $where .= " AND (image_url IS NULL 
                     OR image_url = '' 
                     OR image_url = '/img/no-image-book.png'
                     OR image_url LIKE '%noimage%'
                     OR image_url LIKE '%no-image%'
                     OR image_url LIKE '%no_image%')";
     }
-    
+
+    return [$where, $params];
+}
+
+// 絞り込み条件に一致する冊数を取得（ページネーション用）
+// 本棚は常に最新の状態を見せるため、一覧と同様に件数もキャッシュしない
+function countBookshelfBooks($user_id, $status = '', $search_type = '', $search_word = '', $filter_year = '', $filter_month = '', $tag_filter = '', $cover_filter = '') {
+    global $g_db;
+
+    list($where, $params) = buildBookshelfConditions($user_id, $status, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
+
+    // 条件式が br の列を参照するケースはないが、一覧と同じ結合にして
+    // 列名の解決（name など）が一覧側と一致することを保証する
+    $sql = "SELECT COUNT(*)
+            FROM b_book_list bl
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE " . $where;
+
+    $count = $g_db->getOne($sql, $params);
+
+    if (DB::isError($count)) {
+        error_log('Bookshelf count error: ' . $count->getMessage());
+        return 0;
+    }
+
+    return (int)$count;
+}
+
+// 本棚取得関数（検索・絞り込み・ページ送り対応）
+function getBookshelfWithSearch($user_id, $status = '', $sort = 'update_date_desc', $search_type = '', $search_word = '', $filter_year = '', $filter_month = '', $tag_filter = '', $cover_filter = '', $limit = 0, $offset = 0) {
+    global $g_db;
+
+    list($where, $params) = buildBookshelfConditions($user_id, $status, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
+
+    // b_book_repositoryテーブルから著者情報も取得
+    // ユーザーが編集した著者情報（bl.author）を優先
+    // 注意: bl.*とCOALESCEを併用すると上書きされないため、authorを除外してから追加
+    $sql = "SELECT bl.book_id, bl.user_id, bl.amazon_id, bl.isbn, bl.name,
+            bl.image_url, bl.detail_url, bl.status, bl.rating, bl.memo,
+            bl.total_page, bl.current_page, bl.create_date, bl.update_date,
+            bl.finished_date, bl.number_of_refer, bl.memo_updated,
+            COALESCE(bl.author, br.author, '') as author
+            FROM b_book_list bl
+            LEFT JOIN b_book_repository br ON bl.amazon_id = br.asin
+            WHERE " . $where;
+
     // ソート順（昇順・降順対応）
     switch ($sort) {
         // タイトル
         case 'title_asc':
-            $sql .= " ORDER BY name ASC";
+            $order_clause = "name ASC";
             break;
         case 'title_desc':
-            $sql .= " ORDER BY name DESC";
+            $order_clause = "name DESC";
             break;
         // 著者名
         case 'author_asc':
-            $sql .= " ORDER BY author ASC";
+            $order_clause = "author ASC";
             break;
         case 'author_desc':
-            $sql .= " ORDER BY author DESC";
+            $order_clause = "author DESC";
             break;
         // 評価
         case 'rating_asc':
-            $sql .= " ORDER BY rating ASC, update_date DESC";
+            $order_clause = "rating ASC, update_date DESC";
             break;
         case 'rating_desc':
-            $sql .= " ORDER BY rating DESC, update_date DESC";
+            $order_clause = "rating DESC, update_date DESC";
             break;
         // 読了日
         case 'finished_date_asc':
-            $sql .= " ORDER BY finished_date ASC";
+            $order_clause = "finished_date ASC";
             break;
         case 'finished_date_desc':
-            $sql .= " ORDER BY finished_date DESC";
+            $order_clause = "finished_date DESC";
             break;
         // ページ数
         case 'pages_asc':
-            $sql .= " ORDER BY total_page ASC";
+            $order_clause = "total_page ASC";
             break;
         case 'pages_desc':
-            $sql .= " ORDER BY total_page DESC";
+            $order_clause = "total_page DESC";
             break;
         // 登録日
         case 'created_date_asc':
-            $sql .= " ORDER BY create_date ASC";
+            $order_clause = "create_date ASC";
             break;
         case 'created_date_desc':
-            $sql .= " ORDER BY create_date DESC";
+            $order_clause = "create_date DESC";
             break;
         // 更新日（デフォルト）
         case 'update_date_asc':
-            $sql .= " ORDER BY update_date ASC";
+            $order_clause = "update_date ASC";
+            break;
+        // 画面のセレクトには無いが、旧URLで指定されうる値
+        case 'status':
+            $order_clause = "status ASC";
+            break;
+        case 'total_page':
+            $order_clause = "total_page DESC";
+            break;
+        case 'current_page':
+            $order_clause = "current_page DESC";
             break;
         case 'update_date_desc':
         default:
-            $sql .= " ORDER BY update_date DESC";
+            $order_clause = "update_date DESC";
     }
-    
+
+    // ページ送りで同じ本が二重に出たり抜け落ちたりしないよう、
+    // 値が重複しうるソート列の後ろに必ず一意なキーを足して順序を確定させる
+    $sql .= " ORDER BY " . $order_clause . ", bl.book_id DESC";
+
+    if ($limit > 0) {
+        $sql .= sprintf(" LIMIT %d OFFSET %d", (int)$limit, max(0, (int)$offset));
+    }
+
     $result = $g_db->getAll($sql, $params, DB_FETCHMODE_ASSOC);
-    
+
     if (DB::isError($result)) {
         return [];
     }
-    
-    // 表紙フィルタが有効な場合、既にSQLで適切にフィルタリングされている
-    
+
     return $result;
 }
 
 
-$books = getBooksByStatus($user_id, $status_filter, $sort_order, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
+// ページネーション
+// 以前は該当ステータスの全冊をSQLで取得し、そのまま全件描画していたため、
+// 蔵書数の多いユーザーほど本棚が重くなっていた。1ページ分だけ取得する。
+$per_page = 24;
+$page = max(1, (int)($_GET['page'] ?? 1));
+
+$total_books = countBookshelfBooks($user_id, $status_filter, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter);
+$total_pages = $total_books > 0 ? (int)ceil($total_books / $per_page) : 1;
+
+// 存在しないページ番号を指定された場合は最終ページに寄せる
+if ($page > $total_pages) {
+    $page = $total_pages;
+}
+$offset = ($page - 1) * $per_page;
+
+$books = getBooksByStatus($user_id, $status_filter, $sort_order, $search_type, $search_word, $filter_year, $filter_month, $tag_filter, $cover_filter, $per_page, $offset);
+
+// ページ送りリンク用のクエリパラメータ（page以外の現在の絞り込み条件を引き継ぐ）
+$pagination_params = [];
+if (!$is_own_bookshelf) {
+    $pagination_params['user_id'] = $user_id;
+}
+if ($status_filter !== '') {
+    $pagination_params['status'] = $status_filter;
+}
+if ($sort_order !== 'update_date_desc') {
+    $pagination_params['sort'] = $sort_order;
+}
+foreach ([
+    'search_type' => $search_type,
+    'search_word' => $search_word,
+    'filter_year' => $filter_year,
+    'filter_month' => $filter_month,
+    'tag_filter' => $tag_filter,
+    'cover_filter' => $cover_filter
+] as $key => $value) {
+    if ($value !== '' && $value !== null) {
+        $pagination_params[$key] = $value;
+    }
+}
 
 // ユーザー作家クラウドデータを取得
 $user_author_cloud = new UserAuthorCloud($user_id);

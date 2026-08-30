@@ -1017,6 +1017,63 @@ function getFinishedNumber($user_id, $book_asin) {
     return 0;
 }
 
+// 再読（同じ本の複数エントリ）の回次をまとめて取得する
+// 再読は同じ amazon_id の別エントリとして登録されるため、本棚やレポートでは
+// 「同じ本が理由の説明なく並ぶ」状態になる。登録順の何冊目かを返して区別できるようにする。
+//
+// @param array $amazon_ids 対象の amazon_id（重複・空文字が混ざっていてもよい）
+// @return array book_id => ['round' => 登録順の回次, 'total' => 同じ本のエントリ総数]
+//               エントリが1件しかない本は結果に含めない（再読ではないため）
+function getReadingRounds($user_id, array $amazon_ids) {
+  global $g_db;
+
+  // 手動追加の本などは amazon_id が空になる。空同士を同じ本として
+  // まとめてしまわないよう、必ず除外する
+  $targets = array_values(array_unique(array_filter($amazon_ids, function($amazon_id) {
+    return $amazon_id !== null && $amazon_id !== '';
+  })));
+
+  if (empty($targets)) {
+    return array();
+  }
+
+  $placeholders = implode(',', array_fill(0, count($targets), '?'));
+  $select_sql = "SELECT book_id, amazon_id
+                 FROM b_book_list
+                 WHERE user_id = ? AND amazon_id IN ($placeholders)
+                 ORDER BY amazon_id, create_date ASC, book_id ASC";
+
+  $result = $g_db->getAll($select_sql, array_merge(array($user_id), $targets), DB_FETCHMODE_ASSOC);
+
+  if (DB::isError($result)) {
+    error_log('getReadingRounds error: ' . $result->getMessage());
+    return array();
+  }
+
+  // amazon_idごとに登録順で回次を振る
+  $rounds_by_amazon = array();
+  foreach ($result as $row) {
+    $rounds_by_amazon[$row['amazon_id']][] = $row['book_id'];
+  }
+
+  $rounds = array();
+  foreach ($rounds_by_amazon as $book_ids) {
+    $total = count($book_ids);
+    if ($total < 2) {
+      // 1回しか読んでいない本は再読ではないので何も返さない
+      continue;
+    }
+    foreach ($book_ids as $index => $book_id) {
+      $rounds[$book_id] = array(
+        'round' => $index + 1,
+        'total' => $total
+      );
+    }
+  }
+
+  return $rounds;
+}
+
 
 // update book information
 function updateBook($user_id, $book_id, $status, $rating, $comment, $finished_date = null) {
