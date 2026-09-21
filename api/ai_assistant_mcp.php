@@ -5,6 +5,7 @@
  */
 
 require_once('../modern_config.php');
+require_once(dirname(__DIR__) . '/library/openai_models.php');
 
 // APIレスポンスヘッダー
 header('Content-Type: application/json; charset=utf-8');
@@ -533,12 +534,12 @@ $iteration = 0;
 while ($iteration < $max_iterations) {
     $iteration++;
 
-    $request_body = [
-        'model' => 'gpt-4o-mini',
+    $request_body = openaiChatParams([
+        'model' => openaiChatModel(),
         'messages' => $messages,
         'tools' => $tools,
         'tool_choice' => 'auto'
-    ];
+    ]);
 
     $ch = curl_init('https://api.openai.com/v1/chat/completions');
     curl_setopt($ch, CURLOPT_HTTPHEADER, [

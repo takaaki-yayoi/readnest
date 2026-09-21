@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 require_once(dirname(__FILE__) . '/database.php');
+require_once(dirname(__FILE__) . '/openai_models.php');
 
 class AISimilarityAnalyzer {
     private $apiKey;
@@ -255,8 +256,8 @@ class AISimilarityAnalyzer {
     private function callOpenAI(string $prompt): string {
         $url = 'https://api.openai.com/v1/chat/completions';
         
-        $data = [
-            'model' => 'gpt-4o-mini',
+        $data = openaiChatParams([
+            'model' => openaiChatModel(),
             'messages' => [
                 [
                     'role' => 'system',
@@ -270,7 +271,7 @@ class AISimilarityAnalyzer {
             'temperature' => 0.3,
             'max_tokens' => 2000,
             'response_format' => ['type' => 'json_object']
-        ];
+        ]);
         
         $options = [
             'http' => [

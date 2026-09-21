@@ -4,6 +4,8 @@
  * Wikipedia APIとOpenAI APIから作家の情報を取得してキャッシュ
  */
 
+require_once(dirname(__FILE__) . '/openai_models.php');
+
 class AuthorInfoFetcher {
     private $cache;
     private $db;
@@ -403,8 +405,8 @@ class AuthorInfoFetcher {
         
         $api_url = 'https://api.openai.com/v1/chat/completions';
         
-        $data = [
-            'model' => 'gpt-3.5-turbo',
+        $data = openaiChatParams([
+            'model' => openaiChatModel(),
             'messages' => [
                 [
                     'role' => 'system',
@@ -417,7 +419,7 @@ class AuthorInfoFetcher {
             ],
             'temperature' => 0.3,
             'max_tokens' => 500
-        ];
+        ]);
         
         $options = [
             'http' => [

@@ -86,7 +86,7 @@ try {
     $response = $openaiClient->chatWithSystem(
         $systemPrompt,
         $userPrompt,
-        'gpt-4o-mini',
+        openaiChatModel(),
         0.3,  // 低い温度で一貫性を保つ
         150   // 短いレスポンスでコスト削減
     );

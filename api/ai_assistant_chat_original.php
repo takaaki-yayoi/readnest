@@ -1,5 +1,6 @@
 <?php
 require_once('../modern_config.php');
+require_once(dirname(__DIR__) . '/library/openai_models.php');
 
 // APIレスポンスヘッダー
 header('Content-Type: application/json; charset=utf-8');
@@ -113,15 +114,15 @@ try {
         'Authorization: Bearer ' . OPENAI_API_KEY
     ]);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-        'model' => 'gpt-4o-mini',
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+        'model' => openaiChatModel(),
         'messages' => [
             ['role' => 'system', 'content' => $system_prompt],
             ['role' => 'user', 'content' => $message]
         ],
         'max_tokens' => 500,
         'temperature' => 0.7
-    ]));
+    ])));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     

@@ -234,7 +234,7 @@ try {
         $response = $openaiClient->chatWithSystem(
             $systemPrompt,
             $userPrompt,
-            'gpt-4o-mini',
+            openaiChatModel(),
             0.7,  // 創造性を重視
             1000  // 十分な長さ
         );

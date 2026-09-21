@@ -5,6 +5,7 @@
  */
 
 require_once('../modern_config.php');
+require_once(dirname(__DIR__) . '/library/openai_models.php');
 
 // ログインチェック
 $login_flag = checkLogin();
@@ -124,12 +125,12 @@ function generateSQL($question, $user_id) {
             'Authorization: Bearer ' . OPENAI_API_KEY
         ]);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            'model' => 'gpt-4o-mini',
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+            'model' => openaiChatModel(),
             'messages' => $messages,
             'max_tokens' => 500,
             'temperature' => 0.1  // 低温度で正確性を重視
-        ]));
+        ])));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         

@@ -20,6 +20,7 @@ try {
     require_once(__DIR__ . '/../config.php');
     require_once(__DIR__ . '/../library/database.php');
     require_once(__DIR__ . '/../library/session.php');
+    require_once(__DIR__ . '/../library/openai_models.php');
 } catch (Exception $e) {
     ob_clean();
     http_response_code(500);
@@ -461,12 +462,12 @@ function callOpenAI($messages) {
     $api_key = OPENAI_API_KEY;
     $api_url = 'https://api.openai.com/v1/chat/completions';
     
-    $data = [
-        'model' => defined('OPENAI_MODEL') ? OPENAI_MODEL : 'gpt-4o-mini',
+    $data = openaiChatParams([
+        'model' => openaiChatModel(),
         'messages' => $messages,
         'temperature' => defined('OPENAI_TEMPERATURE') ? OPENAI_TEMPERATURE : 0.7,
         'max_tokens' => defined('OPENAI_MAX_TOKENS') ? OPENAI_MAX_TOKENS : 800
-    ];
+    ]);
     
     $ch = curl_init($api_url);
     curl_setopt($ch, CURLOPT_POST, 1);

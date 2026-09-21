@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 require_once(dirname(__FILE__) . '/database.php');
+require_once(dirname(__FILE__) . '/openai_models.php');
 
 class AIBookTypeDetector {
     private $apiKey;
@@ -75,8 +76,8 @@ class AIBookTypeDetector {
             'Content-Type: application/json',
             'Authorization: Bearer ' . $this->apiKey
         ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            'model' => 'gpt-3.5-turbo',
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+            'model' => openaiChatModel(),
             'messages' => [
                 [
                     'role' => 'system',
@@ -90,7 +91,7 @@ class AIBookTypeDetector {
             'temperature' => 0.3,
             'max_tokens' => 200,
             'response_format' => ['type' => 'json_object']
-        ]));
+        ])));
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         
         $response = curl_exec($ch);

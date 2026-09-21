@@ -1,5 +1,6 @@
 <?php
 require_once('../modern_config.php');
+require_once(dirname(__DIR__) . '/library/openai_models.php');
 
 // APIレスポンスヘッダー
 header('Content-Type: application/json; charset=utf-8');
@@ -591,14 +592,14 @@ try {
         'Authorization: Bearer ' . OPENAI_API_KEY
     ]);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-        'model' => 'gpt-4o-mini',
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+        'model' => openaiChatModel(),
         'messages' => $messages,
         'max_tokens' => 1500,  // リスト表示のため増加
         'temperature' => 0.5,  // 分析的な回答のため適度な温度に
         'presence_penalty' => 0.2,  // より多様な表現を促す
         'frequency_penalty' => 0.1
-    ]));
+    ])));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     

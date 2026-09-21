@@ -42,7 +42,7 @@ class AIBookRecommender {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.8,
                 1500
             );
@@ -120,7 +120,7 @@ class AIBookRecommender {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.5,
                 1500  // 分析結果が途中で途切れないように増加
             );
@@ -196,7 +196,7 @@ class AIBookRecommender {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',  // GPT-5 miniモデルを使用
+                openaiChatModel(),
                 0.9,
                 1500  // チャレンジ提案も十分な長さを確保
             );
@@ -333,7 +333,7 @@ class AIBookRecommender {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.7,
                 600
             );
@@ -369,7 +369,7 @@ class AIBookRecommender {
             error_log('Monthly Summary Generation Error: ' . $e->getMessage());
             return [
                 'success' => false,
-                'error' => '要約生成中にエラーが発生しました'
+                'error' => '要約生成中にエラーが発生しました: ' . $e->getMessage()
             ];
         }
     }
@@ -467,7 +467,7 @@ class AIBookRecommender {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.7,
                 800
             );
@@ -502,7 +502,7 @@ class AIBookRecommender {
             error_log('Yearly Summary Generation Error: ' . $e->getMessage());
             return [
                 'success' => false,
-                'error' => '要約生成中にエラーが発生しました'
+                'error' => '要約生成中にエラーが発生しました: ' . $e->getMessage()
             ];
         }
     }

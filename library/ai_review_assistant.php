@@ -38,7 +38,7 @@ class AIReviewAssistant {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.7,
                 800
             );
@@ -92,7 +92,7 @@ class AIReviewAssistant {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.6,
                 800
             );
@@ -149,7 +149,7 @@ class AIReviewAssistant {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.5,
                 100
             );
@@ -254,7 +254,7 @@ class AIReviewAssistant {
             $response = $this->client->chatWithSystem(
                 $systemPrompt,
                 $userPrompt,
-                'gpt-4o-mini',
+                openaiChatModel(),
                 0.5,
                 500
             );

@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once(__DIR__ . '/../config.php');
 require_once(__DIR__ . '/database.php');
+require_once(__DIR__ . '/openai_models.php');
 
 class EmbeddingAnalyzer {
     private $db;
@@ -392,8 +393,8 @@ PROMPT;
             'Content-Type: application/json'
         ];
         
-        $data = [
-            'model' => 'gpt-4o-mini',
+        $data = openaiChatParams([
+            'model' => openaiChatModel(),
             'messages' => [
                 [
                     'role' => 'system',
@@ -407,7 +408,7 @@ PROMPT;
             'temperature' => 0.7,
             'max_tokens' => 500,
             'response_format' => ['type' => 'json_object']
-        ];
+        ]);
         
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

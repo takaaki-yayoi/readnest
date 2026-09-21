@@ -6,6 +6,8 @@
 
 declare(strict_types=1);
 
+require_once(dirname(__FILE__) . '/openai_models.php');
+
 class OpenAIClient {
     private string $apiKey;
     private string $apiUrl = 'https://api.openai.com/v1';
@@ -22,14 +24,14 @@ class OpenAIClient {
      * ChatGPT APIを呼び出す
      * 
      * @param string $prompt ユーザーからのプロンプト
-     * @param string $model 使用するモデル (default: gpt-4o-mini)
+     * @param string|null $model 使用するモデル (default: openaiChatModel())
      * @param float $temperature 創造性の度合い (0-2, default: 0.7)
      * @param int $maxTokens 最大トークン数
      * @return array レスポンスデータ
      */
     public function chat(
         string $prompt, 
-        string $model = 'gpt-4o-mini',
+        ?string $model = null,
         float $temperature = 0.7,
         int $maxTokens = 1000
     ): array {
@@ -45,7 +47,7 @@ class OpenAIClient {
      * 
      * @param string $systemPrompt システムプロンプト
      * @param string $userPrompt ユーザープロンプト
-     * @param string $model 使用するモデル
+     * @param string|null $model 使用するモデル (default: openaiChatModel())
      * @param float $temperature 創造性の度合い
      * @param int $maxTokens 最大トークン数
      * @return array レスポンスデータ
@@ -53,7 +55,7 @@ class OpenAIClient {
     public function chatWithSystem(
         string $systemPrompt,
         string $userPrompt,
-        string $model = 'gpt-4o-mini',
+        ?string $model = null,
         float $temperature = 0.7,
         int $maxTokens = 1000
     ): array {
@@ -76,16 +78,16 @@ class OpenAIClient {
      */
     private function chatCompletion(
         array $messages,
-        string $model,
+        ?string $model,
         float $temperature,
         int $maxTokens
     ): array {
-        $data = [
+        $data = openaiChatParams([
             'model' => $model,
             'messages' => $messages,
             'temperature' => $temperature,
             'max_tokens' => $maxTokens
-        ];
+        ]);
         
         $response = $this->makeRequest('/chat/completions', $data);
         

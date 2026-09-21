@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 require_once(dirname(__FILE__) . '/book_search.php');
+require_once(dirname(__FILE__) . '/openai_models.php');
 
 class AISearchEngine {
     
@@ -306,12 +307,12 @@ class AISearchEngine {
                 'Authorization: Bearer ' . $this->apiKey,
                 'Content-Type: application/json'
             ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                'model' => 'gpt-3.5-turbo',
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+                'model' => openaiChatModel(),
                 'messages' => $messages,
                 'temperature' => 0.3,
                 'max_tokens' => 100
-            ]));
+            ])));
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -375,12 +376,12 @@ JSON形式で回答: {\"keywords\": [...]}"
                 'Authorization: Bearer ' . $this->apiKey,
                 'Content-Type: application/json'
             ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                'model' => 'gpt-3.5-turbo',
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+                'model' => openaiChatModel(),
                 'messages' => $messages,
                 'temperature' => 0.5,  // より一貫性のある結果のため低めに設定
                 'max_tokens' => 200   // キーワードリストのため少し増やす
-            ]));
+            ])));
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

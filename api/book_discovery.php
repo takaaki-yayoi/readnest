@@ -25,6 +25,7 @@ try {
     require_once(dirname(__DIR__) . '/modern_config.php');
     require_once(dirname(__DIR__) . '/library/book_fuzzy_matcher.php');
     require_once(dirname(__DIR__) . '/library/csrf.php');
+    require_once(dirname(__DIR__) . '/library/openai_models.php');
 } catch (Exception $e) {
     ob_end_clean();
     echo json_encode(['success' => false, 'message' => 'システムエラー']);
@@ -428,12 +429,12 @@ function callOpenAI(string $system_prompt, ?string $user_message = null, float $
         'Authorization: Bearer ' . OPENAI_API_KEY
     ]);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-        'model' => 'gpt-4o-mini',
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(openaiChatParams([
+        'model' => openaiChatModel(),
         'messages' => $messages,
         'max_tokens' => $max_tokens,
         'temperature' => $temperature
-    ]));
+    ])));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
