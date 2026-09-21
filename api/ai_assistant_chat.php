@@ -528,7 +528,7 @@ if (!empty($context_parts)) {
 }
 
 $system_prompt .= "\n【回答の構成】\n";
-$system_prompt .= "1. まず質問の意図を理解し、要約を1行で述べる\n";
+$system_prompt .= "1. まず質問の意図を理解する（意図の要約や「意図：」のような前置きは出力せず、結論から書き始める）\n";
 $system_prompt .= "2. データがある場合は、以下の順で回答:\n";
 $system_prompt .= "   a) 全体的な傾向や洞察（1-2文）\n";
 $system_prompt .= "   b) 具体的なデータ（リスト形式）\n";
