@@ -36,6 +36,7 @@ ReadNest AIアシスタントは、OpenAI APIを使用して高度な会話機�
   - `gpt-3.5-turbo` は 2026-10-23 に提供終了のため使用不可
 
 - **OPENAI_REASONING_EFFORT**: gpt-5系の推論量（デフォルト: `none`）。`none` 以外にすると `temperature` は無視され、推論トークン分のコストと応答時間が増える
+- **OPENAI_VERBOSITY**: gpt-5系の出力の詳しさ（`low` / `medium` / `high`、デフォルト: `low`）。gpt-5.6-luna は gpt-4o-mini より出力が長いため `low` で従来に近づけている
 
 - **OPENAI_MAX_TOKENS**: 最大応答トークン数（デフォルト: 800）
 - **OPENAI_TEMPERATURE**: 応答の創造性（0.0〜2.0、デフォルト: 0.7）

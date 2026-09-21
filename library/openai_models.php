@@ -18,7 +18,7 @@ function openaiChatModel(): string {
  *
  * 呼び出し側は従来どおり max_tokens / temperature / presence_penalty 等を指定してよい。
  * gpt-5系（推論モデル）では以下の差異があるためここで吸収する（2026-09 実APIで確認）:
- *  - max_tokens は 400エラー → max_completion_tokens に変換
+ *  - max_tokens は 400エラー → max_completion_tokens に変換（出力量が多いため3倍に換算）
  *  - temperature は reasoning_effort=none のときのみ指定可（それ以外は400エラー）
  *  - presence_penalty / frequency_penalty を送るとエラーにならずタイムアウトまでハングする
  * gpt-4系 / gpt-3.5系に戻した場合はパラメータをそのまま送る。
@@ -36,9 +36,17 @@ function openaiChatParams(array $params): array {
         return $params;
     }
 
+    // 呼び出し側の max_tokens は gpt-4o-mini の出力量を基準に決められている。
+    // gpt-5.6-luna は同じプロンプトで約2.5〜3.5倍のトークンを出力するため（実測: 226 → 572〜780）、
+    // そのままだとJSONが途中で切れてパースに失敗する。上限なので引き上げても実出力分しか課金されない。
     if (isset($params['max_tokens'])) {
-        $params['max_completion_tokens'] = $params['max_tokens'];
+        $params['max_completion_tokens'] = $params['max_tokens'] * 3;
         unset($params['max_tokens']);
+    }
+
+    if (!isset($params['verbosity'])) {
+        // low: 出力量と応答時間を従来モデルに近づける（medium比で約2割減）
+        $params['verbosity'] = defined('OPENAI_VERBOSITY') ? OPENAI_VERBOSITY : 'low';
     }
 
     if (!isset($params['reasoning_effort'])) {
