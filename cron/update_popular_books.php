@@ -26,20 +26,20 @@ $start_time = microtime(true);
 error_log('[Popular Books Update] Starting update at ' . date('Y-m-d H:i:s'));
 
 try {
+    // 実行ログをデータベースに記録するSQL
+    $log_sql = "INSERT INTO b_cron_log (
+        cron_type,
+        status,
+        message,
+        execution_time,
+        created_at
+    ) VALUES (?, ?, ?, ?, ?)";
+
     // 集計テーブルを更新
     if (preCalculatePopularBooks()) {
         $execution_time = round(microtime(true) - $start_time, 2);
         error_log('[Popular Books Update] Successfully updated popular books cache in ' . $execution_time . ' seconds');
-        
-        // 実行ログをデータベースに記録
-        $log_sql = "INSERT INTO b_cron_log (
-            cron_type, 
-            status, 
-            message, 
-            execution_time, 
-            created_at
-        ) VALUES (?, ?, ?, ?, ?)";
-        
+
         $g_db->query($log_sql, [
             'update_popular_books',
             'success',
