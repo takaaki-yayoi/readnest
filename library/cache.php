@@ -31,7 +31,10 @@ class SimpleCache {
             return false;
         }
         
-        $content = file_get_contents($filename);
+        // file_exists() の直後に別プロセスが期限切れ/破損として unlink すると
+        // ここが空振りする（TOCTOU）。競合として想定内なので警告は抑制し、
+        // 単なるキャッシュミスとして扱う。
+        $content = @file_get_contents($filename);
         if ($content === false) {
             return false;
         }
