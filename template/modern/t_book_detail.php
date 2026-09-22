@@ -2209,9 +2209,9 @@ async function updateFinishedDate(event, bookId) {
         formData.append('action', 'update_review');
         formData.append('book_id', bookId);
         formData.append('finished_date', finishedDate);
-        formData.append('rating', '<?php echo html($user_book_info['rating'] ?? 0); ?>');
-        formData.append('comment', '<?php echo html($user_book_info['memo'] ?? ''); ?>');
-        formData.append('csrf_token', '<?php echo $csrf_token; ?>');
+        formData.append('rating', <?php echo json_encode((string)($user_book_info['rating'] ?? 0)); ?>);
+        formData.append('comment', <?php echo json_encode((string)($user_book_info['memo'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>);
+        formData.append('csrf_token', <?php echo json_encode((string)$csrf_token); ?>);
         
         const response = await fetch('/book_detail.php', {
             method: 'POST',
@@ -2250,7 +2250,7 @@ async function updateProgressMemo(event, eventId, formElement) {
             body: JSON.stringify({
                 event_id: eventId,
                 memo: newMemo,
-                csrf_token: '<?php echo $csrf_token; ?>'
+                csrf_token: <?php echo json_encode((string)$csrf_token); ?>
             })
         });
         
