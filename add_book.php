@@ -262,6 +262,10 @@ if (isset($_GET['keyword']) || isset($_POST['keyword']) || isset($_GET['isbn']) 
                 // ページネーション生成（表示用エスケープ済みキーワードを使用）
                 $ai_search_param = isset($_GET['ai_search']) && $_GET['ai_search'] === 'on' ? '&ai_search=on' : '';
                 $d_pager = generatePagination($page, $g_book_total_pages, $d_keyword, $ai_search_param);
+            } elseif (!empty($search_result['error'])) {
+                $d_total_hit = "本の検索サービスが一時的に混み合っているため、検索できませんでした。しばらくしてから再度お試しください。";
+                $d_book_list = '';
+                $d_pager = '';
             } else {
                 $d_total_hit = "「{$d_keyword}」に該当する本が見つかりませんでした。別のキーワードで検索してください。";
                 $d_book_list = '';

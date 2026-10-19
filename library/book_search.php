@@ -12,6 +12,19 @@ require_once(dirname(__FILE__) . '/memory_utils.php');
 require_once(dirname(__FILE__) . '/book_image_helper.php');
 
 /**
+ * 検索APIの障害を管理画面から見えるReadNestエラーログに1行で記録
+ * （通常のerror_log()はサーバーのシステムログ行きで管理画面から参照できないため）
+ */
+function logBookSearchIssue(string $message): void {
+    $line = '[' . date('Y-m-d H:i:s') . '] [BookSearch] ' . $message . PHP_EOL;
+    if (strpos(__DIR__, '/Users/') === 0) {
+        error_log(rtrim($line));
+    } else {
+        @error_log($line, 3, '/home/icotfeels/readnest.jp/log/dokusho_error_log.txt');
+    }
+}
+
+/**
  * ISBNかどうかを判定
  */
 function isISBN($keyword) {
@@ -116,7 +129,8 @@ function searchBooksWithGoogleAPI($keyword, $page = 1, $max_results = 20) {
     
     $all_books = [];
     $total_items = 0;
-    
+    $api_error = false; // クォータ超過等でAPIがエラーを返したか（0件と区別するため）
+
     // 最大2つの戦略まで試す（通常は最初の戦略で十分）
     $max_strategies = min(2, count($search_strategies));
     
@@ -125,7 +139,9 @@ function searchBooksWithGoogleAPI($keyword, $page = 1, $max_results = 20) {
         $encoded_query = urlencode($search_query);
         
         // Google Books API URL - 日本語の本を優先
-        $api_url = "https://www.googleapis.com/books/v1/volumes?q={$encoded_query}&startIndex={$start_index}&maxResults={$max_results}&langRestrict=ja&orderBy=relevance";
+        // ISBN検索は1冊を特定するため言語で絞らない（言語メタデータ未設定の本が0件になるのを防ぐ）
+        $lang_param = isISBN($keyword) ? '' : '&langRestrict=ja';
+        $api_url = "https://www.googleapis.com/books/v1/volumes?q={$encoded_query}&startIndex={$start_index}&maxResults={$max_results}{$lang_param}&orderBy=relevance";
 
         // APIキーが設定されていれば追加（レート制限緩和のため）
         if (defined('GOOGLE_BOOKS_API_KEY') && !empty(GOOGLE_BOOKS_API_KEY)) {
@@ -149,17 +165,27 @@ function searchBooksWithGoogleAPI($keyword, $page = 1, $max_results = 20) {
         
         if ($response === false) {
             $error = error_get_last();
-            error_log("Google Books API request failed for strategy {$strategy_index}: " . ($error['message'] ?? 'Unknown error'));
+            logBookSearchIssue("Google Books API request failed (query={$search_query}): " . ($error['message'] ?? 'Unknown error'));
+            $api_error = true;
             continue;
         }
-        
+
         $data = json_decode($response, true);
-        
+
         if (!$data) {
-            error_log("Google Books API: Failed to decode JSON response for strategy {$strategy_index}");
+            logBookSearchIssue("Google Books API invalid JSON response (query={$search_query})");
+            $api_error = true;
             continue;
         }
-        
+
+        // ignore_errors=true のため 429(クォータ超過) 等もJSONで返ってくる
+        if (isset($data['error'])) {
+            logBookSearchIssue("Google Books API error (query={$search_query}): "
+                . ($data['error']['code'] ?? '?') . ' ' . ($data['error']['message'] ?? ''));
+            $api_error = true;
+            break; // クォータ超過時は別戦略を試しても同じ結果
+        }
+
         if (isset($data['items']) && !empty($data['items'])) {
             error_log("Google Books API: Found " . count($data['items']) . " items with strategy {$strategy_index}");
             $all_books = $data['items'];
@@ -170,7 +196,7 @@ function searchBooksWithGoogleAPI($keyword, $page = 1, $max_results = 20) {
     
     if (empty($all_books)) {
         error_log("Google Books API: No items found for any strategy");
-        return ['books' => [], 'total' => 0];
+        return ['books' => [], 'total' => 0, 'error' => $api_error];
     }
     
     $books = [];
@@ -345,18 +371,118 @@ function searchBooksWithRakutenAPI($keyword, $page = 1) {
 }
 
 /**
+ * openBD でISBN検索（Google Books APIのフォールバック。キー不要・国内書籍に強い）
+ */
+function searchBookWithOpenBD($isbn) {
+    $clean_isbn = str_replace(['-', ' '], '', trim($isbn));
+    $api_url = 'https://api.openbd.jp/v1/get?isbn=' . urlencode($clean_isbn);
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 10,
+            'user_agent' => 'ReadNest/1.0',
+            'ignore_errors' => true
+        ]
+    ]);
+
+    $response = @file_get_contents($api_url, false, $context);
+    if ($response === false) {
+        error_log("openBD request failed for ISBN {$clean_isbn}");
+        return ['books' => [], 'total' => 0];
+    }
+
+    $data = json_decode($response, true);
+    $summary = $data[0]['summary'] ?? null;
+    if (empty($summary) || empty($summary['title'])) {
+        return ['books' => [], 'total' => 0];
+    }
+
+    $isbn13 = $summary['isbn'] ?? $clean_isbn;
+
+    // 著者表記の正規化: NDL由来の「村上,春樹,1949-」や「岩田,明子」→「村上春樹」
+    $author = trim($summary['author'] ?? '');
+    $author_names = [];
+    foreach (preg_split('/\s+/u', $author) as $person) {
+        $person = preg_replace('/／.*$/u', '', $person); // 「著者名／著」の役割表記を除去
+        $parts = array_values(array_filter(explode(',', $person), function($p) {
+            return $p !== '' && !preg_match('/^[0-9]{3,4}-?[0-9]{0,4}$/', $p); // 生没年を除去
+        }));
+        if (!empty($parts)) {
+            $author_names[] = implode('', $parts);
+        }
+    }
+    $author = implode(', ', $author_names);
+
+    // ページ数（ONIX Extent: ExtentType 11 = 本文ページ数）
+    $page_count = 0;
+    $extents = $data[0]['onix']['DescriptiveDetail']['Extent'] ?? [];
+    foreach ($extents as $extent) {
+        if (($extent['ExtentType'] ?? '') === '11') {
+            $page_count = (int)($extent['ExtentValue'] ?? 0);
+            break;
+        }
+    }
+
+    // 説明文（TextType 03 = 内容紹介、02 = 短い説明）
+    $description = '';
+    $texts = $data[0]['onix']['CollateralDetail']['TextContent'] ?? [];
+    foreach ($texts as $text) {
+        if (in_array($text['TextType'] ?? '', ['03', '02'], true) && !empty($text['Text'])) {
+            $description = $text['Text'];
+            break;
+        }
+    }
+
+    $imageHelper = getBookImageHelper();
+    $image_url = $imageHelper->getReliableImageUrl($summary['cover'] ?? '', $isbn13);
+
+    $pubdate = $summary['pubdate'] ?? '';
+    if (preg_match('/^(\d{4})(\d{2})(\d{2})?$/', $pubdate, $m)) {
+        $pubdate = $m[1] . '-' . $m[2] . (isset($m[3]) ? '-' . $m[3] : '');
+    }
+
+    error_log("openBD: Found book for ISBN {$clean_isbn}");
+
+    return [
+        'books' => [[
+            'Title' => $summary['title'],
+            'Author' => !empty($author) ? $author : '不明な著者',
+            'ASIN' => $isbn13,
+            'ISBN' => $isbn13,
+            'LargeImage' => $image_url,
+            'DetailPageURL' => '',
+            'NumberOfPages' => $page_count,
+            'PublishedDate' => $pubdate,
+            'Description' => mb_substr($description, 0, 200) . (mb_strlen($description) > 200 ? '...' : ''),
+            'Categories' => []
+        ]],
+        'total' => 1
+    ];
+}
+
+/**
  * 統合検索関数
+ * 戻り値の 'error' が true の場合、0件ではなく検索APIの障害（クォータ超過等）を意味する
  */
 function searchBooks($keyword, $page = 1, $max_results = 20) {
     // Google Books APIで検索
     $result = searchBooksWithGoogleAPI($keyword, $page, $max_results);
-    
-    // 結果が得られない場合は空の結果を返す（サンプルデータは返さない）
-    if (empty($result['books'])) {
-        return ['books' => [], 'total' => 0];
+
+    if (!empty($result['books'])) {
+        return $result;
     }
-    
-    return $result;
+
+    // ISBN検索（バーコード読み取り等）はopenBDにフォールバック
+    if (isISBN($keyword) && $page == 1) {
+        $openbd_result = searchBookWithOpenBD($keyword);
+        if (!empty($openbd_result['books'])) {
+            return $openbd_result;
+        }
+    }
+
+    // 結果が得られない場合は空の結果を返す（サンプルデータは返さない）
+    return ['books' => [], 'total' => 0, 'error' => !empty($result['error'])];
 }
 
 /**
