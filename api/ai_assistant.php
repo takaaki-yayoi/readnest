@@ -50,16 +50,9 @@ try {
 // ログインチェック
 if (!isset($_SESSION['AUTH_USER'])) {
     ob_clean();
-    
-    // デバッグモードの場合は仮ユーザーを設定（本番では削除）
-    if (isset($_GET['debug']) && $_GET['debug'] === '1') {
-        $_SESSION['AUTH_USER'] = 'debug_user';
-        // Debug mode enabled
-    } else {
-        http_response_code(401);
-        echo json_encode(['error' => 'Unauthorized - Please login first']);
-        exit;
-    }
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized - Please login first']);
+    exit;
 }
 
 $user_id = $_SESSION['AUTH_USER'];

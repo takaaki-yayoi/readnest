@@ -159,7 +159,8 @@ if ($is_own_favorites && !empty($favorites)) {
             }
         }
         
-        $exclude_list = !empty($owned_asins) ? "AND br.asin NOT IN ('" . implode("','", $owned_asins) . "')" : "";
+        // ASINはユーザー入力由来のためプレースホルダで渡す
+        $exclude_list = !empty($owned_asins) ? "AND br.asin NOT IN (" . implode(',', array_fill(0, count($owned_asins), '?')) . ")" : "";
         
         $candidates_sql = "
             SELECT 
@@ -177,7 +178,7 @@ if ($is_own_favorites && !empty($favorites)) {
             LIMIT 200
         ";
         
-        $candidates = $g_db->getAll($candidates_sql, [], DB_FETCHMODE_ASSOC);
+        $candidates = $g_db->getAll($candidates_sql, $owned_asins, DB_FETCHMODE_ASSOC);
         
         if (!DB::isError($candidates) && $candidates) {
             // 各候補本に対して、全お気に入り本との類似度を計算

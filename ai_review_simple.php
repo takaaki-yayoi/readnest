@@ -41,23 +41,20 @@ register_shutdown_function(function() {
     }
 });
 
-// CORS対応
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-// OPTIONSリクエスト（プリフライト）の処理
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('HTTP/1.1 200 OK');
-    exit;
-}
-
 // レスポンスヘッダー
+// セキュリティ: 外部サイトからOpenAI APIを無断利用されないよう、CORS許可は付けない
 header('Content-Type: application/json; charset=UTF-8');
 
 // POSTリクエストのみ処理
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+    exit;
+}
+
+// ログインチェック（未ログインでのOpenAI API利用を防ぐ）
+if (empty($_SESSION['AUTH_USER'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'ログインが必要です']);
     exit;
 }
 

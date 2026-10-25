@@ -5,12 +5,10 @@
  */
 
 require_once('../modern_config.php');
+require_once(__DIR__ . '/admin_auth.php');
 
-// 管理者権限チェック（必要に応じて調整）
-$login_flag = checkLogin();
-if (!$login_flag) {
-    die('ログインが必要です');
-}
+// 管理者認証
+requireAdmin();
 
 echo "<h1>お気に入り機能セットアップ</h1>";
 

@@ -194,7 +194,8 @@ switch ($rec_type) {
         
     case 'popular':
         // 人気の本
-        $exclude_list = !empty($owned_books) ? "AND br.asin NOT IN ('" . implode("','", $owned_books) . "')" : "";
+        // ASINはユーザー入力由来のためプレースホルダで渡す
+        $exclude_list = !empty($owned_books) ? "AND br.asin NOT IN (" . implode(',', array_fill(0, count($owned_books), '?')) . ")" : "";
         
         $popular_sql = "
             SELECT 
@@ -217,7 +218,7 @@ switch ($rec_type) {
             LIMIT 20
         ";
         
-        $popular_books = $g_db->getAll($popular_sql, [], DB_FETCHMODE_ASSOC);
+        $popular_books = $g_db->getAll($popular_sql, array_values($owned_books), DB_FETCHMODE_ASSOC);
         
         if (!DB::isError($popular_books)) {
             $recommendations = $popular_books;

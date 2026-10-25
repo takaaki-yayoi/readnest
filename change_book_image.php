@@ -85,7 +85,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     
                     // ユニークなファイル名を生成
-                    $extension = pathinfo($upload_file['name'], PATHINFO_EXTENSION);
+                    // 拡張子はクライアントのファイル名ではなく検出したMIMEタイプから決める（.php等の設置防止）
+                    $extension_map = [
+                        'image/jpeg' => 'jpg',
+                        'image/jpg' => 'jpg',
+                        'image/png' => 'png',
+                        'image/gif' => 'gif',
+                        'image/webp' => 'webp',
+                    ];
+                    $extension = $extension_map[$mime_type];
                     $filename = 'book_' . $book_id . '_' . uniqid() . '.' . $extension;
                     $upload_path = $upload_dir . '/' . $filename;
                     $web_path = '/uploads/book_covers/' . $year_month . '/' . $filename;

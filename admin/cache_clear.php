@@ -16,6 +16,9 @@ $g_db = DB_Connect();
 
 require_once(__DIR__ . '/admin_auth.php');
 
+// POST処理より前に管理者認証（header.php 内の認証より後にPOSTが処理されるのを防ぐ）
+requireAdmin();
+
 // ページタイトルを設定
 $page_title = 'キャッシュ管理';
 

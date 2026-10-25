@@ -6,10 +6,10 @@ LOG_FILE=".claude/ftp-hook.log"
 # ターミナルにも表示
 echo "🔔 FTP Hook: Triggered at $(date)"
 
-# FTP設定
+# FTP設定（認証情報はリポジトリに書かず環境変数から読む）
 FTP_HOST="sv16506.xserver.jp"
-FTP_USER="icotfeels"
-FTP_PASS="ege69emy"
+FTP_USER="${READNEST_FTP_USER:?READNEST_FTP_USER is not set}"
+FTP_PASS="${READNEST_FTP_PASS:?READNEST_FTP_PASS is not set}"
 REMOTE_DIR="/readnest.jp/public_html"
 
 # 実行されたことを記録

@@ -35,9 +35,15 @@ if (!isset($g_db) || !$g_db) {
 // レスポンスヘッダー設定
 header('Content-Type: application/json; charset=utf-8');
 
-// CORSヘッダー（必要に応じて設定）
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET');
+// ログインチェック（未ログインでのOpenAI API利用を防ぐ）
+if (!checkLogin()) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Login required'
+    ]);
+    exit;
+}
 
 // レート制限チェック
 $client_ip = $_SERVER['REMOTE_ADDR'] ?? '';

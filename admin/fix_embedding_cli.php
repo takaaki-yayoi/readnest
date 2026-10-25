@@ -9,10 +9,15 @@ if (php_sapi_name() !== 'cli') {
 }
 
 // データベース設定
+// 認証情報はリポジトリに書かず、config.php（git管理外）の$dsnから読み込む
+$config_content = preg_replace('#/\*.*?\*/#s', '', file_get_contents(dirname(__DIR__) . '/config.php'));
+if (!preg_match('/"username"\s*=>\s*"([^"]*)".*?"password"\s*=>\s*"([^"]*)"/s', $config_content, $db_matches)) {
+    die("✗ DB credentials not found in config.php\n");
+}
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'icotfeels_book');
-define('DB_USER', 'icotfeels_book');
-define('DB_PASS', 'dokushonoteigi');
+define('DB_USER', $db_matches[1]);
+define('DB_PASS', $db_matches[2]);
 
 echo "Embedding Column Fix Script\n";
 echo str_repeat("=", 60) . "\n\n";

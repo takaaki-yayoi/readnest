@@ -147,3 +147,5 @@ development.php
 
 # Claude Code 一時 worktree（過去セッションの作業コピー）
 .claude/worktrees/
+# Claude Code local settings (machine-specific, may contain credentials)
+.claude/settings.local.json

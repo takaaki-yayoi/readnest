@@ -14,6 +14,7 @@ if (php_sapi_name() === 'cli') {
     // Web実行時は認証チェックを含む
     require_once(dirname(__DIR__) . '/modern_config.php');
     require_once('admin_auth.php');
+    requireAdmin();
 }
 
 // 動的embedding生成ライブラリを読み込み

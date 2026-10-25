@@ -4,6 +4,13 @@
  * セキュリティ: ユーザー自身のデータのみアクセス可能
  */
 
+// セキュリティ: LLMが生成したSQLをそのまま実行するため、プロンプト操作で
+// 他ユーザーのデータを含む任意テーブルを読み出せる。安全な方式に作り直すまで無効化。
+header('Content-Type: application/json; charset=UTF-8');
+http_response_code(410);
+echo json_encode(['success' => false, 'error' => 'This feature is disabled']);
+exit;
+
 require_once('../modern_config.php');
 require_once(dirname(__DIR__) . '/library/openai_models.php');
 

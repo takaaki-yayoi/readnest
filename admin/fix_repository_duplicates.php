@@ -7,11 +7,8 @@
 require_once(dirname(__DIR__) . '/modern_config.php');
 require_once('admin_auth.php');
 
-// ログインチェック
-if (!isset($_SESSION['AUTH_USER'])) {
-    header('Location: /');
-    exit;
-}
+// 管理者認証
+requireAdmin();
 
 global $g_db;
 

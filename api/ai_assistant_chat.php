@@ -351,8 +351,10 @@ function executeText2SQL($message, $user_id) {
 }
 
 // Text2SQLチェック
+// セキュリティ: LLM生成SQLの実行は任意テーブルの読み出しが可能なため無効化
 $sql_data = null;
-if (shouldUseText2SQL($message)) {
+$text2sql_enabled = false;
+if ($text2sql_enabled && shouldUseText2SQL($message)) {
     // Text2SQLトリガー
     $sql_result = executeText2SQL($message, $mine_user_id);
     // Text2SQL結果取得
