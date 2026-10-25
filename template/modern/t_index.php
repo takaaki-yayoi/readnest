@@ -681,10 +681,9 @@ $icon = $type_icons[$type] ?? 'bullhorn';
             $whisper_link = '#';
             if (!empty($whisper_book['link_url'])) {
                 $whisper_link = $whisper_book['link_url'];
-            } elseif (!empty($whisper_book['amazon_id'])) {
-                $whisper_link = '/add_book.php?keyword=' . urlencode($whisper_book['title']);
             } else {
-                $whisper_link = '/add_book.php?keyword=' . urlencode($whisper_book['title']);
+                // リポジトリの本はASINで開く（タイトル検索では目的の本がヒットしないことがある）
+                $whisper_link = getAddBookUrl($whisper_book);
             }
             ?>
             <a href="<?php echo html($whisper_link); ?>"

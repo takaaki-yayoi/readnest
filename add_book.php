@@ -233,6 +233,14 @@ if (isset($_GET['keyword']) || isset($_POST['keyword']) || isset($_GET['isbn']) 
                 } else {
                     // 通常の検索を使用
                     $search_result = searchBooks($keyword, $page, 20);
+
+                    // ISBNで見つからない場合、リンク元から渡されたタイトルで検索し直す（新刊通知など）
+                    if (empty($search_result['books']) && empty($search_result['error'])
+                        && isISBN($keyword) && !empty($_GET['title']) && !isset($_GET['from'])) {
+                        $keyword = trim($_GET['title']);
+                        $d_keyword = htmlspecialchars($keyword, ENT_QUOTES, 'UTF-8');
+                        $search_result = searchBooks($keyword, $page, 20);
+                    }
                     $g_book_array = $search_result['books'];
                     $g_book_total_num = $search_result['total'];
                     $g_book_total_pages = (int)ceil($g_book_total_num / 20);
@@ -286,7 +294,13 @@ if (isset($_GET['keyword']) || isset($_POST['keyword']) || isset($_GET['isbn']) 
     
     // ASINで直接検索
     try {
-        $search_result = searchBooks($asin, 1, 1);
+        // ISBN以外（Google BooksのボリュームID等）はAPIでは通常のキーワード検索になり、
+        // 別の本が「指定された本」として表示されるため、リポジトリに登録済みならそれを優先する
+        $search_result = ['books' => [], 'total' => 0];
+        $in_repository = !isISBN($asin) ? $g_db->getOne("SELECT 1 FROM b_book_repository WHERE asin = ?", [$asin]) : null;
+        if (DB::isError($in_repository) || empty($in_repository)) {
+            $search_result = searchBooks($asin, 1, 1);
+        }
         $g_book_array = $search_result['books'];
         $g_book_total_num = $search_result['total'];
         

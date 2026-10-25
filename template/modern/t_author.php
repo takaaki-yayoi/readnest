@@ -5,6 +5,7 @@ if(!defined('CONFIG')) {
 }
 
 require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
+require_once(dirname(dirname(__DIR__)) . '/library/add_book_link_helper.php');
 
 // メインコンテンツを生成
 ob_start();
@@ -237,7 +238,7 @@ ob_start();
                     <div class="mt-2 flex items-center justify-center gap-2">
                         <?php if ($login_flag): ?>
                         <!-- ログインユーザー向けの本棚追加ショートカットは従来どおり残す -->
-                        <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>"
+                        <a href="<?php echo html(getAddBookUrl($book)); ?>"
                            class="inline-flex items-center px-2 py-1 bg-readnest-primary text-white text-xs rounded hover:bg-opacity-90 transition-colors"
                            title="「<?php echo htmlspecialchars($book['title']); ?>」を検索して本棚に追加">
                             <i class="fas fa-plus mr-1"></i>追加
@@ -271,7 +272,7 @@ ob_start();
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <?php foreach ($undiscovered_books as $book): ?>
                 <div class="group bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:shadow-md">
-                    <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>" class="block">
+                    <a href="<?php echo html(getAddBookUrl($book)); ?>" class="block">
                         <div class="flex items-start space-x-3">
                             <?php if (!empty($book['imageLinks']['thumbnail'])): ?>
                             <img src="<?php echo htmlspecialchars($book['imageLinks']['thumbnail']); ?>"
@@ -301,7 +302,7 @@ ob_start();
                         </div>
                     </a>
                     <div class="mt-3 flex items-center gap-2">
-                        <a href="/add_book.php?keyword=<?php echo urlencode($book['title']); ?>"
+                        <a href="<?php echo html(getAddBookUrl($book)); ?>"
                            class="inline-flex items-center text-xs text-readnest-primary hover:text-readnest-accent">
                             <i class="fas fa-plus mr-1"></i>本棚に追加
                         </a>

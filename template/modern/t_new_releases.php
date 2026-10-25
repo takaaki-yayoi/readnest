@@ -6,6 +6,7 @@ if(!defined('CONFIG')) {
 
 require_once(dirname(dirname(__DIR__)) . '/library/form_helpers.php');
 require_once(dirname(dirname(__DIR__)) . '/library/affiliate_helper.php');
+require_once(dirname(dirname(__DIR__)) . '/library/add_book_link_helper.php');
 
 ob_start();
 ?>
@@ -60,7 +61,10 @@ ob_start();
             $title = $data['title'] ?? '';
             $image_url = $data['image_url'] ?? '';
             $published_date = $data['published_date'] ?? '';
-            $link_url = $notif['link_url'] ?: '/add_book.php?keyword=' . urlencode($title);
+            // ISBNがあればISBNで開く（既存の通知は link_url がタイトル検索のため）
+            $link_url = !empty($data['isbn'])
+                ? getAddBookUrl(['isbn' => $data['isbn'], 'title' => $title])
+                : ($notif['link_url'] ?: getAddBookUrl(['title' => $title]));
             $created_at = $notif['created_at'];
             $is_unread = !$notif['is_read'];
             $author_info = $fav_authors[$author] ?? null;
@@ -185,7 +189,7 @@ ob_start();
                     'title' => $book['book_title'],
                     'author' => $book['author_name']
                 ]);
-                $add_link = '/add_book.php?keyword=' . urlencode($book['book_title']);
+                $add_link = getAddBookUrl(['isbn' => $book['google_books_id'] ?? '', 'title' => $book['book_title']]);
             ?>
             <div class="group flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                 <a href="<?php echo html($add_link); ?>" class="flex-shrink-0">

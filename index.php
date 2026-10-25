@@ -25,6 +25,7 @@ require_once('modern_config.php');
 
 // 月間目標ライブラリを読み込み
 require_once(dirname(__FILE__) . '/library/monthly_goals.php');
+require_once(dirname(__FILE__) . '/library/add_book_link_helper.php');
 
 // ログインチェック
 $login_flag = checkLogin();
@@ -140,6 +141,15 @@ if ($login_flag) {
             $pick = $new_releases[array_rand($new_releases)];
             $data = json_decode($pick['data'], true);
             if ($data) {
+                // ISBNを持たない既存の通知は、新刊チェック時のキャッシュから引き直す
+                $release_isbn = $data['isbn'] ?? '';
+                if ($release_isbn === '' && !empty($data['author']) && !empty($data['title'])) {
+                    $cached_isbn = $g_db->getOne(
+                        "SELECT google_books_id FROM b_author_books_cache WHERE author_name = ? AND book_title = ? LIMIT 1",
+                        [$data['author'], $data['title']]
+                    );
+                    $release_isbn = (!DB::isError($cached_isbn) && $cached_isbn) ? $cached_isbn : '';
+                }
                 $whisper_book = [
                     'title' => $data['title'] ?? '',
                     'author' => $data['author'] ?? '',
@@ -148,7 +158,7 @@ if ($login_flag) {
                     'reason_count' => null,
                     'reason_rating' => null,
                     'notification_id' => $pick['notification_id'],
-                    'link_url' => $pick['link_url'] ?? '/add_book.php?keyword=' . urlencode($data['title'] ?? '')
+                    'link_url' => getAddBookUrl(['isbn' => $release_isbn, 'title' => $data['title'] ?? ''])
                 ];
                 $whisper_type = 'new_release';
             }

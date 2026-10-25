@@ -19,6 +19,7 @@ require_once(dirname(__DIR__) . '/library/database.php');
 require_once(dirname(__DIR__) . '/library/notification_helpers.php');
 require_once(dirname(__DIR__) . '/library/google_books_api.php');
 require_once(dirname(__DIR__) . '/library/push_helper.php');
+require_once(dirname(__DIR__) . '/library/add_book_link_helper.php');
 
 $g_db = DB_Connect();
 if (!$g_db || DB::isError($g_db)) {
@@ -177,10 +178,12 @@ foreach ($all_fav_authors as $author_row) {
                             "{$author_name}の新刊『{$work['title']}』",
                             [
                                 'message' => "お気に入り作家の新しい作品が見つかりました",
-                                'link_url' => '/add_book.php?keyword=' . urlencode($work['title']),
+                                // ISBNで開く（タイトル検索では目的の本がヒットしないことがある）
+                                'link_url' => getAddBookUrl(['isbn' => $google_id, 'title' => $work['title']]),
                                 'data' => [
                                     'author' => $author_name,
                                     'title' => $work['title'],
+                                    'isbn' => $google_id,
                                     'image_url' => $image_url,
                                     'published_date' => $work['publishedDate'] ?? null
                                 ]
