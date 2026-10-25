@@ -418,6 +418,7 @@ async function initBarcodeScanner() {
     
     statusDiv.textContent = 'カメラを起動中...';
     errorDiv.classList.add('hidden');
+    barcodeSearchStarted = false;
     
     try {
         // 優先順位: Native BarcodeDetector → QuaggaJS → ZXing
@@ -477,17 +478,46 @@ function handleBarcodeResult(result) {
     }
     
     if (result.isISBN) {
-        // スキャン成功
-        document.getElementById('scanStatus').textContent = `ISBN: ${result.code} を読み取りました`;
-        
-        // 少し待ってから自動的に検索
+        // スキャナーは読み取り後も動き続けるため、二重遷移を防ぐ
+        if (barcodeSearchStarted) return;
+        barcodeSearchStarted = true;
+
+        // 読み取り音と同時に検索中表示を出し、結果ページが開くまで表示し続ける
+        closeBarcodeScanner();
+        showBarcodeSearching(result.code);
+
+        // 表示を描画させてから遷移（検索はサーバー側で数秒かかる）
         setTimeout(() => {
-            closeBarcodeScanner();
-            // ISBNで検索を実行
             window.location.href = `${window.location.pathname}?isbn=${encodeURIComponent(result.code)}`;
-        }, 1500);
+        }, 50);
     }
 }
+
+let barcodeSearchStarted = false;
+
+// バーコード検索中のオーバーレイ
+function showBarcodeSearching(isbn) {
+    const overlay = document.createElement('div');
+    overlay.id = 'barcodeSearchingOverlay';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    overlay.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 text-center">
+            <i class="fas fa-circle-notch fa-spin text-3xl text-readnest-primary mb-3"></i>
+            <p class="font-semibold text-gray-800 dark:text-gray-200">本を検索しています...</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1"></p>
+        </div>
+    `;
+    overlay.querySelector('.text-sm').textContent = `ISBN: ${isbn}`;
+    document.body.appendChild(overlay);
+}
+
+// 戻るボタンでbfcacheから復帰した時はオーバーレイを消し、再スキャン可能にする
+window.addEventListener('pageshow', function(e) {
+    if (!e.persisted) return;
+    const overlay = document.getElementById('barcodeSearchingOverlay');
+    if (overlay) overlay.remove();
+    barcodeSearchStarted = false;
+});
 
 // 検索フォームのエンターキー対応
 document.addEventListener('DOMContentLoaded', function() {
@@ -560,9 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (keywordInput) {
             keywordInput.value = isbn;
         }
-        
-        // 成功メッセージを表示
-        showNotification('バーコードから本を検索しています...', 'info');
+        // 「検索しています」表示は読み取り直後にオーバーレイで出すため、検索完了後のここでは出さない
     }
 });
 

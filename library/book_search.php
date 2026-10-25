@@ -371,6 +371,84 @@ function searchBooksWithRakutenAPI($keyword, $page = 1) {
 }
 
 /**
+ * ISBN-13（978始まり）をISBN-10に変換。変換できない場合は空文字
+ */
+function convertISBN13To10($isbn13) {
+    $isbn13 = str_replace(['-', ' '], '', $isbn13);
+    if (preg_match('/^[0-9]{9}[0-9Xx]$/', $isbn13)) {
+        return strtoupper($isbn13);
+    }
+    if (!preg_match('/^978([0-9]{9})[0-9]$/', $isbn13, $m)) {
+        return ''; // 979始まりはISBN-10が存在しない
+    }
+    $sum = 0;
+    for ($i = 0; $i < 9; $i++) {
+        $sum += (int)$m[1][$i] * (10 - $i);
+    }
+    $check = (11 - $sum % 11) % 11;
+    return $m[1] . ($check === 10 ? 'X' : (string)$check);
+}
+
+/**
+ * ISBNからAmazonの書影URLを取得（書影が無い場合Amazonは1x1のGIFを返すため、JPEGのときのみ採用）
+ */
+function getAmazonCoverUrlByISBN($isbn) {
+    $isbn10 = convertISBN13To10($isbn);
+    if ($isbn10 === '') {
+        return '';
+    }
+    $url = "https://images-fe.ssl-images-amazon.com/images/P/{$isbn10}.09.LZZZZZZZ";
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'HEAD',
+            'timeout' => 5,
+            'user_agent' => 'ReadNest/1.0',
+            'follow_location' => true,
+            'ignore_errors' => true
+        ]
+    ]);
+    @file_get_contents($url, false, $context);
+
+    foreach ($http_response_header ?? [] as $header) {
+        if (stripos($header, 'Content-Type:') === 0 && stripos($header, 'image/jpeg') !== false) {
+            return $url;
+        }
+    }
+    return '';
+}
+
+/**
+ * 国立国会図書館サーチからページ数を取得（dcterms:extent の「486p ; 16cm」等を解析）
+ */
+function getPageCountFromNDL($isbn) {
+    $clean_isbn = str_replace(['-', ' '], '', $isbn);
+    $api_url = 'https://ndlsearch.ndl.go.jp/api/sru?operation=searchRetrieve&version=1.2'
+        . '&recordSchema=dcndl&maximumRecords=1&query=' . urlencode('isbn=' . $clean_isbn);
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 8,
+            'user_agent' => 'ReadNest/1.0',
+            'ignore_errors' => true
+        ]
+    ]);
+    $response = @file_get_contents($api_url, false, $context);
+    if ($response === false) {
+        return 0;
+    }
+
+    // レコード本体はエスケープされたXMLとして埋め込まれている
+    $xml = html_entity_decode($response, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    if (preg_match('/<dcterms:extent>([^<]*)<\/dcterms:extent>/u', $xml, $m)
+        && preg_match('/([0-9]+)\s*p/u', $m[1], $pm)) {
+        return (int)$pm[1];
+    }
+    return 0;
+}
+
+/**
  * openBD でISBN検索（Google Books APIのフォールバック。キー不要・国内書籍に強い）
  */
 function searchBookWithOpenBD($isbn) {
@@ -423,6 +501,10 @@ function searchBookWithOpenBD($isbn) {
             break;
         }
     }
+    // openBDにページ数が無い本（NDL由来の書誌等）は国立国会図書館サーチで補完
+    if ($page_count <= 0) {
+        $page_count = getPageCountFromNDL($isbn13);
+    }
 
     // 説明文（TextType 03 = 内容紹介、02 = 短い説明）
     $description = '';
@@ -434,8 +516,13 @@ function searchBookWithOpenBD($isbn) {
         }
     }
 
+    // 表紙: openBDのcoverは空の本が多いため、空ならAmazonの書影で補完
+    $cover_url = $summary['cover'] ?? '';
+    if (empty($cover_url)) {
+        $cover_url = getAmazonCoverUrlByISBN($isbn13);
+    }
     $imageHelper = getBookImageHelper();
-    $image_url = $imageHelper->getReliableImageUrl($summary['cover'] ?? '', $isbn13);
+    $image_url = $imageHelper->getReliableImageUrl($cover_url, $isbn13);
 
     $pubdate = $summary['pubdate'] ?? '';
     if (preg_match('/^(\d{4})(\d{2})(\d{2})?$/', $pubdate, $m)) {
