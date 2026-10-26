@@ -132,8 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             if (!empty($user_result)) {
                 $user = $user_result[0];
                 
-                // パスワード確認（SHA1ハッシュ）
-                if (sha1($password) === $user['password']) {
+                // パスワード確認（旧SHA1・password_hash の両方に対応）
+                if (verifyUserPassword($password, $user['password'])) {
+                    upgradeUserPasswordIfNeeded((int)$user['user_id'], $password, (string)$user['password']);
                     if ($user['status'] == 1) {
                         // ログイン成功
                         $_SESSION['user_id'] = $user['user_id'];

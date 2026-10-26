@@ -1,25 +1,29 @@
 <?php
 // Include PDO wrapper functions
 require_once(dirname(__FILE__) . '/database_pdo.php');
+require_once(dirname(__FILE__) . '/auth_helpers.php');
 
 function authUser($username, $password) {
   global $g_db;
-  
-  $select_sql = 'select user_id from b_user where email=? and password=? and status=?';
-  //$select_sql = 'select user_id from b_user where email=? and password=? and regist_date is not null';
 
-  if(defined('DEBUG')) { 
-    d($select_sql);
-    d($username);
-    d($password);
-    d(sha1($password));
+  // ハッシュはソルト付き（password_hash）なのでSQLでは比較できない。取り出してPHPで照合する
+  $select_sql = 'select user_id, password from b_user where email=? and status=?';
+
+  if(defined('DEBUG')) { d($select_sql); }
+  $rows = $g_db->getAll($select_sql, array($username, USER_STATUS_ACTIVE), DB_FETCHMODE_ASSOC);
+  if(DB::isError($rows)) {
+    trigger_error($rows->getMessage());
+    return null;
   }
-  $result = $g_db->getOne($select_sql, array($username, sha1($password), USER_STATUS_ACTIVE));
-  if(DB::isError($result)) {
-    trigger_error($result->getMessage());
+
+  foreach ($rows as $row) {
+    if (verifyUserPassword((string)$password, $row['password'])) {
+      upgradeUserPasswordIfNeeded((int)$row['user_id'], (string)$password, (string)$row['password']);
+      return $row['user_id'];
+    }
   }
-  
-  return $result;
+
+  return null;
 }
 
 
@@ -142,38 +146,14 @@ function incrementRefNum($book_id) {
 
 // setting auto login
 function setAutoLoginKey($user_id) {
-  global $g_db;
-  // $g_db is already a DB_PDO instance
-  
-  $secret = 'SH;alncasd;k8792a';
-  
-  $sha1 = sha1($secret . mt_rand() . microtime());
-  
-  $update_sql = 'update b_user set autologin=? where user_id=?';
-  if(defined('DEBUG')) { d($update_sql); }
-  $result = $g_db->query($update_sql, array($sha1, $user_id));
-  if(DB::isError($result)) {
-    trigger_error($result->getMessage() . '<br />');
-  }
-
-  return $sha1;
+  // 安全な乱数で発行し、DBにはハッシュを保存する（auth_helpers.php）
+  return issueAutoLoginKey((int)$user_id);
 }
 
 
 // get user by autologinkey
 function getUserByAutologiKey($autologin_key) {
-  global $g_db;
-  // $g_db is already a DB_PDO instance
-  
-  $select_sql = 'select user_id from b_user where autologin=?';
-
-  if(defined('DEBUG')) { d($select_sql); }
-  $result = $g_db->getOne($select_sql, array($autologin_key));
-  if(DB::isError($result)) {
-    trigger_error($result->getMessage());
-  }
-  
-  return $result;
+  return findUserByAutoLoginKey($autologin_key);
 }
 
 
@@ -182,9 +162,8 @@ function setAppToken($user_id) {
   global $g_db;
   // $g_db is already a DB_PDO instance
   
-  $secret = 'SH;aglssg;j2323b';
-  
-  $sha1 = sha1($user_id . $secret . mt_rand() . microtime());
+  // 予測できない乱数で発行する（以前は mt_rand と時刻から作っていた）
+  $sha1 = bin2hex(random_bytes(20));
   
   $update_sql = 'update b_user set iphone_app_token=? where user_id=?';
   if(defined('DEBUG')) { d($update_sql); }
@@ -219,18 +198,14 @@ function registUserInterim($email, $nickname, $password) {
   global $g_db;
   // $g_db is already a DB_PDO instance
 
-  $secret = 'SH;alncasd;k8792a';
-  $sha1 = sha1($secret . mt_rand() . microtime());
+  // 仮登録の確認用ID。予測できない乱数で発行する（以前は mt_rand と時刻から作っていた）
+  $sha1 = bin2hex(random_bytes(20));
 
   // DATETIME型のcreate_dateにはNOW()を使用、statusは仮登録(0)
   $create_sql = 'insert into b_user(email, create_date, nickname, password, interim_id, diary_policy, status) values(?, NOW(), ?, ?, ?, ?, ?)';
-  if(defined('DEBUG')) {
-    d($create_sql); 
-    d($password);
-    d(sha1($password));
-  }
+  if(defined('DEBUG')) { d($create_sql); }
 
-  $result = $g_db->query($create_sql, array($email, $nickname, sha1($password), $sha1, 1, USER_STATUS_INTERIM));
+  $result = $g_db->query($create_sql, array($email, $nickname, hashUserPassword((string)$password), $sha1, 1, USER_STATUS_INTERIM));
   if(DB::isError($result)) {
     trigger_error($result->getMessage() . '<br />');
     return false;
@@ -302,10 +277,12 @@ function passwordReissue($user_id) {
 
   $update_sql = 'update b_user set password=? where user_id=?';
   if(defined('DEBUG')) { d($update_sql); }
-  $result = $g_db->query($update_sql, array(sha1($tmp_password), $user_id));
+  $result = $g_db->query($update_sql, array(hashUserPassword($tmp_password), $user_id));
   if(DB::isError($result)) {
     trigger_error($result->getMessage() . '<br />');
   }
+  // パスワードを変えたので、他の端末の自動ログインも無効にする
+  revokeAutoLoginKey((int)$user_id);
 
   return $tmp_password;
 
@@ -362,7 +339,7 @@ function updateUserInformation($user_id, $email, $nickname, $password, $amazon_i
   if($password != '') {
     $update_sql = 'update b_user set password=? where user_id=?';
     if(defined('DEBUG')) { d($update_sql); }
-    $result = $g_db->query($update_sql, array(sha1($password), $user_id));
+    $result = $g_db->query($update_sql, array(hashUserPassword((string)$password), $user_id));
     if(DB::isError($result)) {
       $g_db->rollback();
       trigger_error($result->getMessage() . '<br />');
@@ -1554,19 +1531,19 @@ function getProfilePhotoURL($user_id, $mode = 'thumbnail') {
 function checkPasswordById($user_id, $password) {
     global $g_db;
     
-    // パスワードをSHA1でハッシュ化
-    $password_hash = sha1($password);
-    
     // ユーザーIDとパスワードが一致するか確認（regist_dateがnullでないことで有効なユーザーを判定）
-    $check_sql = 'SELECT COUNT(*) FROM b_user WHERE user_id = ? AND password = ? AND regist_date IS NOT NULL';
-    $result = $g_db->getOne($check_sql, array($user_id, $password_hash));
+    $check_sql = 'SELECT password FROM b_user WHERE user_id = ? AND regist_date IS NOT NULL';
+    $stored = $g_db->getOne($check_sql, array($user_id));
     
-    if (DB::isError($result)) {
-        trigger_error($result->getMessage());
+    if (DB::isError($stored)) {
+        trigger_error($stored->getMessage());
         return false;
     }
-    
-    return ($result > 0);
+    if (!verifyUserPassword((string)$password, $stored)) {
+        return false;
+    }
+    upgradeUserPasswordIfNeeded((int)$user_id, (string)$password, (string)$stored);
+    return true;
 }
 
 // ユーザーアカウントを削除

@@ -18,19 +18,16 @@ if (!function_exists('checkPasswordById')) {
     function checkPasswordById($user_id, $password) {
         global $g_db;
         
-        // パスワードをSHA1でハッシュ化
-        $password_hash = sha1($password);
-        
         // ユーザーIDとパスワードが一致するか確認（regist_dateがnullでないことで有効なユーザーを判定）
-        $check_sql = 'SELECT COUNT(*) FROM b_user WHERE user_id = ? AND password = ? AND regist_date IS NOT NULL';
-        $result = $g_db->getOne($check_sql, array($user_id, $password_hash));
+        $check_sql = 'SELECT password FROM b_user WHERE user_id = ? AND regist_date IS NOT NULL';
+        $stored = $g_db->getOne($check_sql, array($user_id));
         
-        if (DB::isError($result)) {
-            trigger_error($result->getMessage());
+        if (DB::isError($stored)) {
+            trigger_error($stored->getMessage());
             return false;
         }
         
-        return ($result > 0);
+        return verifyUserPassword((string)$password, $stored);
     }
 }
 
@@ -279,14 +276,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 global $g_db;
                 $current_hash = $g_db->getOne("SELECT password FROM b_user WHERE user_id = ?", array($user_id));
                 
-                if (!DB::isError($current_hash) && $current_hash === sha1($current_password)) {
+                if (!DB::isError($current_hash) && verifyUserPassword((string)$current_password, $current_hash)) {
                     try {
                         // パスワード更新
-                        $new_hash = sha1($new_password);
+                        $new_hash = hashUserPassword((string)$new_password);
                         $result = $g_db->query("UPDATE b_user SET password = ? WHERE user_id = ?", array($new_hash, $user_id));
                         
                         if (!DB::isError($result)) {
                             $success_message = 'パスワードを変更しました。';
+                            // 他の端末の自動ログインを無効にし、この端末で使っていた場合は発行し直す
+                            revokeAutoLoginKey((int)$user_id);
+                            if (!empty($_COOKIE['AUTOLOGIN'])) {
+                                setAutoLogin($user_id);
+                            }
                             // ユーザー情報を更新
                             $user_info['password'] = $new_hash;
                         } else {

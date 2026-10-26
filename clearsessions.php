@@ -18,11 +18,13 @@ error_log("Logout process started for session: " . session_id());
 // ログアウト前にユーザーIDを保存
 $logout_user_id = isset($_SESSION['AUTH_USER']) ? $_SESSION['AUTH_USER'] : null;
 
-// データベースから自動ログインキーを削除
-if ($logout_user_id && isset($_COOKIE['AUTOLOGIN'])) {
-    global $g_db;
-    $delete_sql = "DELETE FROM b_autologin WHERE user_id = ? AND autologin_key = ?";
-    $g_db->query($delete_sql, array($logout_user_id, $_COOKIE['AUTOLOGIN']));
+// データベースの自動ログインキーを無効にする
+// （以前は存在しない b_autologin テーブルから削除しようとしており、キーがDBに残り続けていた）
+if (!$logout_user_id && !empty($_COOKIE['AUTOLOGIN'])) {
+    $logout_user_id = getUserByAutologiKey($_COOKIE['AUTOLOGIN']);
+}
+if ($logout_user_id) {
+    revokeAutoLoginKey((int)$logout_user_id);
 }
 
 // セッション変数をすべて削除
@@ -38,7 +40,7 @@ if (ini_get("session.use_cookies")) {
 }
 
 // ReadNest固有のクッキーも削除
-setcookie('AUTOLOGIN', '', time() - 86400, '/', '', false, true);
+unsetAutoLogin();
 setcookie('autologin', '', time() - 86400, '/', '', false, true);
 setcookie('use_modern_template', '', time() - 86400, '/', '', false, true);
 setcookie('AUTH_USER_ID', '', time() - 86400, '/', '', false, true);

@@ -107,17 +107,31 @@ function checkLogin() {
 }
 
 
+// 自動ログインCookieの属性（JSから読めない・HTTPSのみ・他サイトからのPOSTでは送らない）
+function autoLoginCookieOptions(int $expires, string $path = '/'): array {
+  return [
+    'expires' => $expires,
+    'path' => $path,
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+  ];
+}
+
 function setAutoLogin($user_id) {
   $autologin_key = setAutoLoginKey($user_id);
          
-  if(!setcookie('AUTOLOGIN', $autologin_key, time() + AUTO_LOGIN_DURATION)) {
+  if(!setcookie('AUTOLOGIN', $autologin_key, autoLoginCookieOptions(time() + AUTO_LOGIN_DURATION))) {
     trigger_error('setting autologin failed.');
   }
 }
 
 function unsetAutoLogin() {
-  if(!setcookie('AUTOLOGIN', '', 0)) {
-    trigger_error('setting autologin failed.');
+  // 以前はpath未指定で発行していたため、ログインしたページのディレクトリ（/auth 等）に残っている場合がある
+  foreach (['/', '/auth'] as $path) {
+    if(!setcookie('AUTOLOGIN', '', autoLoginCookieOptions(time() - 86400, $path))) {
+      trigger_error('setting autologin failed.');
+    }
   }
 }
 
