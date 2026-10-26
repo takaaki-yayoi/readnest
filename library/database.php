@@ -1177,13 +1177,18 @@ function createEvent($user_id, $book_id, $memo, $number_of_pages, $event_date = 
   }
 
   // get book page num
-  $sql = 'select total_page, status, current_page from b_book_list where book_id=?';
+  // 本人の本に限定する（以前は book_id だけで引いており、他のユーザーの本の進捗・ステータスを書き換えられた）
+  $sql = 'select total_page, status, current_page from b_book_list where book_id=? and user_id=?';
   
   if(defined('DEBUG')) { d($sql); }
-  $result = $g_db->getRow($sql, array($book_id), DB_FETCHMODE_ASSOC);
-  if(DB::isError($result)) {
+  $result = $g_db->getRow($sql, array($book_id, $user_id), DB_FETCHMODE_ASSOC);
+  if(DB::isError($result) || empty($result)) {
+    if(DB::isError($result)) {
+      trigger_error($result->getMessage());
+    }
     $g_db->rollback();
-    trigger_error($result->getMessage());
+    $g_db->autoCommit(true);
+    return DB_OPERATE_FAILED;
   }
   
   $current_page = (int)($result['current_page'] ?? 0);
@@ -1248,10 +1253,10 @@ function createEvent($user_id, $book_id, $memo, $number_of_pages, $event_date = 
   // DATETIME型で更新
   // 読書進捗の更新は常にupdate_dateを更新する（CLAUDE.mdの仕様に従う）
   // 進捗更新は「読書状態の更新」として扱う
-  $sql = 'update b_book_list set status=?, update_date=NOW(), current_page=? where book_id=?';
+  $sql = 'update b_book_list set status=?, update_date=NOW(), current_page=? where book_id=? and user_id=?';
 
   if(defined('DEBUG')) { d($sql); }
-  $result = $g_db->query($sql, array($status, $number_of_pages, $book_id));
+  $result = $g_db->query($sql, array($status, $number_of_pages, $book_id, $user_id));
   if(DB::isError($result)) {
     $g_db->rollback();
     trigger_error($result->getMessage());
@@ -1750,6 +1755,13 @@ function searchReview($keyword) {
 // add tag
 function updateTag($user_id, $book_id, $tag_array) {
   global $g_db;
+
+  // 本人の本にだけタグを付けられるようにする
+  // （以前は確認しておらず、他のユーザーの本にタグを付けると book_id で引くタグ表示に出ていた）
+  $owner = $g_db->getOne('SELECT user_id FROM b_book_list WHERE book_id = ?', array($book_id));
+  if(DB::isError($owner) || (int)$owner !== (int)$user_id) {
+    return DB_OPERATE_FAILED;
+  }
   
   // 既存のタグを削除
   $delete_sql = "DELETE FROM b_book_tags WHERE book_id = ? AND user_id = ?";
