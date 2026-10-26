@@ -317,16 +317,15 @@ function readingDataBreakdownLimit(string $group_by): int {
  * 条件の日本語説明（回答冒頭の「データベース検索を実行しました」に使う）
  */
 function describeReadingDataConditions(array $c, array $rows): string {
-    // チャット画面は回答をHTMLとして表示するため、利用者が入力した文字列はエスケープする
-    $h = function($v) { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); };
+    // 表示時のエスケープはチャット画面側（formatAIResponse）で回答全体に対して行う
     $parts = [];
     if ($c['date_from'] || $c['date_to']) {
         $range = ($c['date_from'] ?? '') . '〜' . ($c['date_to'] ?? '');
         $parts[] = $range . (($c['date_field'] === 'registered') ? 'に登録した' : 'に読了した');
     }
-    if ($c['author'] !== null) $parts[] = "著者「{$h($c['author'])}」の";
-    if ($c['title'] !== null) $parts[] = "タイトルに「{$h($c['title'])}」を含む";
-    if ($c['tag'] !== null && $c['group_by'] !== 'tag') $parts[] = "タグ「{$h($c['tag'])}」の";
+    if ($c['author'] !== null) $parts[] = "著者「{$c['author']}」の";
+    if ($c['title'] !== null) $parts[] = "タイトルに「{$c['title']}」を含む";
+    if ($c['tag'] !== null && $c['group_by'] !== 'tag') $parts[] = "タグ「{$c['tag']}」の";
     if ($c['rating_min'] !== null || $c['rating_max'] !== null) {
         $parts[] = '評価' . ($c['rating_min'] ?? 1) . '〜' . ($c['rating_max'] ?? 5) . 'の';
     }

@@ -299,6 +299,36 @@ function getEnhancedContext($user_id, $message, $user_context = []) {
     ];
 }
 
+/**
+ * 回答中の「」で囲まれたタイトルのうち、本人の本棚にある本の book_id を返す
+ * クライアントはこれを使い、本棚にある本は詳細ページ、それ以外は追加ページへリンクする
+ *
+ * @return array タイトル => book_id
+ */
+function findBookshelfLinks(string $text, int $user_id): array {
+    global $g_db;
+
+    if (!preg_match_all('/「([^」]{1,200})」/u', $text, $m)) {
+        return [];
+    }
+    $titles = array_slice(array_values(array_unique($m[1])), 0, 30);
+    $placeholders = implode(',', array_fill(0, count($titles), '?'));
+    $rows = $g_db->getAll(
+        "SELECT name, MIN(book_id) AS book_id FROM b_book_list WHERE user_id = ? AND name IN ({$placeholders}) GROUP BY name",
+        array_merge([$user_id], $titles),
+        DB_FETCHMODE_ASSOC
+    );
+    if (DB::isError($rows)) {
+        return [];
+    }
+
+    $links = [];
+    foreach ($rows as $row) {
+        $links[$row['name']] = (int)$row['book_id'];
+    }
+    return $links;
+}
+
 // Text2SQLの判定と実行
 function shouldUseText2SQL($message) {
     // データ分析系のキーワードをチェック
@@ -408,6 +438,7 @@ if (!empty($data_sources)) {
 
 // Text2SQLの結果がある場合
 $text2sql_info = "";
+$debug_html = ""; // user_id=12向けのデバッグ表示（サーバーで生成・エスケープ済みのHTML）
 $sql_explanation = "";
 if ($sql_data && isset($sql_data['debug'])) {
     $data_sources[] = 'sql_query';
@@ -449,16 +480,16 @@ if ($sql_data && isset($sql_data['debug'])) {
     $text2sql_info = "\n📊 **データベース検索を実行しました**: {$sql_explanation}\n";
     
     // user_id=12の場合のみSQLクエリを表示
+    // 回答本文はクライアントで全体をエスケープするため、HTMLは debug_html として別に返す
     if ($mine_user_id == 12) {
-        $text2sql_info .= "<details style='cursor: pointer; color: #666; font-size: 0.9em; margin-top: 5px;'>\n";
-        $text2sql_info .= "<summary>クエリを表示（デバッグ用）</summary>\n";
-        // <details> の中はMarkdownとして処理されないため、```ではなく<pre>で囲む
         $debug_query = $sql;
         if (isset($sql_data['debug']['params'])) {
             $debug_query .= "\nパラメータ: " . json_encode($sql_data['debug']['params'], JSON_UNESCAPED_UNICODE);
         }
-        $text2sql_info .= "<pre style='white-space: pre-wrap; font-size: 0.85em;'>" . htmlspecialchars($debug_query, ENT_QUOTES, 'UTF-8') . "</pre>";
-        $text2sql_info .= "</details>\n";
+        $debug_html .= "<details style='cursor: pointer; color: #666; font-size: 0.9em; margin-top: 5px;'>"
+            . "<summary>クエリを表示（デバッグ用）</summary>"
+            . "<pre style='white-space: pre-wrap; font-size: 0.85em;'>" . htmlspecialchars($debug_query, ENT_QUOTES, 'UTF-8') . "</pre>"
+            . "</details>";
     }
     $text2sql_info .= "\n";
 }
@@ -560,7 +591,7 @@ $system_prompt .= "   a) 全体的な傾向や洞察（1-2文）\n";
 $system_prompt .= "   b) 具体的なデータ（リスト形式）\n";
 $system_prompt .= "   c) 分析から得られる提案や気づき（1-2文）\n";
 $system_prompt .= "3. 回答のガイドライン:\n";
-$system_prompt .= "   - 本のタイトルは「」で囲む\n";
+$system_prompt .= "   - 本のタイトルは「」で囲む。「」は本のタイトル以外（語句の強調や引用など）には使わない\n";
 $system_prompt .= "   - 数値データがある場合は具体的に示す\n";
 $system_prompt .= "   - 読書習慣の改善につながる提案を含める\n";
 $system_prompt .= "   - 単純な列挙ではなく、意味のあるグルーピングや分類を行う\n";
@@ -578,7 +609,7 @@ if (!DB::isError($user_books) && !empty($user_books)) {
     $system_prompt .= "\n【ユーザーの本棚にある本】\n";
     $system_prompt .= "以下の本はユーザーの本棚に既に存在します：\n";
     $system_prompt .= implode(", ", array_slice($book_titles, 0, 50)) . "\n";
-    $system_prompt .= "これらの本について言及する際は、『本棚にある』ことを明示してください。";
+    $system_prompt .= "これらの本について言及する際は、本棚にあることを明示してください。";
 }
 
 // 会話履歴をメッセージ配列に変換
@@ -648,9 +679,8 @@ try {
             
             // デバッグ情報を追加（user_id=12の場合のみ）
             if ($mine_user_id == 12 && !empty($context_debug)) {
-                $debug_text = "\n\n<details style='background: #f5f5f5; padding: 10px; border-radius: 5px; margin-top: 10px;'>\n";
-                $debug_text .= "<summary style='cursor: pointer; color: #666; font-weight: bold;'>🔧 デバッグ情報</summary>\n";
-                $debug_text .= "<div style='margin-top: 10px; font-family: monospace; font-size: 0.9em;'>\n";
+                // 中身はテキストで組み立て、最後にエスケープして debug_html に入れる
+                $debug_text = "";
                 
                 // Embedding検索のデバッグ情報
                 if (!empty($context_debug['embedding'])) {
@@ -687,13 +717,17 @@ try {
                     $debug_text .= "- " . $source . "\n";
                 }
                 
-                $debug_text .= "</div>\n</details>\n";
-                $ai_response .= $debug_text;
+                $debug_html .= "<details style='background: #f5f5f5; padding: 10px; border-radius: 5px; margin-top: 10px;'>"
+                    . "<summary style='cursor: pointer; color: #666; font-weight: bold;'>🔧 デバッグ情報</summary>"
+                    . "<pre style='margin-top: 10px; white-space: pre-wrap; font-size: 0.9em;'>" . htmlspecialchars($debug_text, ENT_QUOTES, 'UTF-8') . "</pre>"
+                    . "</details>";
             }
             
             echo json_encode([
                 'success' => true,
-                'response' => $ai_response
+                'response' => $ai_response,
+                'book_links' => findBookshelfLinks($ai_response, (int)$mine_user_id),
+                'debug_html' => $debug_html
             ]);
         } else {
             echo json_encode([

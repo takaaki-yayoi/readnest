@@ -343,7 +343,8 @@ function saveSharedConversation(messages) {
 
 // マークダウンをHTMLに変換する関数
 function renderMarkdown(text) {
-    let html = text;
+    // LLMの出力や本のタイトルにHTMLが含まれていても実行されないよう、先に全体をエスケープしてから整形する
+    let html = escapeHtml(text);
     
     // コードブロック（最初に処理して他の変換から保護）
     const codeBlocks = [];
@@ -362,8 +363,13 @@ function renderMarkdown(text) {
     // 斜体
     html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
     
-    // リンク
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">$1</a>');
+    // リンク（javascript: 等を防ぐため、http(s) と同一サイト内のパスだけをリンクにする）
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, label, url) {
+        if (!/^(https?:\/\/|\/(?!\/))/i.test(unescapeHtml(url))) {
+            return label;
+        }
+        return `<a href="${url}" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">${label}</a>`;
+    });
     
     // 見出し
     html = html.replace(/^### (.+)$/gm, '<h3 class="font-bold text-lg mt-2 mb-1">$1</h3>');
@@ -397,12 +403,13 @@ function renderMarkdown(text) {
     
     // 書籍タイトルをリンクに（本棚にあるかどうかでリンク先を変更）
     html = html.replace(/「([^」]+)」/g, function(match, title) {
-        const encoded = encodeURIComponent(title);
+        const rawTitle = unescapeHtml(title);
+        const encoded = encodeURIComponent(rawTitle);
         
         // ユーザーの本棚にある本かチェック
         const isInBookshelf = userBookTitles.some(bookTitle => 
-            bookTitle && bookTitle.toLowerCase().includes(title.toLowerCase()) || 
-            title.toLowerCase().includes(bookTitle.toLowerCase())
+            bookTitle && bookTitle.toLowerCase().includes(rawTitle.toLowerCase()) || 
+            rawTitle.toLowerCase().includes(bookTitle.toLowerCase())
         );
         
         if (isInBookshelf) {
@@ -484,7 +491,7 @@ function displayMessage(content, sender) {
     messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
     
     // アシスタントのメッセージはマークダウンをレンダリング
-    const renderedContent = sender === 'assistant' ? renderMarkdown(content) : content.replace(/\n/g, '<br>');
+    const renderedContent = sender === 'assistant' ? renderMarkdown(content) : escapeHtml(content).replace(/\n/g, '<br>');
     
     if (sender === 'user') {
         messageDiv.innerHTML = `
@@ -804,11 +811,23 @@ function deleteHistory(historyId) {
     }
 }
 
-// HTMLエスケープ
+// HTMLエスケープ（属性値にも使うため引用符もエスケープする）
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function unescapeHtml(text) {
+    return String(text)
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, '&');
 }
 
 // ウェルカムメッセージ表示

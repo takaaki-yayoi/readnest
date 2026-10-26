@@ -598,8 +598,11 @@ class AIAssistant {
                 throw new Error(data.error);
             }
             
-            // AIの応答を追加
-            this.addMessage(data.response, 'assistant');
+            // AIの応答を追加（本棚にある本のリンク先と、管理者向けデバッグ表示を渡す）
+            this.addMessage(data.response, 'assistant', {
+                bookLinks: data.book_links || {},
+                debugHtml: data.debug_html || ''
+            });
             
             // 初回フラグを更新
             if (data.is_first_time) {
@@ -628,7 +631,7 @@ class AIAssistant {
         }
     }
     
-    addMessage(text, sender) {
+    addMessage(text, sender, options = {}) {
         const messagesContainer = document.getElementById('ai-messages');
         const messageDiv = document.createElement('div');
         messageDiv.className = `ai-message ${sender}`;
@@ -652,7 +655,8 @@ class AIAssistant {
                 <div class="flex items-start space-x-2">
                     <img src="/favicon.png" alt="AI" class="w-8 h-8 rounded-full">
                     <div class="bg-gray-100 dark:bg-gray-700 rounded-xl p-3 max-w-[80%]">
-                        <p class="text-sm text-gray-800 dark:text-gray-200">${this.formatAIResponse(text)}</p>
+                        <p class="text-sm text-gray-800 dark:text-gray-200">${this.formatAIResponse(text, options.bookLinks || {})}</p>
+                        ${options.debugHtml || ''}
                     </div>
                 </div>
             `;
@@ -871,31 +875,41 @@ class AIAssistant {
     }
     
     escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        // 属性値にも使うため引用符もエスケープする
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
     
-    formatAIResponse(text) {
+    unescapeHtml(text) {
+        return String(text)
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&amp;/g, '&');
+    }
+    
+    formatAIResponse(text, bookLinks = {}) {
         let formatted = text;
         
         // 既存の<br>タグを一時的に改行に戻す（AIからの応答に<br>が含まれている場合）
-        formatted = formatted.replace(/<br>/g, '\n');
+        formatted = formatted.replace(/<br\s*\/?>/g, '\n');
+        
+        // LLMの出力や本のタイトルにHTMLが含まれていても実行されないよう、先に全体をエスケープしてから整形する
+        // （サーバーが生成するデバッグ用HTMLは debug_html として別に受け取る）
+        formatted = this.escapeHtml(formatted);
         
         // 処理済みの部分を保護するためのプレースホルダー
         const placeholders = [];
         let placeholderIndex = 0;
         
-        // HTMLタグ（details, summary）を先に処理して保護（Text2SQL用）
-        formatted = formatted.replace(/<details[^>]*>([\s\S]*?)<\/details>/g, (match) => {
-            const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
-            placeholders.push(match);
-            return placeholder;
-        });
-        
         // コードブロック（```code```）を先に処理して保護
         formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
-            const escapedCode = this.escapeHtml(code.trim());
+            const escapedCode = code.trim(); // エスケープ済み
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
             placeholders.push(`<pre class="bg-gray-200 dark:bg-gray-800 p-3 rounded overflow-x-auto my-2"><code>${escapedCode}</code></pre>`);
             return placeholder;
@@ -904,12 +918,16 @@ class AIAssistant {
         // インラインコード（`code`）を処理して保護
         formatted = formatted.replace(/`([^`]+)`/g, (match, code) => {
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
-            placeholders.push(`<code class="bg-gray-200 dark:bg-gray-800 px-1 py-0.5 rounded text-sm">${this.escapeHtml(code)}</code>`);
+            placeholders.push(`<code class="bg-gray-200 dark:bg-gray-800 px-1 py-0.5 rounded text-sm">${code}</code>`);
             return placeholder;
         });
         
         // マークダウンリンク [text](url) を処理
         formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+            // javascript: 等を防ぐため、http(s) と同一サイト内のパスだけをリンクにする
+            if (!/^(https?:\/\/|\/(?!\/))/i.test(this.unescapeHtml(url))) {
+                return text;
+            }
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
             placeholders.push(`<a href="${url}" target="_blank" class="text-readnest-primary dark:text-readnest-accent hover:underline">${text}</a>`);
             return placeholder;
@@ -930,11 +948,17 @@ class AIAssistant {
         // アンダースコアのイタリック（_text_）
         formatted = formatted.replace(/(\s|^)_([^_\n]+)_(\s|$)/g, '$1<em>$2</em>$3');
         
-        // 本の名前を検索リンクに変換（「」で囲まれたテキスト）
+        // 本の名前をリンクに変換（「」で囲まれたテキスト）
+        // 本棚にある本（サーバーが book_links で返す）は詳細ページ、それ以外は追加ページへ
         formatted = formatted.replace(/「([^」]+)」/g, (match, bookTitle) => {
-            const encodedTitle = encodeURIComponent(bookTitle);
+            const rawTitle = this.unescapeHtml(bookTitle);
             const placeholder = `__PLACEHOLDER_${placeholderIndex++}__`;
-            placeholders.push(`<a href="/add_book.php?keyword=${encodedTitle}" class="text-readnest-primary hover:underline font-medium" target="_blank" title="${bookTitle}を検索">「${bookTitle}」</a>`);
+            const bookId = Object.prototype.hasOwnProperty.call(bookLinks, rawTitle) ? parseInt(bookLinks[rawTitle], 10) : 0;
+            if (bookId > 0) {
+                placeholders.push(`<a href="/book/${bookId}" class="text-readnest-primary hover:underline font-medium" target="_blank" title="本棚の本を表示">「${bookTitle}」</a>`);
+            } else {
+                placeholders.push(`<a href="/add_book.php?keyword=${encodeURIComponent(rawTitle)}" class="text-readnest-primary hover:underline font-medium" target="_blank" title="${bookTitle}を検索">「${bookTitle}」</a>`);
+            }
             return placeholder;
         });
         
