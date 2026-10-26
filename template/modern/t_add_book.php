@@ -142,21 +142,27 @@ ob_start();
         <!-- バーコードスキャナーモーダル - レスポンシブ対応 -->
         <div id="barcodeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-2 sm:p-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-2 sm:mx-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-2 sm:mx-4" style="max-height: 95vh; overflow-y: auto;">
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold">バーコード読み取り</h3>
-                            <button onclick="closeBarcodeScanner()" class="text-gray-400 hover:text-gray-600">
+                            <button onclick="requestCloseBarcodeScanner()" class="text-gray-400 hover:text-gray-600">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
+
+                        <!-- 連続読み取り（まとめて登録）の切り替え -->
+                        <label class="flex items-center justify-center gap-2 mb-3 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            <input type="checkbox" id="barcodeBatchToggle" class="rounded" onchange="setBarcodeBatchMode(this.checked)">
+                            続けて読み取る（まとめて登録）
+                        </label>
                         
                         <div class="space-y-4">
                             <div class="text-center">
                                 <p class="text-gray-600 mb-4">本の裏面にあるISBNバーコードをカメラで読み取ってください</p>
                                 
-                                <!-- 読み取りのコツ -->
-                                <div class="bg-blue-50 rounded-lg p-3 mb-4">
+                                <!-- 読み取りのコツ（連続読み取り中はリストの場所を空けるため隠す） -->
+                                <div id="barcodeTips" class="bg-blue-50 rounded-lg p-3 mb-4">
                                     <div class="text-xs text-blue-800 space-y-1">
                                         <div class="flex items-center justify-center space-x-1">
                                             <i class="fas fa-lightbulb text-yellow-500"></i>
@@ -192,6 +198,28 @@ ob_start();
                                 
                                 <!-- エラーメッセージ -->
                                 <div id="barcodeError" class="mt-4 text-sm text-red-600 hidden"></div>
+                            </div>
+
+                            <!-- 連続読み取りで読んだ本のリスト -->
+                            <div id="barcodeBatchPanel" class="hidden">
+                                <div id="barcodeBatchList" class="space-y-2"></div>
+                                <p id="barcodeBatchEmpty" class="text-xs text-gray-500 text-center py-2">読み取った本がここに並びます</p>
+                                <div id="barcodeBatchActions" class="mt-3 space-y-2 hidden">
+                                    <div class="flex items-center justify-center gap-2 text-sm">
+                                        <label for="barcodeBatchStatus" class="text-gray-600 dark:text-gray-300">ステータス</label>
+                                        <select id="barcodeBatchStatus" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded px-2 py-1 text-sm">
+                                            <option value="<?php echo NOT_STARTED; ?>" selected>積読</option>
+                                            <option value="<?php echo READING_NOW; ?>">読書中</option>
+                                            <option value="<?php echo READING_FINISH; ?>">読了</option>
+                                            <option value="<?php echo READ_BEFORE; ?>">既読</option>
+                                            <option value="<?php echo BUY_SOMEDAY; ?>">いつか買う</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" id="barcodeBatchAddButton" onclick="addBatchBooksToShelf()"
+                                            class="w-full bg-readnest-primary text-white rounded-lg py-2 text-sm font-medium hover:bg-opacity-90 disabled:opacity-50">
+                                    </button>
+                                    <p id="barcodeBatchResult" class="text-sm text-center text-gray-600 dark:text-gray-300 hidden"></p>
+                                </div>
                             </div>
                             
                             <div class="text-center">
@@ -396,7 +424,7 @@ function toggleBarcodeScanner() {
         modal.classList.remove('hidden');
         initBarcodeScanner();
     } else {
-        closeBarcodeScanner();
+        requestCloseBarcodeScanner();
     }
 }
 
@@ -419,6 +447,7 @@ async function initBarcodeScanner() {
     statusDiv.textContent = 'カメラを起動中...';
     errorDiv.classList.add('hidden');
     barcodeSearchStarted = false;
+    setBarcodeBatchMode(loadBarcodeBatchMode());
     
     try {
         // 優先順位: Native BarcodeDetector → QuaggaJS → ZXing
@@ -477,6 +506,12 @@ function handleBarcodeResult(result) {
         return;
     }
     
+    if (result.isISBN && barcodeBatchMode) {
+        // 連続読み取り: カメラは止めずにリストへ追加する
+        addBatchIsbn(result.code);
+        return;
+    }
+
     if (result.isISBN) {
         // スキャナーは読み取り後も動き続けるため、二重遷移を防ぐ
         if (barcodeSearchStarted) return;
@@ -509,6 +544,202 @@ function showBarcodeSearching(isbn) {
     `;
     overlay.querySelector('.text-sm').textContent = `ISBN: ${isbn}`;
     document.body.appendChild(overlay);
+}
+
+// ===== 連続読み取り（まとめて登録） =====
+// 1冊ずつ検索結果へ移らずに、読み取った本をリストにためて最後にまとめて本棚へ追加する
+
+let barcodeBatchMode = false;
+const barcodeBatchBooks = new Map(); // ISBN => { state, book, message }
+
+function loadBarcodeBatchMode() {
+    try {
+        return localStorage.getItem('barcodeBatchMode') === '1';
+    } catch (e) {
+        return false;
+    }
+}
+
+function setBarcodeBatchMode(enabled) {
+    barcodeBatchMode = !!enabled;
+    try {
+        localStorage.setItem('barcodeBatchMode', barcodeBatchMode ? '1' : '0');
+    } catch (e) {}
+    document.getElementById('barcodeBatchToggle').checked = barcodeBatchMode;
+    document.getElementById('barcodeBatchPanel').classList.toggle('hidden', !barcodeBatchMode);
+    document.getElementById('barcodeTips').classList.toggle('hidden', barcodeBatchMode);
+    document.getElementById('barcodePreview').style.height = barcodeBatchMode ? '200px' : '300px';
+    renderBatchList();
+}
+
+function csrfHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': meta ? meta.content : (window.READNEST_CSRF_TOKEN || '')
+    };
+}
+
+async function addBatchIsbn(isbn) {
+    const statusDiv = document.getElementById('scanStatus');
+    if (barcodeBatchBooks.has(isbn)) {
+        statusDiv.textContent = `ISBN: ${isbn} は読み取り済みです`;
+        return;
+    }
+    statusDiv.textContent = `ISBN: ${isbn} を読み取りました。続けて読み取れます`;
+    barcodeBatchBooks.set(isbn, { state: 'loading' });
+    renderBatchList();
+
+    try {
+        const response = await fetch('/api/book_search_quick.php', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ query: isbn, limit: 1 })
+        });
+        const data = await response.json();
+        const book = (data.success && data.books && data.books[0]) ? data.books[0] : null;
+        if (!barcodeBatchBooks.has(isbn)) return; // 検索中に削除された
+        barcodeBatchBooks.set(isbn, book ? { state: 'found', book: book } : { state: 'notfound' });
+    } catch (e) {
+        if (!barcodeBatchBooks.has(isbn)) return;
+        barcodeBatchBooks.set(isbn, { state: 'error' });
+    }
+    renderBatchList();
+}
+
+function removeBatchIsbn(isbn) {
+    barcodeBatchBooks.delete(isbn);
+    renderBatchList();
+}
+
+function renderBatchList() {
+    const list = document.getElementById('barcodeBatchList');
+    list.textContent = '';
+
+    const labels = {
+        loading: '検索中...',
+        notfound: '見つかりませんでした',
+        error: '検索に失敗しました',
+        adding: '追加中...',
+        added: '追加しました',
+        exists: '既に本棚にあります',
+        failed: '追加に失敗しました'
+    };
+
+    barcodeBatchBooks.forEach((item, isbn) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg';
+
+        const cover = document.createElement('div');
+        cover.className = 'w-8 h-11 flex-shrink-0 bg-gray-200 dark:bg-gray-600 rounded overflow-hidden flex items-center justify-center';
+        if (item.book && item.book.image_url) {
+            const img = document.createElement('img');
+            img.src = item.book.image_url;
+            img.alt = '';
+            img.className = 'w-full h-full object-cover';
+            cover.appendChild(img);
+        } else {
+            cover.innerHTML = '<i class="fas fa-book text-gray-400 text-xs"></i>';
+        }
+        row.appendChild(cover);
+
+        // タイトル等はAPIの値なので textContent で入れる
+        const text = document.createElement('div');
+        text.className = 'min-w-0 flex-1 text-left';
+        const title = document.createElement('p');
+        title.className = 'text-sm font-medium text-gray-800 dark:text-gray-200 truncate';
+        title.textContent = item.book ? item.book.title : `ISBN: ${isbn}`;
+        const sub = document.createElement('p');
+        sub.className = 'text-xs text-gray-500 dark:text-gray-400 truncate';
+        sub.textContent = labels[item.state] || (item.book ? item.book.author : '');
+        text.appendChild(title);
+        text.appendChild(sub);
+        row.appendChild(text);
+
+        if (['found', 'notfound', 'error', 'failed'].includes(item.state)) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'text-gray-400 hover:text-gray-600 px-1';
+            remove.title = 'リストから外す';
+            remove.innerHTML = '<i class="fas fa-times"></i>';
+            remove.addEventListener('click', () => removeBatchIsbn(isbn));
+            row.appendChild(remove);
+        }
+
+        list.appendChild(row);
+    });
+
+    const addable = [...barcodeBatchBooks.values()].filter(item => item.state === 'found' || item.state === 'failed').length;
+    const busy = [...barcodeBatchBooks.values()].some(item => item.state === 'loading' || item.state === 'adding');
+    document.getElementById('barcodeBatchEmpty').classList.toggle('hidden', barcodeBatchBooks.size > 0);
+    document.getElementById('barcodeBatchActions').classList.toggle('hidden', barcodeBatchBooks.size === 0);
+    const button = document.getElementById('barcodeBatchAddButton');
+    button.textContent = addable > 0 ? `${addable}冊を本棚に追加` : '追加できる本はありません';
+    button.disabled = addable === 0 || busy;
+}
+
+async function addBatchBooksToShelf() {
+    const status = parseInt(document.getElementById('barcodeBatchStatus').value, 10);
+    const targets = [...barcodeBatchBooks.entries()].filter(([, item]) => item.state === 'found' || item.state === 'failed');
+    let added = 0;
+
+    // 本の追加は順番に行う（同時に送るとサーバーとDBに負荷がかかるため）
+    for (const [isbn, item] of targets) {
+        item.state = 'adding';
+        renderBatchList();
+        try {
+            const book = item.book;
+            const response = await fetch('/api/add_book_from_search.php', {
+                method: 'POST',
+                headers: csrfHeaders(),
+                body: JSON.stringify({
+                    asin: book.asin,
+                    isbn: book.isbn || isbn,
+                    title: book.title,
+                    author: book.author,
+                    image_url: book.image_url,
+                    detail_url: book.detail_url,
+                    pages: book.pages,
+                    status: status,
+                    categories: book.categories
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                item.state = 'added';
+                added++;
+            } else {
+                item.state = (response.status === 409) ? 'exists' : 'failed';
+            }
+        } catch (e) {
+            item.state = 'failed';
+        }
+        renderBatchList();
+    }
+
+    const result = document.getElementById('barcodeBatchResult');
+    result.innerHTML = '';
+    result.appendChild(document.createTextNode(`${added}冊を本棚に追加しました。`));
+    if (added > 0) {
+        const link = document.createElement('a');
+        link.href = '/bookshelf.php';
+        link.className = 'text-readnest-primary hover:underline ml-1';
+        link.textContent = '本棚を見る';
+        result.appendChild(link);
+    }
+    result.classList.remove('hidden');
+}
+
+// ×ボタン: 追加していない本が残っていれば確認してから閉じる
+function requestCloseBarcodeScanner() {
+    const pending = [...barcodeBatchBooks.values()].filter(item => item.state === 'found' || item.state === 'loading').length;
+    if (pending > 0 && !confirm(`まだ本棚に追加していない本が${pending}冊あります。閉じますか？`)) {
+        return;
+    }
+    // 追加済み・追加できなかった本はリストから消し、次に開いたときは空から始める
+    barcodeBatchBooks.clear();
+    document.getElementById('barcodeBatchResult').classList.add('hidden');
+    closeBarcodeScanner();
 }
 
 // 戻るボタンでbfcacheから復帰した時はオーバーレイを消し、再スキャン可能にする
