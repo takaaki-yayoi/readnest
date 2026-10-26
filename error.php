@@ -7,7 +7,8 @@
 declare(strict_types=1);
 
 // エラーコードとメッセージの取得
-$error_code = $_GET['code'] ?? '500';
+// 画面にそのまま出すため、3桁の数字以外は500扱い（反射型XSS対策）
+$error_code = preg_match('/^[0-9]{3}$/', (string)($_GET['code'] ?? '')) ? $_GET['code'] : '500';
 $error_message = $_GET['message'] ?? '';
 
 // エラーコードに応じたメッセージ

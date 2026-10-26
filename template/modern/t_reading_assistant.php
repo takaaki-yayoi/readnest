@@ -283,10 +283,10 @@ $js_recent_books = $template_recent_books ?? [];
 $js_favorite_genres = $template_favorite_genres ?? [];
 $js_reading_stats = $template_reading_stats ?? [];
 ?>
-const userInfo = <?php echo json_encode($js_user_info, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-const recentBooks = <?php echo json_encode($js_recent_books, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-const favoriteGenres = <?php echo json_encode($js_favorite_genres, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-const readingStats = <?php echo json_encode($js_reading_stats, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+const userInfo = <?php echo json_encode($js_user_info, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?>;
+const recentBooks = <?php echo json_encode($js_recent_books, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?>;
+const favoriteGenres = <?php echo json_encode($js_favorite_genres, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?>;
+const readingStats = <?php echo json_encode($js_reading_stats, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?>;
 
 // ユーザーの本棚にある本のタイトルを収集
 <?php
@@ -302,7 +302,7 @@ if ($login_flag && $mine_user_id) {
     }
 }
 ?>
-userBookTitles = <?php echo json_encode($user_book_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+userBookTitles = <?php echo json_encode($user_book_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG); ?>;
 
 // 会話履歴を共有ストレージから読み込む
 function loadSharedConversation() {

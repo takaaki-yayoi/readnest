@@ -56,7 +56,8 @@ if (!function_exists('verifyCSRFToken')) {
         
         // トークンが一致しない
         if (!hash_equals($_SESSION['csrf_token'], $token)) {
-            error_log('CSRF verify: Token mismatch - Session: ' . $_SESSION['csrf_token'] . ', Input: ' . $token);
+            // トークンの値はログに残さない（ログ経由で漏れると偽装に使える）
+            error_log('CSRF verify: Token mismatch');
             return false;
         }
         
@@ -88,11 +89,9 @@ if (!function_exists('requireCSRFToken')) {
             if (!verifyCSRFToken($token)) {
                 http_response_code(403);
                 // デバッグ情報をログ出力
-                error_log('CSRF token validation failed. IP: ' . $_SERVER['REMOTE_ADDR']);
-                error_log('Session ID: ' . session_id());
-                error_log('Session csrf_token: ' . ($_SESSION['csrf_token'] ?? 'not set'));
-                error_log('Posted token: ' . ($token ?? 'not set'));
-                error_log('Session data: ' . print_r($_SESSION, true));
+                // セッションID・トークン・セッション内容はログに残さない（漏れるとなりすましに使える）
+                error_log('CSRF token validation failed. IP: ' . $_SERVER['REMOTE_ADDR']
+                    . ' path: ' . parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
                 die('不正なリクエストです。ページを再読み込みしてください。');
             }
         }

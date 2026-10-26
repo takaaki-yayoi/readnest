@@ -44,11 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
-// デバッグログ
-error_log('Like API: Received data: ' . print_r($data, true));
-error_log('Like API: Session ID: ' . session_id());
-error_log('Like API: Session csrf_token: ' . ($_SESSION['csrf_token'] ?? 'not set'));
-
 if (!$data) {
     error_log('Like API: Failed to decode JSON');
     sendResponse(false, 'リクエストデータが不正です');

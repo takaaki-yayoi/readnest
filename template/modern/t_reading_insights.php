@@ -1867,8 +1867,12 @@ async function analyzeReadingTrends() {
 // 分析結果をフォーマット
 function formatAnalysisResult(text) {
     if (!text) return '';
-    // Markdown風の変換
-    let html = text
+    // Markdown風の変換（LLMの出力なので先にエスケープする）
+    let html = String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/^## (.+)$/gm, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
         .replace(/^### (.+)$/gm, '<h4 class="font-semibold mt-3 mb-1">$1</h4>')

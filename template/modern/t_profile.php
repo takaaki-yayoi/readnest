@@ -284,7 +284,8 @@ ob_start();
                         $corrected_content = AuthorCorrections::correctInText($reading_analysis['analysis_content']);
                         
                         // Markdownを簡易的にHTMLに変換
-                        $analysis_html = $corrected_content;
+                        // 公開プロフィールで他のユーザーにも表示されるため、先にエスケープする（保存型XSS対策）
+                        $analysis_html = htmlspecialchars($corrected_content, ENT_QUOTES, 'UTF-8');
                         // 【】で囲まれたセクションタイトルを太字に
                         $analysis_html = preg_replace('/【(.+?)】/', '<strong class="text-xl font-bold text-indigo-900">【$1】</strong>', $analysis_html);
                         $analysis_html = preg_replace('/^### (.+)$/m', '<h3 class="text-xl font-semibold text-indigo-900 mt-5 mb-3">$1</h3>', $analysis_html);
@@ -408,6 +409,17 @@ ob_start();
 ob_start();
 ?>
 <script>
+// 分析文はLLMの出力でHTMLとして表示するため、整形前にエスケープする
+function escapeAnalysisHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+
 // 読書傾向分析の公開設定を切り替え
 async function toggleAnalysisVisibility(analysisId) {
     const checkbox = document.getElementById('analysis-public-toggle');
@@ -610,7 +622,7 @@ async function showAnalysisHistory() {
                         </div>
                         ${!isCurrent ? '<i class="fas fa-chevron-right text-gray-400"></i>' : ''}
                     </div>
-                    <p class="text-sm text-gray-600 line-clamp-2">${item.preview}</p>
+                    <p class="text-sm text-gray-600 line-clamp-2">${escapeAnalysisHtml(item.preview)}</p>
                 </div>
             `;
         });
@@ -712,8 +724,8 @@ async function loadAnalysis(analysisId) {
             return;
         }
         
-        // Markdown変換（PHPと同じ処理）
-        let html = analysis.analysis_content;
+        // Markdown変換（PHPと同じ処理。先にエスケープする）
+        let html = escapeAnalysisHtml(analysis.analysis_content);
         html = html.replace(/【(.+?)】/g, '<strong class="text-xl font-bold text-indigo-900">【$1】</strong>');
         html = html.replace(/^### (.+)$/gm, '<h3 class="text-xl font-semibold text-indigo-900 mt-5 mb-3">$1</h3>');
         html = html.replace(/^## (.+)$/gm, '<h2 class="text-2xl font-bold text-indigo-900 mt-6 mb-4">$1</h2>');

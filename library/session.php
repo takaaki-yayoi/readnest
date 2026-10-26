@@ -120,4 +120,7 @@ function unsetAutoLogin() {
     trigger_error('setting autologin failed.');
   }
 }
+
+// 全ページ共通のCSRF対策（セッション開始後に行う必要があるためここで読み込む）
+require_once(__DIR__ . '/csrf_guard.php');
 ?>

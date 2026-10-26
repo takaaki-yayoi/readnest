@@ -25,6 +25,10 @@ $offset = ($page - 1) * $per_page;
 // 検索条件
 $search_keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
 $sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'recent'; // recent, rating_high, rating_low
+// ページャーのリンクにそのまま出すため、想定外の値は既定に戻す（反射型XSS対策）
+if (!in_array($sort_by, ['recent', 'rating_high', 'rating_low'], true)) {
+    $sort_by = 'recent';
+}
 
 // レビュー総数を取得
 $count_sql = "SELECT COUNT(DISTINCT bl.book_id, bl.user_id) as total 

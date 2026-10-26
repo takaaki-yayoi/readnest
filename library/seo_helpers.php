@@ -141,7 +141,7 @@ function generateBookSchema(array $book): string {
     
     return sprintf(
         '<script type="application/ld+json">%s</script>',
-        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG)
     );
 }
 
@@ -182,7 +182,7 @@ function generateReviewSchema(array $review): string {
     
     return sprintf(
         '<script type="application/ld+json">%s</script>',
-        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG)
     );
 }
 
@@ -211,7 +211,7 @@ function generateOrganizationSchema(): string {
     
     return sprintf(
         '<script type="application/ld+json">%s</script>',
-        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG)
     );
 }
 
@@ -235,7 +235,7 @@ function generatePersonSchema(array $user): string {
     
     return sprintf(
         '<script type="application/ld+json">%s</script>',
-        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG)
     );
 }
 
@@ -265,7 +265,7 @@ function generateBreadcrumbSchema(array $items): string {
     
     return sprintf(
         '<script type="application/ld+json">%s</script>',
-        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG)
     );
 }
 

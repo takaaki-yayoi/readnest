@@ -18,8 +18,10 @@ if (!function_exists('asset_ver')) {
 // グラフライブラリ(Chart.js/moment)を読み込む必要があるか。
 // 本文にインラインの new Chart() を含むページだけ true（取りこぼし防止のため自動判定）。
 // 個別ページが明示的に $g_load_charts = true を設定した場合も読み込む。
+// グラフのスクリプトを $d_additional_scripts に置くページ（プロフィール・ホーム）もあるため両方を見る。
 $g_need_charts = !empty($g_load_charts)
-    || (isset($d_content) && stripos($d_content, 'new Chart') !== false);
+    || (isset($d_content) && stripos($d_content, 'new Chart') !== false)
+    || (isset($d_additional_scripts) && stripos($d_additional_scripts, 'new Chart') !== false);
 ?>
 <!DOCTYPE html>
 <html lang="ja">

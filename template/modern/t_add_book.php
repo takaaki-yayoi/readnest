@@ -65,7 +65,7 @@ ob_start();
 <section class="py-6 sm:py-8 bg-gray-50 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="max-w-2xl mx-auto">
-            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="get" class="space-y-3 sm:space-y-4">
+            <form action="<?php echo html($_SERVER['PHP_SELF']); ?>" method="get" class="space-y-3 sm:space-y-4">
                 <div class="relative">
                     <label for="keyword" class="sr-only">検索キーワード</label>
                     <div class="relative">

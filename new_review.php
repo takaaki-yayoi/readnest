@@ -85,11 +85,15 @@ for($i = $start_point; $i < $end_point; $i++) {
     $update_date_conv = date('Y/m/d H:i:s', $timestamp);
   }
 
+  // レビュー本文・タイトル・ニックネームは他のユーザーが入力した値なのでエスケープする（保存型XSS対策）
+  // 切り詰めてから改行を<br>にする（先にnl2brすると途中でタグが切れる）
   if(mb_strlen($book_memo) > 50) {
-    $book_memo = mb_substr(nl2br($book_memo), 0, 50) . '…';
+    $book_memo = nl2br(html(mb_substr($book_memo, 0, 50))) . '…';
   } else {
-    $book_memo = nl2br($book_memo);
+    $book_memo = nl2br(html($book_memo));
   }
+  $name = html($name);
+  $image_url = html($image_url);
   
   if($current_rating != '') {
     $star = '[' . $g_star_array[$current_rating] . ']&nbsp;';
@@ -97,7 +101,9 @@ for($i = $start_point; $i < $end_point; $i++) {
     $star = '[未評価]&nbsp;';
   }
   
-  $d_nickname = getNickname($user_id);
+  $d_nickname = html(getNickname($user_id));
+  $book_id = (int)$book_id;
+  $user_id = (int)$user_id;
 
   $detail_url = "/book/$book_id";
   $title_part = '';
