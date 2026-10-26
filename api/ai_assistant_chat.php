@@ -321,7 +321,7 @@ function shouldUseText2SQL($message) {
     return false;
 }
 
-// Text2SQL実行（直接関数呼び出し）
+// Text2SQL実行（旧方式: LLM生成SQLをそのまま実行。無効化済み・参照用に残す）
 function executeText2SQL($message, $user_id) {
     global $g_db;
     
@@ -351,12 +351,14 @@ function executeText2SQL($message, $user_id) {
 }
 
 // Text2SQLチェック
-// セキュリティ: LLM生成SQLの実行は任意テーブルの読み出しが可能なため無効化
+// セキュリティ: 旧方式（LLM生成SQLの実行）は任意テーブルの読み出しが可能なため無効化し、
+// LLMには検索条件だけを返させて固定クエリに当てはめる方式（reading_data_query.php）に置き換え
 $sql_data = null;
-$text2sql_enabled = false;
+$text2sql_enabled = true;
 if ($text2sql_enabled && shouldUseText2SQL($message)) {
     // Text2SQLトリガー
-    $sql_result = executeText2SQL($message, $mine_user_id);
+    require_once(dirname(__DIR__) . '/library/reading_data_query.php');
+    $sql_result = executeReadingDataQuery($message, (int)$mine_user_id);
     // Text2SQL結果取得
     if ($sql_result && $sql_result['success']) {
         $sql_data = $sql_result;
@@ -412,7 +414,10 @@ if ($sql_data && isset($sql_data['debug'])) {
     // SQLから日本語の説明を生成
     $sql = $sql_data['debug']['query'];
     
-    if (stripos($sql, 'COUNT(*)') !== false) {
+    if (!empty($sql_data['explanation'])) {
+        // 新方式は検索条件から説明文を生成済み
+        $sql_explanation = $sql_data['explanation'];
+    } else if (stripos($sql, 'COUNT(*)') !== false) {
         if (stripos($sql, 'status = 3') !== false) {
             $sql_explanation = "読了した本の数を検索";
         } else if (stripos($sql, 'status = 2') !== false) {
@@ -436,7 +441,7 @@ if ($sql_data && isset($sql_data['debug'])) {
         $sql_explanation = "データベースを検索";
     }
     
-    if (isset($sql_data['count'])) {
+    if (isset($sql_data['count']) && empty($sql_data['explanation'])) {
         $sql_explanation .= "（結果: {$sql_data['count']}件）";
     }
     
@@ -447,7 +452,12 @@ if ($sql_data && isset($sql_data['debug'])) {
     if ($mine_user_id == 12) {
         $text2sql_info .= "<details style='cursor: pointer; color: #666; font-size: 0.9em; margin-top: 5px;'>\n";
         $text2sql_info .= "<summary>クエリを表示（デバッグ用）</summary>\n";
-        $text2sql_info .= "```sql\n{$sql}\n```\n";
+        // <details> の中はMarkdownとして処理されないため、```ではなく<pre>で囲む
+        $debug_query = $sql;
+        if (isset($sql_data['debug']['params'])) {
+            $debug_query .= "\nパラメータ: " . json_encode($sql_data['debug']['params'], JSON_UNESCAPED_UNICODE);
+        }
+        $text2sql_info .= "<pre style='white-space: pre-wrap; font-size: 0.85em;'>" . htmlspecialchars($debug_query, ENT_QUOTES, 'UTF-8') . "</pre>";
         $text2sql_info .= "</details>\n";
     }
     $text2sql_info .= "\n";
@@ -456,7 +466,15 @@ if ($sql_data && isset($sql_data['debug'])) {
 if ($sql_data && !empty($sql_data['data'])) {
     $system_prompt .= "【データベース検索結果】\n";
     $system_prompt .= "以下のデータを基に、単なる列挙ではなく分析的な回答を提供してください。\n";
-    $system_prompt .= "結果数: " . count($sql_data['data']) . "件\n\n";
+    if (!empty($sql_data['explanation'])) {
+        // 何を数えた結果かを伝えないと、件数を本棚全体の冊数などと取り違える
+        $system_prompt .= "検索内容: " . $sql_data['explanation'] . "\n";
+        $system_prompt .= "これはユーザー本人の本棚を上記の条件で検索した正確な結果です。この値をそのまま質問への答えとして使ってください。\n";
+        // 検索に含めなかった項目を「データがない」「記録すると分析できる」と言わないように
+        $system_prompt .= "この検索に含まれない情報（月別・著者別・ジャンル別の内訳、タイトル一覧など）は、記録が無いのではなく今回取得していないだけです。必要なら「〜と聞いてもらえれば調べられます」と案内してください。\n\n";
+    } else {
+        $system_prompt .= "結果数: " . count($sql_data['data']) . "件\n\n";
+    }
     
     // データタイプを判定して分析のヒントを追加
     if (isset($sql_data['data'][0])) {
@@ -464,7 +482,10 @@ if ($sql_data && !empty($sql_data['data'])) {
         if (isset($first_item['rating'])) {
             $system_prompt .= "【分析のポイント】評価の分布、高評価の理由、ジャンルの傾向を含めてください。\n";
         }
-        if (isset($first_item['finished_date'])) {
+        if (($sql_data['debug']['conditions']['metric'] ?? '') === 'list') {
+            // 評価順などで抜き出した一部の本なので、読了日の間隔はその人の読書ペースを表さない
+            $system_prompt .= "【注意】この一覧は条件で抜き出した一部の本です。ここに含まれる読了日の間隔から読書ペースや読書量を推定しないでください。\n";
+        } elseif (isset($first_item['finished_date'])) {
             $system_prompt .= "【分析のポイント】読書ペースの変化、季節性、読了期間の傾向を含めてください。\n";
         }
         if (isset($first_item['status'])) {
@@ -483,11 +504,13 @@ if ($sql_data && !empty($sql_data['data'])) {
             foreach ($row as $key => $value) {
                 if ($value !== null) {
                     // キー名を日本語に変換
-                    $key_jp = str_replace(
-                        ['name', 'title', 'author', 'rating', 'status', 'finished_date', 'count', 'avg_rating', 'update_date'],
-                        ['タイトル', 'タイトル', '著者', '評価', 'ステータス', '読了日', '件数', '平均評価', '更新日'],
-                        $key
-                    );
+                    // strtr は長いキーから置換するため avg_rating が「avg_評価」にならない
+                    $key_jp = strtr($key, [
+                        'name' => 'タイトル', 'title' => 'タイトル', 'author' => '著者', 'rating' => '評価',
+                        'status' => 'ステータス', 'finished_date' => '読了日', 'count' => '件数',
+                        'avg_rating' => '平均評価', 'update_date' => '更新日', 'label' => '項目',
+                        'total_pages' => '合計ページ数', 'total_page' => 'ページ数'
+                    ]);
                     $formatted_row[] = "{$key_jp}: {$value}";
                 }
             }
@@ -498,13 +521,14 @@ if ($sql_data && !empty($sql_data['data'])) {
         $system_prompt .= "合計 " . count($sql_data['data']) . " 件の結果があります。\n";
         $system_prompt .= "全リスト:\n";
         foreach ($sql_data['data'] as $index => $row) {
-            $title = $row['name'] ?? $row['title'] ?? $row['tag_name'] ?? '項目' . ($index + 1);
+            $title = $row['name'] ?? $row['title'] ?? $row['tag_name'] ?? $row['label'] ?? '項目' . ($index + 1);
             $author = $row['author'] ?? '';
             $rating = isset($row['rating']) && $row['rating'] > 0 ? "★{$row['rating']}" : '';
             
             $item_text = ($index + 1) . ". 「{$title}」";
             if ($author) $item_text .= " - {$author}";
             if ($rating) $item_text .= " {$rating}";
+            if (isset($row['label'], $row['count'])) $item_text .= " {$row['count']}冊";
             
             $system_prompt .= $item_text . "\n";
             
