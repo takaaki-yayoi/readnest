@@ -702,6 +702,13 @@ $icon = $type_icons[$type] ?? 'bullhorn';
                     <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         お気に入り作家の新しい作品です
                     </p>
+                    <?php elseif (isset($whisper_type) && $whisper_type === 'series_next'): ?>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-readnest-primary dark:group-hover:text-readnest-accent transition-colors">
+                        続きの『<?php echo html($whisper_book['title']); ?>』、まだ本棚にないようです
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        『<?php echo html($whisper_book['prev_title']); ?>』を読み終えました
+                    </p>
                     <?php else: ?>
                     <p class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-readnest-primary dark:group-hover:text-readnest-accent transition-colors">
                         『<?php echo html($whisper_book['title']); ?>』、まだ読んでいませんね

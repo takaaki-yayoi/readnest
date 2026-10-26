@@ -126,7 +126,7 @@ if ($login_flag) {
 
     // 囁きレコメンド：新刊通知があれば優先、なければ未読作品からランダム
     $whisper_book = null;
-    $whisper_type = 'undiscovered'; // 'new_release' or 'undiscovered'
+    $whisper_type = 'undiscovered'; // 'new_release' / 'series_next' / 'undiscovered'
     try {
         // まず未読の新刊通知があるかチェック
         $new_release_sql = "
@@ -167,7 +167,21 @@ if ($login_flag) {
         // 新刊通知テーブルがまだなくてもエラーにしない
     }
 
-    // 新刊通知がなければ、既存の未読作品から囁く
+    // 新刊通知がなければ、最近読み終えた本の続巻を囁く
+    if (!$whisper_book) {
+        try {
+            require_once(dirname(__FILE__) . '/library/series_next_volume.php');
+            $series_next = getSeriesNextWhisper((int)$mine_user_id);
+            if ($series_next) {
+                $whisper_book = $series_next;
+                $whisper_type = 'series_next';
+            }
+        } catch (Exception $e) {
+            error_log('Failed to get series next volume: ' . $e->getMessage());
+        }
+    }
+
+    // 新刊・続巻がなければ、既存の未読作品から囁く
     if (!$whisper_book) {
     try {
         // ユーザーが2冊以上読んでいる or 高評価の作家を取得
