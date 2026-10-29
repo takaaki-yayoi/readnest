@@ -142,9 +142,13 @@ function csrfGuardInjectToken(string $buffer): string {
     $token_attr = htmlspecialchars($token, ENT_QUOTES, 'UTF-8');
 
     // POSTフォームに隠しフィールドを差し込む（既にある場合も同じ値なので重複して問題ない）
+    // 属性値内の「>」（Alpine.jsの @submit="x > 0" 等）でタグを途中で切らないよう、引用符の中は読み飛ばす
     $buffer = preg_replace_callback(
-        '/<form\b[^>]*\bmethod\s*=\s*["\']?post\b[^>]*>/i',
+        '/<form\b(?:[^>"\']++|"[^"]*+"|\'[^\']*+\')*+>/i',
         function ($m) use ($token_attr) {
+            if (!preg_match('/\bmethod\s*=\s*["\']?post\b/i', $m[0])) {
+                return $m[0];
+            }
             // 送信先が別サイトのフォームにはトークンを渡さない
             if (preg_match('/\baction\s*=\s*["\']?(?:https?:)?\/\/([^\/"\'\s>]+)/i', $m[0], $a)
                 && strcasecmp($a[1], $_SERVER['HTTP_HOST'] ?? '') !== 0) {
