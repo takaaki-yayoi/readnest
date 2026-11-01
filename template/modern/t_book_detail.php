@@ -854,8 +854,11 @@ ob_start();
                                          'canEdit' => (bool)$is_book_owner,
                                          'canAdd' => (bool)$can_add_book_links,
                                      ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)); ?>)">
-                                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                                        <i class="fas fa-link mr-2"></i>この本で紹介された本
+                                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center justify-between">
+                                        <span><i class="fas fa-link mr-2"></i>この本で紹介された本</span>
+                                        <?php if ($is_book_owner): ?>
+                                        <a href="/my_book_links.php" class="text-xs font-normal text-blue-600 hover:underline">すべてのブックリンク</a>
+                                        <?php endif; ?>
                                     </h3>
 
                                     <p x-show="canAdd && links.length === 0 && !adding" class="text-sm text-gray-500 dark:text-gray-400 mb-2">

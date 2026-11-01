@@ -789,6 +789,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <a href="/my_reviews.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-pen-to-square mr-2 text-indigo-500"></i> マイレビュー
                                 </a>
+                                <a href="/my_book_links.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-link mr-2 text-blue-500"></i> ブックリンク
+                                </a>
                                 <a href="/my_likes.php" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     <i class="fas fa-heart mr-2 text-red-500"></i> いいね
                                 </a>
@@ -960,6 +963,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </a>
                     <a href="/my_reviews.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-pen-to-square mr-3 w-4 text-indigo-500"></i> マイレビュー
+                    </a>
+                    <a href="/my_book_links.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
+                        <i class="fas fa-link mr-3 w-4 text-blue-500"></i> ブックリンク
                     </a>
                     <a href="/my_likes.php" class="block py-2 text-gray-700 hover:text-book-primary-600">
                         <i class="fas fa-heart mr-3 w-4 text-red-500"></i> いいね

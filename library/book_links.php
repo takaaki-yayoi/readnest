@@ -247,6 +247,54 @@ function getBookLinksToAsin($target_asin, $viewer_user_id = null, $limit = 30, $
 }
 
 /**
+ * ユーザーのブックリンクをすべて取得する（ブックリンク一覧ページ用）
+ *
+ * 紹介先の本の解決方法は getBookLinksFromBook() と同じ。
+ * 紹介元の本が本棚から削除されているリンクは出さない。
+ */
+function getUserBookLinks($user_id, $limit = 2000) {
+    global $g_db;
+
+    $limit = max(1, (int)$limit);
+
+    $sql = "SELECT l.id, l.user_id, l.source_book_id, l.target_asin, l.page, l.memo,
+                   l.created_at, l.updated_at,
+                   sb.name AS source_title, sb.status AS source_status,
+                   COALESCE(NULLIF(sb.author, ''),
+                            (SELECT r.author FROM b_book_repository r WHERE r.asin = sb.amazon_id LIMIT 1),
+                            '') AS source_author,
+                   COALESCE(NULLIF(sb.image_url, ''),
+                            (SELECT r.image_url FROM b_book_repository r WHERE r.asin = sb.amazon_id LIMIT 1),
+                            '') AS source_image_url,
+                   tb.book_id AS target_book_id, tb.status AS target_status,
+                   COALESCE(tb.name,
+                            (SELECT r.title FROM b_book_repository r WHERE r.asin = l.target_asin LIMIT 1),
+                            '') AS target_title,
+                   COALESCE(NULLIF(tb.author, ''),
+                            (SELECT r.author FROM b_book_repository r WHERE r.asin = l.target_asin LIMIT 1),
+                            '') AS target_author,
+                   COALESCE(NULLIF(tb.image_url, ''),
+                            (SELECT r.image_url FROM b_book_repository r WHERE r.asin = l.target_asin LIMIT 1),
+                            '') AS target_image_url
+            FROM book_links l
+            INNER JOIN b_book_list sb ON sb.book_id = l.source_book_id AND sb.user_id = l.user_id
+            LEFT JOIN b_book_list tb ON tb.user_id = l.user_id AND tb.book_id = COALESCE(
+                (SELECT t1.book_id FROM b_book_list t1 WHERE t1.book_id = l.target_book_id AND t1.user_id = l.user_id),
+                (SELECT MAX(t2.book_id) FROM b_book_list t2 WHERE t2.user_id = l.user_id AND t2.amazon_id = l.target_asin)
+            )
+            WHERE l.user_id = ?
+            ORDER BY l.created_at DESC
+            LIMIT {$limit}";
+
+    $rows = $g_db->getAll($sql, [(int)$user_id], DB_FETCHMODE_ASSOC);
+    if (DB::isError($rows)) {
+        error_log('getUserBookLinks failed: ' . $rows->getMessage());
+        return [];
+    }
+    return $rows ?: [];
+}
+
+/**
  * 画面・API 用にリンク1件を整形する（紹介先側）
  */
 function formatBookLinkForDisplay(array $link) {

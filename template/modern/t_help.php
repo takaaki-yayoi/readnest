@@ -979,6 +979,7 @@ ob_start();
                             <ul class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
                                 <li><i class="fas fa-edit text-blue-600 mr-2"></i>追加したリンクは、鉛筆アイコンでページ番号・メモを編集、×アイコンで削除できます（本棚の本は削除されません）</li>
                                 <li><i class="fas fa-quote-left text-blue-600 mr-2"></i>紹介された側の本の詳細ページには「この本を紹介していた本」が表示されます</li>
+                                <li><i class="fas fa-list text-blue-600 mr-2"></i>メニューの「ブックリンク」から、これまでのリンクを「紹介元の本ごと」「紹介された本ごと」に一覧できます。「本棚にない本だけ」で、まだ手元にない本を探すこともできます</li>
                             </ul>
                             <div class="mt-4 p-3 bg-white dark:bg-gray-800 rounded text-sm">
                                 <p class="text-gray-700 dark:text-gray-300">
