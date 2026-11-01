@@ -566,6 +566,16 @@ ob_start();
                                             <span>自動的に本が検索・表示される</span>
                                         </div>
                                     </div>
+                                    <div class="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300">
+                                        <p class="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                            <i class="fas fa-layer-group mr-1 text-blue-600"></i>まとめて登録
+                                        </p>
+                                        <p>
+                                            バーコード画面で「続けて読み取る（まとめて登録）」をオンにすると、カメラを止めずに何冊でも続けて読み取れます。
+                                            読み取った本はリストにたまるので、ステータスを選んで「○冊を本棚に追加」でまとめて登録できます。
+                                            同じ本の二重読み取りや、既に本棚にある本は自動でスキップされます。
+                                        </p>
+                                    </div>
                                 </div>
                                 <div>
                                     <h4 class="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center">
@@ -951,6 +961,34 @@ ob_start();
                         </div>
                     </div>
                     
+                    <div id="book-links">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                            <i class="fas fa-link text-readnest-primary mr-2"></i>
+                            ブックリンク（この本で紹介された本）
+                        </h3>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                読んでいる本の中で別の本が紹介されていたら、その本を「紹介元の本」に紐づけて残しておけます。
+                            </p>
+                            <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm">
+                                <li>読書中・読了・既読の本の詳細ページで「紹介された本を追加」をクリック</li>
+                                <li>タイトル・著者・ISBNで検索して、紹介されていた本を選ぶ</li>
+                                <li>必要ならページ番号と、どういう文脈で紹介されていたかのひとことメモを入力</li>
+                                <li>「本棚の「いつか買う」にも入れる」を選ぶと、本棚にも同時に追加されます（既に本棚にある本はその本に紐づきます）</li>
+                            </ol>
+                            <ul class="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                                <li><i class="fas fa-edit text-blue-600 mr-2"></i>追加したリンクは、鉛筆アイコンでページ番号・メモを編集、×アイコンで削除できます（本棚の本は削除されません）</li>
+                                <li><i class="fas fa-quote-left text-blue-600 mr-2"></i>紹介された側の本の詳細ページには「この本を紹介していた本」が表示されます</li>
+                            </ul>
+                            <div class="mt-4 p-3 bg-white dark:bg-gray-800 rounded text-sm">
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-lock mr-1 text-gray-500"></i>
+                                    <strong class="text-gray-900 dark:text-gray-100">公開範囲：</strong>読書記録を公開しているユーザーのリンクは、他のユーザーにも表示されます。非公開にしている場合は自分にだけ表示されます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">読書目標の設定</h3>
                         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
@@ -2211,6 +2249,55 @@ ob_start();
                 </h2>
                 
                 <div class="space-y-8">
+                    <!-- ブックリンク NEW! -->
+                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg p-6 relative">
+                        <span class="absolute top-4 right-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-link text-blue-600 mr-3"></i>
+                            ブックリンク
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            読んでいる本の中で紹介されていた本を、ページ番号やメモと一緒に紐づけて残せるようになりました。
+                            紹介された側の本の詳細ページには「この本を紹介していた本」が表示されます。
+                        </p>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">
+                            使い方は<a href="#book-links" class="text-readnest-primary hover:underline">読書管理の「ブックリンク」</a>をご覧ください。
+                        </p>
+                    </div>
+
+                    <!-- 囁きレコメンドの続巻 NEW! -->
+                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg p-6 relative">
+                        <span class="absolute top-4 right-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-layer-group text-emerald-600 mr-3"></i>
+                            囁きレコメンドで「続巻」をお知らせ
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            シリーズものの本を読み終えると、ホーム画面の囁きレコメンドで次の巻をお知らせします（次の巻が本棚にない場合のみ）。
+                        </p>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+                            <ul class="list-disc list-inside space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                                <li>タイトルの「上・中・下」「前編・後編」「第2巻」「(3)」「Vol.4」などから巻数を読み取ります</li>
+                                <li>同じ著者の本の中から次の巻を探します。別の版で持っている場合は表示しません</li>
+                                <li>囁きの優先順位は 新刊 → 続巻 → まだ読んでいない作品 です</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- バーコードまとめて登録 NEW! -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-lg p-6 relative">
+                        <span class="absolute top-4 right-4 bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-barcode text-indigo-600 mr-3"></i>
+                            バーコードでまとめて登録
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            本を追加ページのバーコード画面で「続けて読み取る（まとめて登録）」をオンにすると、手元の本を続けて読み取り、
+                            最後にステータスを選んでまとめて本棚に追加できます。
+                            詳しくは<a href="#add-books" class="text-readnest-primary hover:underline">本の追加方法</a>をご覧ください。
+                        </p>
+                    </div>
+
                     <!-- 次に読むタブ NEW! -->
                     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 relative">
                         <span class="absolute top-4 right-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs px-2 py-1 rounded-full font-bold">New</span>
@@ -3006,9 +3093,10 @@ ob_start();
                                         </ul>
                                     </li>
                                     <li><strong>自然言語での質問：</strong>「今年読了した本は？」「評価が4以上の本」「積読の中からおすすめは？」など</li>
+                                    <li><strong>集計の質問：</strong>冊数・一覧・平均評価・合計ページ数や、月別・年別・著者別・ステータス別・評価別・タグ別の内訳を、本棚のデータから集計して答えます</li>
                                     <li><strong>本の推薦：</strong>読書傾向に基づいた本の提案</li>
                                     <li><strong>会話履歴：</strong>過去の会話を保存・復元・削除</li>
-                                    <li><strong>動的リンク：</strong>本の状況に応じて適切なページへ誘導</li>
+                                    <li><strong>動的リンク：</strong>回答に出てきた本が本棚にあれば詳細ページへ、なければ追加ページへリンクします</li>
                                 </ul>
                                 
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100 mt-4">アクセス方法:</h4>
@@ -3039,6 +3127,12 @@ ob_start();
                                     </div>
                                     <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
                                         <strong class="text-gray-900 dark:text-gray-100">📝 レビュー:</strong> 「レビューを書いた本を見せて」「高評価の本は？」
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <strong class="text-gray-900 dark:text-gray-100">📈 集計:</strong> 「今年の月ごとの読了冊数は？」「著者別の読了冊数は？」
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        <strong class="text-gray-900 dark:text-gray-100">🏷️ 内訳:</strong> 「タグ別の冊数を教えて」「去年読んだ本の合計ページ数は？」
                                     </div>
                                 </div>
 
