@@ -877,7 +877,7 @@ ob_start();
                                                     <div class="flex items-start justify-between gap-2">
                                                         <div class="min-w-0">
                                                             <a :href="link.url" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 line-clamp-2" x-text="link.title"></a>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="link.author"></p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1" x-text="link.author"></p>
                                                         </div>
                                                         <div x-show="canEdit && editingId !== link.id" class="flex-shrink-0 flex gap-2 text-xs">
                                                             <button type="button" @click="startEdit(link)" class="text-gray-400 hover:text-blue-600" title="メモを編集">
@@ -944,8 +944,8 @@ ob_start();
                                                                 <img :src="book.image_url || '/img/no-image-book.png'" alt="" class="w-8 h-11 object-cover rounded flex-shrink-0 bg-gray-200"
                                                                      onerror="this.src='/img/no-image-book.png'">
                                                                 <span class="min-w-0">
-                                                                    <span class="block text-sm text-gray-900 dark:text-gray-100 line-clamp-2" x-text="book.title"></span>
-                                                                    <span class="block text-xs text-gray-500 dark:text-gray-400 truncate" x-text="book.author"></span>
+                                                                    <span class="text-sm text-gray-900 dark:text-gray-100 line-clamp-2" x-text="book.title"></span>
+                                                                    <span class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1" x-text="book.author"></span>
                                                                 </span>
                                                             </button>
                                                         </li>
@@ -959,7 +959,7 @@ ob_start();
                                                              onerror="this.src='/img/no-image-book.png'">
                                                         <div class="min-w-0 flex-1">
                                                             <p class="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2" x-text="selected && selected.title"></p>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="selected && selected.author"></p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1" x-text="selected && selected.author"></p>
                                                             <button type="button" @click="selected = null" class="text-xs text-blue-600 hover:underline mt-1">選び直す</button>
                                                         </div>
                                                     </div>
@@ -1009,7 +1009,7 @@ ob_start();
                                                    class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 line-clamp-2">
                                                     <?php echo html((string)$back_link['source_title']); ?>
                                                 </a>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                                                     <?php echo html((string)$back_link['source_author']); ?>
                                                     <?php if (!$back_is_mine): ?>
                                                     <span class="ml-1">・<?php echo html((string)$back_link['nickname']); ?>さんの本棚</span>
