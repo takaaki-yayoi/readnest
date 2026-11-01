@@ -4,6 +4,9 @@ if(!defined('CONFIG')) {
     die('reference for this file is not allowed.');
 }
 
+// 本文のURL自動リンク（XSS::nl2brAutoLink）
+require_once(dirname(dirname(__DIR__)) . '/library/security_enhanced.php');
+
 // メインコンテンツを生成
 ob_start();
 ?>
@@ -70,9 +73,9 @@ ob_start();
                     // 基本的なHTMLタグのみ許可
                     $allowed_tags = '<p><br><strong><em><u><a><ul><ol><li><h2><h3><h4><blockquote>';
                     $content = strip_tags($content, $allowed_tags);
-                    // 改行を<br>に変換（既にHTMLタグが含まれていない部分のみ）
+                    // HTMLタグを含まない本文は、改行を<br>に・URLをリンクに変換
                     if (!preg_match('/<[^>]+>/', $content)) {
-                        $content = nl2br($content);
+                        $content = XSS::nl2brAutoLink($content);
                     }
                     echo $content;
                     ?>

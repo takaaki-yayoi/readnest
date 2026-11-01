@@ -66,32 +66,48 @@ class XSS {
      * @return string URLがリンクに変換されたテキスト
      */
     public static function autoLink(string $text): string {
-        // まずHTMLエスケープ
-        $text = self::escape($text);
-        
-        // URL正規表現パターン（日本語URLにも対応）
-        $pattern = '/(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!$&\'()*+,;=%\p{L}\p{N}]+)/u';
-        
-        // URLをリンクに変換（エスケープ済みのテキストに対して実行）
-        $text = preg_replace_callback($pattern, function($matches) {
-            $url = $matches[1];
-            
-            // URLの検証（日本語URLも許可）
-            if (filter_var($url, FILTER_VALIDATE_URL) !== false || 
-                preg_match('/^https?:\/\/[^\s<>"{}|\\\\^`\[\]]+$/u', $url)) {
+        // URLはエスケープ前の生テキストから切り出す。
+        // エスケープ後に探すと & が &amp; のまま href に入り、さらに二重にエスケープされてリンク先が壊れるため。
+        // 使える文字はURLに直接書けるASCIIのみ（日本語のURLはパーセントエンコードされた形で一致する）。
+        // 日本語を含めるとURLの直後に続く「をご覧ください」などまでURLに含まれてしまう。
+        $pattern = '/https?:\/\/[a-zA-Z0-9\-._~:\/?#\[\]@!$&\'()*+,;=%]+/';
+
+        $parts = preg_split($pattern, $text);
+        if (!preg_match_all($pattern, $text, $matches)) {
+            return self::escape($text);
+        }
+
+        $result = '';
+        foreach ($parts as $i => $part) {
+            $result .= self::escape($part);
+            if (!isset($matches[0][$i])) {
+                continue;
+            }
+
+            $url = $matches[0][$i];
+            // 文末の句読点や閉じ括弧はURLに含めない（「(https://example.com)」「https://example.com.」など）
+            $trailing = '';
+            while ($url !== '' && (preg_match('/[.,;:!?\'*]$/', $url)
+                || (substr($url, -1) === ')' && substr_count($url, '(') < substr_count($url, ')')))) {
+                $trailing = substr($url, -1) . $trailing;
+                $url = substr($url, 0, -1);
+            }
+
+            if (filter_var($url, FILTER_VALIDATE_URL) !== false) {
                 // 安全なリンクを生成
-                return sprintf(
+                $result .= sprintf(
                     '<a href="%s" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all">%s</a>',
                     self::attr($url),
                     self::escape($url)
                 );
+            } else {
+                // 無効なURLの場合は文字のまま
+                $result .= self::escape($url);
             }
-            
-            // 無効なURLの場合はそのまま返す
-            return $url;
-        }, $text);
-        
-        return $text;
+            $result .= self::escape($trailing);
+        }
+
+        return $result;
     }
     
     /**

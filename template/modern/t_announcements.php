@@ -4,6 +4,9 @@ if(!defined('CONFIG')) {
   die('reference for this file is not allowed.');
 }
 
+// 本文のURL自動リンク（XSS::nl2brAutoLink）
+require_once(dirname(dirname(__DIR__)) . '/library/security_enhanced.php');
+
 // コンテンツ部分を生成
 ob_start();
 ?>
@@ -119,7 +122,7 @@ ob_start();
                             <!-- 内容 -->
                             <?php if (!empty($announcement['content'])): ?>
                                 <div class="prose prose-gray max-w-none">
-                                    <?php echo nl2br(html($announcement['content'])); ?>
+                                    <?php echo XSS::nl2brAutoLink((string)$announcement['content']); ?>
                                 </div>
                             <?php endif; ?>
                             
