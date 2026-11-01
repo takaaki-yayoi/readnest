@@ -721,7 +721,312 @@ ob_start();
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
-                                
+
+                                <!-- ブックリンク: この本で紹介された本 -->
+                                <?php if (!empty($book_links_from) || $can_add_book_links): ?>
+                                <script>
+                                function bookLinksSection(config) {
+                                    return {
+                                        sourceBookId: config.sourceBookId,
+                                        links: config.links,
+                                        canEdit: config.canEdit,
+                                        canAdd: config.canAdd,
+                                        adding: false,
+                                        query: '',
+                                        searching: false,
+                                        results: [],
+                                        searched: false,
+                                        selected: null,
+                                        newPage: '',
+                                        newMemo: '',
+                                        addToShelf: true,
+                                        saving: false,
+                                        editingId: null,
+                                        editPage: '',
+                                        editMemo: '',
+                                        message: '',
+                                        error: '',
+                                        headers() {
+                                            const meta = document.querySelector('meta[name="csrf-token"]');
+                                            return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
+                                        },
+                                        async post(url, body) {
+                                            const res = await fetch(url, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
+                                            const data = await res.json().catch(() => ({ success: false, error: '通信に失敗しました' }));
+                                            if (!data.success) throw new Error(data.error || '処理に失敗しました');
+                                            return data;
+                                        },
+                                        openAdd() {
+                                            this.adding = true;
+                                            this.error = '';
+                                            this.message = '';
+                                            this.$nextTick(() => this.$refs.query && this.$refs.query.focus());
+                                        },
+                                        closeAdd() {
+                                            this.adding = false;
+                                            this.query = '';
+                                            this.results = [];
+                                            this.searched = false;
+                                            this.selected = null;
+                                            this.newPage = '';
+                                            this.newMemo = '';
+                                            this.error = '';
+                                        },
+                                        async search() {
+                                            const q = this.query.trim();
+                                            if (!q || this.searching) return;
+                                            this.searching = true;
+                                            this.error = '';
+                                            this.selected = null;
+                                            try {
+                                                const data = await this.post('/api/book_search_quick.php', { query: q, limit: 8 });
+                                                this.results = (data.books || []).filter(b => b.asin);
+                                            } catch (e) {
+                                                this.results = [];
+                                                this.error = e.message;
+                                            }
+                                            this.searched = true;
+                                            this.searching = false;
+                                        },
+                                        select(book) {
+                                            this.selected = book;
+                                            this.$nextTick(() => this.$refs.newPage && this.$refs.newPage.focus());
+                                        },
+                                        async add() {
+                                            if (!this.selected || this.saving) return;
+                                            this.saving = true;
+                                            this.error = '';
+                                            try {
+                                                const b = this.selected;
+                                                const data = await this.post('/api/book_links.php', {
+                                                    action: 'add',
+                                                    source_book_id: this.sourceBookId,
+                                                    asin: b.asin, isbn: b.isbn, title: b.title, author: b.author,
+                                                    image_url: b.image_url, detail_url: b.detail_url, pages: b.pages, categories: b.categories,
+                                                    page: this.newPage, memo: this.newMemo, add_to_shelf: this.addToShelf
+                                                });
+                                                if (data.link) this.links.push(data.link);
+                                                this.closeAdd();
+                                                this.message = data.added_to_shelf ? '追加して、本棚の「いつか買う」に入れました' : '追加しました';
+                                            } catch (e) {
+                                                this.error = e.message;
+                                            }
+                                            this.saving = false;
+                                        },
+                                        startEdit(link) {
+                                            this.editingId = link.id;
+                                            this.editPage = link.page === null ? '' : String(link.page);
+                                            this.editMemo = link.memo || '';
+                                            this.error = '';
+                                            this.message = '';
+                                        },
+                                        async saveEdit(link) {
+                                            if (this.saving) return;
+                                            this.saving = true;
+                                            this.error = '';
+                                            try {
+                                                const data = await this.post('/api/book_links.php', { action: 'update', id: link.id, page: this.editPage, memo: this.editMemo });
+                                                if (data.link) Object.assign(link, data.link);
+                                                this.editingId = null;
+                                            } catch (e) {
+                                                this.error = e.message;
+                                            }
+                                            this.saving = false;
+                                        },
+                                        async remove(link) {
+                                            if (!confirm('「' + link.title + '」のリンクを削除しますか？\n（本棚の本は削除されません）')) return;
+                                            this.error = '';
+                                            this.message = '';
+                                            try {
+                                                await this.post('/api/book_links.php', { action: 'delete', id: link.id });
+                                                this.links = this.links.filter(l => l.id !== link.id);
+                                            } catch (e) {
+                                                this.error = e.message;
+                                            }
+                                        }
+                                    };
+                                }
+                                </script>
+                                <div class="mt-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+                                     x-data="bookLinksSection(<?php echo html(json_encode([
+                                         'sourceBookId' => (int)$book['book_id'],
+                                         'links' => array_values($book_links_from),
+                                         'canEdit' => (bool)$is_book_owner,
+                                         'canAdd' => (bool)$can_add_book_links,
+                                     ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)); ?>)">
+                                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                        <i class="fas fa-link mr-2"></i>この本で紹介された本
+                                    </h3>
+
+                                    <p x-show="canAdd && links.length === 0 && !adding" class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                        この本の中で紹介されていた本を、ここに残しておけます。
+                                    </p>
+
+                                    <ul x-show="links.length > 0" class="space-y-3 mb-3">
+                                        <template x-for="link in links" :key="link.id">
+                                            <li class="flex gap-3">
+                                                <a :href="link.url" class="flex-shrink-0">
+                                                    <img :src="link.image_url" alt="" loading="lazy"
+                                                         class="w-10 h-14 object-cover rounded shadow-sm bg-gray-200"
+                                                         onerror="this.src='/img/no-image-book.png'">
+                                                </a>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-start justify-between gap-2">
+                                                        <div class="min-w-0">
+                                                            <a :href="link.url" class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 line-clamp-2" x-text="link.title"></a>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="link.author"></p>
+                                                        </div>
+                                                        <div x-show="canEdit && editingId !== link.id" class="flex-shrink-0 flex gap-2 text-xs">
+                                                            <button type="button" @click="startEdit(link)" class="text-gray-400 hover:text-blue-600" title="メモを編集">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button type="button" @click="remove(link)" class="text-gray-400 hover:text-red-600" title="リンクを削除">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div x-show="editingId !== link.id && (link.page || link.memo)" class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                                        <span x-show="link.page" class="inline-block bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-1.5 mr-1" x-text="'p.' + link.page"></span>
+                                                        <span class="whitespace-pre-line break-words" x-text="link.memo"></span>
+                                                    </div>
+                                                    <!-- 編集フォーム -->
+                                                    <div x-show="editingId === link.id" x-cloak class="mt-2 space-y-2">
+                                                        <div class="flex gap-2">
+                                                            <input type="number" min="1" x-model="editPage" placeholder="ページ"
+                                                                   class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                            <input type="text" x-model="editMemo" maxlength="500" placeholder="どういう文脈で紹介されていたか"
+                                                                   @keydown.enter.prevent="saveEdit(link)"
+                                                                   class="flex-1 min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                        </div>
+                                                        <div class="flex gap-2">
+                                                            <button type="button" @click="saveEdit(link)" :disabled="saving"
+                                                                    class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50">保存</button>
+                                                            <button type="button" @click="editingId = null"
+                                                                    class="px-3 py-1 text-gray-600 dark:text-gray-300 text-xs hover:underline">キャンセル</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+
+                                    <p x-show="message" x-cloak class="text-xs text-emerald-700 dark:text-emerald-300 mb-2" x-text="message"></p>
+                                    <p x-show="error" x-cloak class="text-xs text-red-600 dark:text-red-400 mb-2" x-text="error"></p>
+
+                                    <template x-if="canAdd">
+                                        <div>
+                                            <button type="button" x-show="!adding" @click="openAdd()"
+                                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                                <i class="fas fa-plus mr-1"></i>紹介された本を追加
+                                            </button>
+
+                                            <!-- 追加フォーム -->
+                                            <div x-show="adding" x-cloak class="space-y-3">
+                                                <form @submit.prevent="search()" class="flex gap-2">
+                                                    <input type="text" x-ref="query" x-model="query" placeholder="タイトル・著者・ISBNで検索"
+                                                           class="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                                    <button type="submit" :disabled="searching || !query.trim()"
+                                                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50">
+                                                        <span x-show="!searching">検索</span>
+                                                        <span x-show="searching"><i class="fas fa-spinner fa-spin"></i></span>
+                                                    </button>
+                                                </form>
+
+                                                <p x-show="searched && results.length === 0 && !searching" class="text-xs text-gray-500 dark:text-gray-400">見つかりませんでした。キーワードを変えてみてください。</p>
+
+                                                <ul x-show="results.length > 0 && !selected" class="max-h-72 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-600 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600">
+                                                    <template x-for="book in results" :key="book.asin">
+                                                        <li>
+                                                            <button type="button" @click="select(book)" class="w-full flex gap-3 p-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700">
+                                                                <img :src="book.image_url || '/img/no-image-book.png'" alt="" class="w-8 h-11 object-cover rounded flex-shrink-0 bg-gray-200"
+                                                                     onerror="this.src='/img/no-image-book.png'">
+                                                                <span class="min-w-0">
+                                                                    <span class="block text-sm text-gray-900 dark:text-gray-100 line-clamp-2" x-text="book.title"></span>
+                                                                    <span class="block text-xs text-gray-500 dark:text-gray-400 truncate" x-text="book.author"></span>
+                                                                </span>
+                                                            </button>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+
+                                                <!-- 選んだ本の詳細入力 -->
+                                                <div x-show="selected" x-cloak class="bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600 p-3 space-y-3">
+                                                    <div class="flex gap-3">
+                                                        <img :src="(selected && selected.image_url) || '/img/no-image-book.png'" alt="" class="w-10 h-14 object-cover rounded flex-shrink-0 bg-gray-200"
+                                                             onerror="this.src='/img/no-image-book.png'">
+                                                        <div class="min-w-0 flex-1">
+                                                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2" x-text="selected && selected.title"></p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="selected && selected.author"></p>
+                                                            <button type="button" @click="selected = null" class="text-xs text-blue-600 hover:underline mt-1">選び直す</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-2">
+                                                        <input type="number" min="1" x-ref="newPage" x-model="newPage" placeholder="ページ"
+                                                               class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                        <input type="text" x-model="newMemo" maxlength="500" placeholder="ひとことメモ（任意）"
+                                                               class="flex-1 min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                    </div>
+                                                    <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                                                        <input type="checkbox" x-model="addToShelf" class="rounded border-gray-300">
+                                                        本棚の「いつか買う」にも入れる
+                                                        <span class="text-gray-400">（本棚にある本はそのまま紐づけます）</span>
+                                                    </label>
+                                                    <button type="button" @click="add()" :disabled="saving"
+                                                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50">
+                                                        <span x-show="!saving">追加する</span>
+                                                        <span x-show="saving"><i class="fas fa-spinner fa-spin"></i></span>
+                                                    </button>
+                                                </div>
+
+                                                <button type="button" @click="closeAdd()" class="text-xs text-gray-500 dark:text-gray-400 hover:underline">閉じる</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <?php endif; ?>
+
+                                <!-- ブックリンク: この本を紹介していた本（逆リンク） -->
+                                <?php if (!empty($book_links_to)): ?>
+                                <div class="mt-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                        <i class="fas fa-quote-left mr-2"></i>この本を紹介していた本
+                                    </h3>
+                                    <ul class="space-y-3">
+                                        <?php foreach ($book_links_to as $back_link): ?>
+                                        <?php $back_is_mine = $login_flag && (int)$back_link['user_id'] === (int)$mine_user_id; ?>
+                                        <li class="flex gap-3">
+                                            <a href="/book/<?php echo (int)$back_link['source_book_id']; ?>" class="flex-shrink-0">
+                                                <img src="<?php echo html(!empty($back_link['source_image_url']) ? (string)$back_link['source_image_url'] : '/img/no-image-book.png'); ?>"
+                                                     alt="" loading="lazy"
+                                                     class="w-10 h-14 object-cover rounded shadow-sm bg-gray-200"
+                                                     onerror="this.src='/img/no-image-book.png'">
+                                            </a>
+                                            <div class="flex-1 min-w-0">
+                                                <a href="/book/<?php echo (int)$back_link['source_book_id']; ?>"
+                                                   class="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 line-clamp-2">
+                                                    <?php echo html((string)$back_link['source_title']); ?>
+                                                </a>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                    <?php echo html((string)$back_link['source_author']); ?>
+                                                    <?php if (!$back_is_mine): ?>
+                                                    <span class="ml-1">・<?php echo html((string)$back_link['nickname']); ?>さんの本棚</span>
+                                                    <?php endif; ?>
+                                                </p>
+                                                <?php if (!empty($back_link['page']) || !empty($back_link['memo'])): ?>
+                                                <div class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                                                    <?php if (!empty($back_link['page'])): ?>
+                                                    <span class="inline-block bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded px-1.5 mr-1">p.<?php echo (int)$back_link['page']; ?></span>
+                                                    <?php endif; ?>
+                                                    <span class="whitespace-pre-line break-words"><?php echo html((string)($back_link['memo'] ?? '')); ?></span>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <?php endif; ?>
+
                                 <!-- ソーシャルメディア共有ボタン -->
                                 <?php
                                 // Xシェア文面を読書状況に応じて生成（自動投稿の文面に合わせる）。本棚に無い場合は書誌情報のみ。

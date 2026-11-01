@@ -1385,6 +1385,21 @@ if ($should_show_progress && $progress_user_id) {
     }
 }
 
+// ブックリンク（この本で紹介された本 / この本を紹介していた本）
+require_once(__DIR__ . '/library/book_links.php');
+$book_links_from = [];
+$book_links_to = [];
+$can_add_book_links = $is_book_owner && isBookLinkSourceStatus($book['status']);
+// 紹介された本は、本人か読書記録を公開しているユーザーの本だけ見せる
+$can_view_book_links_from = $is_book_owner
+    || (!empty($book_owner_info) && (int)$book_owner_info['diary_policy'] === 1);
+if ($can_view_book_links_from) {
+    $book_links_from = array_map('formatBookLinkForDisplay', getBookLinksFromBook((int)$book['book_id']));
+}
+if (!empty($book['amazon_id'])) {
+    $book_links_to = getBookLinksToAsin($book['amazon_id'], $login_flag ? (int)$mine_user_id : null);
+}
+
 // 公開設定ユーザーのレビューを取得
 $public_user_review = null;
 if (!$is_in_bookshelf && !empty($book['user_id'])) {

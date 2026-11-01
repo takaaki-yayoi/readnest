@@ -230,7 +230,7 @@ function handleMcpMessage($message, $user_id) {
                         ],
                         [
                             'name' => 'get_book_detail',
-                            'description' => '特定の本の詳細情報を取得します。
+                            'description' => '特定の本の詳細情報を取得します。この本で紹介された本・この本を紹介していた本（ブックリンク）も含みます。
 
 パラメータ:
 - book_id (required): 本のID',
@@ -779,6 +779,46 @@ function handleGetBookDetail($args, $user_id, $id) {
 
     if ($book['description']) {
         $output .= "\n説明:\n{$book['description']}\n";
+    }
+
+    // ブックリンク（本人のリンクのみ）
+    require_once(dirname(__DIR__) . '/library/book_links.php');
+    $links_from = getBookLinksFromBook($book_id);
+    if (!empty($links_from)) {
+        $output .= "\nこの本で紹介された本:\n";
+        foreach ($links_from as $link) {
+            $item = formatBookLinkForDisplay($link);
+            $line = "- {$item['title']}";
+            if ($item['author'] !== '') {
+                $line .= " / {$item['author']}";
+            }
+            if ($item['target_book_id']) {
+                $line .= " (book_id: {$item['target_book_id']})";
+            }
+            if ($item['page']) {
+                $line .= " p.{$item['page']}";
+            }
+            if ($item['memo'] !== '') {
+                $line .= " — {$item['memo']}";
+            }
+            $output .= $line . "\n";
+        }
+    }
+    if (!empty($book['amazon_id'])) {
+        $links_to = getBookLinksToAsin($book['amazon_id'], $user_id, 30, true);
+        if (!empty($links_to)) {
+            $output .= "\nこの本を紹介していた本:\n";
+            foreach ($links_to as $link) {
+                $line = "- {$link['source_title']} (book_id: {$link['source_book_id']})";
+                if (!empty($link['page'])) {
+                    $line .= " p.{$link['page']}";
+                }
+                if (!empty($link['memo'])) {
+                    $line .= " — {$link['memo']}";
+                }
+                $output .= $line . "\n";
+            }
+        }
     }
 
     return [
