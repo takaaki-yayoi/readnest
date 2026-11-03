@@ -386,7 +386,7 @@ ob_start();
                             </div>
                             
                             <!-- 書籍情報とタグセクション（左下に配置） -->
-                            <div class="mt-4 space-y-4">
+                            <div class="w-full mt-4 space-y-4">
                                 <!-- 本の詳細情報 -->
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                                     <h3 class="font-semibold mb-3">書籍情報</h3>
@@ -896,10 +896,10 @@ ob_start();
                                                     <div x-show="editingId === link.id" x-cloak class="mt-2 space-y-2">
                                                         <div class="flex gap-2">
                                                             <input type="number" min="1" x-model="editPage" placeholder="ページ"
-                                                                   class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                                   class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-base sm:text-sm">
                                                             <input type="text" x-model="editMemo" maxlength="500" placeholder="どういう文脈で紹介されていたか"
                                                                    @keydown.enter.prevent="saveEdit(link)"
-                                                                   class="flex-1 min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                                   class="flex-1 min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-base sm:text-sm">
                                                         </div>
                                                         <div class="flex gap-2">
                                                             <button type="button" @click="saveEdit(link)" :disabled="saving"
@@ -927,7 +927,7 @@ ob_start();
                                             <div x-show="adding" x-cloak class="space-y-3">
                                                 <form @submit.prevent="search()" class="flex gap-2">
                                                     <input type="text" x-ref="query" x-model="query" placeholder="タイトル・著者・ISBNで検索"
-                                                           class="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                                           class="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                                                     <button type="submit" :disabled="searching || !query.trim()"
                                                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50">
                                                         <span x-show="!searching">検索</span>
@@ -965,9 +965,9 @@ ob_start();
                                                     </div>
                                                     <div class="flex gap-2">
                                                         <input type="number" min="1" x-ref="newPage" x-model="newPage" placeholder="ページ"
-                                                               class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                               class="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-base sm:text-sm">
                                                         <input type="text" x-model="newMemo" maxlength="500" placeholder="ひとことメモ（任意）"
-                                                               class="flex-1 min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-sm">
+                                                               class="flex-1 min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded text-base sm:text-sm">
                                                     </div>
                                                     <label class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
                                                         <input type="checkbox" x-model="addToShelf" class="rounded border-gray-300">
